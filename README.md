@@ -45,6 +45,12 @@ npm run start:mobile
 ```
 Scan the QR code with Expo Go.
 
+## API Verification
+You can verify the authentication manually:
+1. **Register**: `POST /api/auth/register`
+2. **Login**: `POST /api/auth/login` -> Returns `token`
+3. **Verify**: `GET /api/auth/me` (Header: `Authorization: Bearer <token>`)
+
 ## Architecture
 - **Backend**: Node.js, Express, Sequelize (SQLite for Dev).
 - **Frontend**: React (Vite).
