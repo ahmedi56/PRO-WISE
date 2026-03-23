@@ -1,0 +1,41 @@
+{
+  "name": "backend",
+  "private": true,
+  "version": "0.0.0",
+  "description": "PRO-WISE Product Assistance Platform — Sails.js Backend",
+  "keywords": [],
+  "dependencies": {
+    "@sailshq/lodash": "^3.10.6",
+    "bcryptjs": "^3.0.3",
+    "connect-mongo": "^3.2.0",
+    "dotenv": "^16.4.7",
+    "eslint-plugin-react": "7.22.0",
+    "jsonwebtoken": "^9.0.3",
+    "qrcode": "^1.5.4",
+    "sails": "^1.5.11",
+    "sails-hook-orm": "^4.0.3",
+    "sails-hook-sockets": "^3.0.0",
+    "sails-mongo": "^2.1.1"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "eslint": "^9.39.4"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=production node app.js",
+    "dev": "node app.js",
+    "test": "npm run lint && npm run custom-tests && echo 'Done.'",
+    "lint": "eslint . --max-warnings=0",
+    "custom-tests": "echo \"(No other custom tests yet.)\" && echo"
+  },
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "author": "PRO-WISE Team",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18"
+  }
+}

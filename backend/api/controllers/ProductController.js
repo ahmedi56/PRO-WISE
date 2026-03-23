@@ -1,0 +1,368 @@
+/**
+ * ProductController
+ *
+ * @description :: Server-side actions for product management.
+ * @help        :: See https://sailsjs.com/docs/concepts/actions
+ */
+
+module.exports = {
+
+  /**
+     * POST /api/products
+     * Create a new product (admin only)
+     */
+  create: async function (req, res) {
+    try {
+      let { name, description, content, manufacturer, modelNumber, category } = req.body;
+      let company = req.body.company;
+
+      if (!name) {
+        return res.status(400).json({ message: 'Product name is required' });
+      }
+
+      // 1 & 4. Strict Tenant Isolation
+      // NEVER trust client input for tenant-scoped users
+      if ((req.user && req.user.companyId)) {
+        company = (req.user && req.user.companyId);
+      }
+
+      // Validate category exists if provided
+      if (category) {
+        const cat = await Category.findOne({ id: category });
+        if (!cat) {
+          return res.status(400).json({ message: 'Category not found' });
+        }
+      }
+
+      // Validate company exists if provided
+      if (company) {
+        const comp = await Company.findOne({ id: company });
+        if (!comp) {
+          return res.status(400).json({ message: 'Company not found' });
+        }
+      }
+
+      const product = await Product.create({
+        name,
+        description: description || null,
+        content: content || null,
+        manufacturer: manufacturer || null,
+        modelNumber: modelNumber || null,
+        category: category || null,
+        company: company || null,
+        status: 'published' // Default to published as per user request
+      }).fetch();
+
+      return res.status(201).json(product);
+
+    } catch (err) {
+      sails.log.error('Create product error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * GET /api/products
+     * Get all products with optional filters
+     */
+  getAll: async function (req, res) {
+    try {
+      const { category, company, search, page = 1, limit = 20 } = req.query;
+
+      // Resolve role from DB for accurate permission checks
+      let roleName = '';
+      if (req.user && req.user.id) {
+        const dbUser = await sails.models.user.findOne({ id: req.user.id }).populate('role');
+        roleName = (dbUser && dbUser.role && dbUser.role.name ? dbUser.role.name : '').toLowerCase();
+      }
+
+      const where = {};
+      if (category) {where.category = category;}
+
+      // Respect tenant isolation — (req.user && req.user.companyId) set by tenant-isolation policy
+      // If tenantIsolation hasn't run (e.g. getAll uses isAuthenticated only),
+      // fall back to the user's DB company for admin/technician roles.
+      let userCompanyId = req.user && req.user.companyId;
+      if (!userCompanyId && req.user && req.user.id) {
+        const dbUserForCompany = await sails.models.user.findOne({ id: req.user.id });
+        if (dbUserForCompany && dbUserForCompany.company &&
+            (roleName === 'company_admin' || roleName === 'administrator' || roleName === 'technician')) {
+          userCompanyId = dbUserForCompany.company;
+        }
+      }
+
+      const isManage = req.query.manage === 'true';
+
+      if (userCompanyId && isManage) {
+        // Enforce tenant isolation for admin list view
+        where.company = userCompanyId;
+      } else if (company) {
+        where.company = company;
+      }
+
+      // Non-admin users (clients) OR admins in public view can only see published products
+      if ((roleName !== 'super_admin' && roleName !== 'administrator' && roleName !== 'company_admin') || (userCompanyId && !isManage)) {
+        where.status = 'published';
+      }
+
+      if (search) {
+        where.or = [
+          { name: { contains: search } },
+          { description: { contains: search } },
+          { manufacturer: { contains: search } },
+          { modelNumber: { contains: search } }
+        ];
+      }
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const total = await Product.count(where);
+      const products = await Product.find(where)
+                .populate('category')
+                .populate('company')
+                .skip(skip)
+                .limit(parseInt(limit))
+                .sort('createdAt DESC');
+
+      return res.json({
+        data: products,
+        meta: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
+      });
+
+    } catch (err) {
+      sails.log.error('Get products error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * GET /api/products/:id
+     * Get a single product
+     */
+  getOne: async function (req, res) {
+    try {
+      const product = await Product.findOne({ id: req.params.id })
+                .populate('category')
+                .populate('company')
+                .populate('guides');
+
+      if (product && product.guides) {
+        // Deep populate steps and their media for each guide
+        for (let guide of product.guides) {
+          guide.steps = await Step.find({ guide: guide.id }).sort('stepNumber ASC');
+          for (let step of guide.steps) {
+            step.media = await Media.find({ step: step.id });
+          }
+        }
+      }
+
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      // Resolve role from DB
+      let roleName = '';
+      if (req.user && req.user.id) {
+        const dbUser = await sails.models.user.findOne({ id: req.user.id }).populate('role');
+        roleName = (dbUser && dbUser.role && dbUser.role.name ? dbUser.role.name : '').toLowerCase();
+      }
+
+      // Clients OR Admins in public view can only see published products
+      // Only the owning company admin or super_admin can see non-published products
+      const isOwnerAdmin = (roleName === 'administrator' || roleName === 'company_admin') && String(product.company) === String((req.user && req.user.companyId));
+      
+      if (roleName !== 'super_admin' && !isOwnerAdmin && product.status !== 'published') {
+        return res.status(403).json({ message: 'Forbidden: Product is not published' });
+      }
+
+      // We DO NOT enforce tenant isolation here for viewing! Everyone can view published products.
+      // Management specific actions (update, delete, publish) rely on the tenantIsolation policy instead.
+
+      return res.json(product);
+
+    } catch (err) {
+      sails.log.error('Get product error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * PUT /api/products/:id
+     * Update a product (admin only)
+     */
+  update: async function (req, res) {
+    try {
+      const { name, description, content, manufacturer, modelNumber, category, company } = req.body;
+
+      const existing = await Product.findOne({ id: req.params.id });
+      if (!existing) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+        return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
+      }
+
+      // Validate category exists if provided
+      if (category) {
+        const cat = await Category.findOne({ id: category });
+        if (!cat) {
+          return res.status(400).json({ message: 'Category not found' });
+        }
+      }
+
+      // Validate company exists if provided
+      if (company) {
+        const comp = await Company.findOne({ id: company });
+        if (!comp) {
+          return res.status(400).json({ message: 'Company not found' });
+        }
+      }
+
+      const updateData = {};
+      if (name !== undefined) {updateData.name = name;}
+      if (description !== undefined) {updateData.description = description;}
+      if (content !== undefined) {updateData.content = content;}
+      if (manufacturer !== undefined) {updateData.manufacturer = manufacturer;}
+      if (modelNumber !== undefined) {updateData.modelNumber = modelNumber;}
+      if (category !== undefined) {updateData.category = category;}
+
+      // 1 & 4. Strict Tenant Isolation
+      if ((req.user && req.user.companyId)) {
+        // Tenant-scoped admin: strictly force company to their own, ignore req.body
+        updateData.company = (req.user && req.user.companyId);
+      } else if (company !== undefined) {
+        // Super admin: allow specific assignment
+        updateData.company = company;
+      }
+
+      const product = await Product.updateOne({ id: req.params.id }).set(updateData);
+
+      return res.json(product);
+
+    } catch (err) {
+      sails.log.error('Update product error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * DELETE /api/products/:id
+     * Delete a product (admin only)
+     */
+  delete: async function (req, res) {
+    try {
+      const product = await Product.findOne({ id: req.params.id });
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      if ((req.user && req.user.companyId) && product.company !== (req.user && req.user.companyId)) {
+        return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
+      }
+
+      await Product.destroyOne({ id: req.params.id });
+
+      return res.json({ message: 'Product deleted successfully' });
+
+    } catch (err) {
+      sails.log.error('Delete product error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * GET /api/products/:id/recommendations
+     * Get product recommendations based on category
+     */
+  getRecommendations: async function (req, res) {
+    try {
+      const product = await Product.findOne({ id: req.params.id });
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      const where = { id: { '!=': product.id }, status: 'published' };
+      if (product.category) {
+        where.category = product.category;
+      }
+
+      const recommendations = await Product.find(where)
+                .populate('category')
+                .populate('company')
+                .limit(5)
+                .sort('createdAt DESC');
+
+      return res.json(recommendations);
+
+    } catch (err) {
+      sails.log.error('Get recommendations error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * PUT /api/products/:id/publish
+     * Publish a product
+     */
+  publish: async function (req, res) {
+    try {
+      const existing = await Product.findOne({ id: req.params.id });
+      if (!existing) {return res.status(404).json({ message: 'Product not found' });}
+
+      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      const product = await Product.updateOne({ id: req.params.id }).set({ status: 'published' });
+      return res.json({ message: 'Product published', product });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * PUT /api/products/:id/unpublish
+     * Unpublish a product
+     */
+  unpublish: async function (req, res) {
+    try {
+      const existing = await Product.findOne({ id: req.params.id });
+      if (!existing) {return res.status(404).json({ message: 'Product not found' });}
+
+      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      const product = await Product.updateOne({ id: req.params.id }).set({ status: 'draft' });
+      return res.json({ message: 'Product unpublished', product });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * PUT /api/products/:id/archive
+     * Archive a product
+     */
+  archive: async function (req, res) {
+    try {
+      const existing = await Product.findOne({ id: req.params.id });
+      if (!existing) {return res.status(404).json({ message: 'Product not found' });}
+
+      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      const product = await Product.updateOne({ id: req.params.id }).set({ status: 'archived' });
+      return res.json({ message: 'Product archived', product });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  }
+
+};

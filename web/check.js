@@ -1,0 +1,1 @@
+fetch('https://unpkg.com/ionicons@7.1.0/dist/ionicons/svg/tv-outline.svg').then(r= ' + r.status)); fetch('https://unpkg.com/ionicons@7.1.0/dist/ionicons/svg/server-outline.svg').then(r= '+ r.status)); fetch('https://unpkg.com/ionicons@7.1.0/dist/ionicons/svg/car-sport-outline.svg').then(r= ' + r.status));  

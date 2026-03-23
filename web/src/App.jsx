@@ -1,16 +1,101 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { loadUser } from './store/slices/authSlice';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
+import AdminPage from './pages/AdminPage';
+import ProductListPage from './pages/ProductListPage';
+import AdminCategoryPage from './pages/AdminCategoryPage';
+import AdminCompanyPage from './pages/AdminCompanyPage';
+import ProductFormPage from './pages/ProductFormPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import Navbar from './components/Navbar';
+import AdminLayout from './components/AdminLayout';
+import SuperAdminRoute from './components/SuperAdminRoute';
+import CompanyAdminRoute from './components/CompanyAdminRoute';
+import PermissionProtectedRoute from './components/PermissionProtectedRoute';
+import AdminUsersPage from './pages/AdminUsersPage';
+import AdminGuideTypePage from './pages/AdminGuideTypePage';
+import PendingApprovalPage from './pages/PendingApprovalPage';
+import AuditLogPage from './pages/AuditLogPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import QRGeneratorPage from './pages/QRGeneratorPage';
+import CategoryPage from './pages/CategoryPage';
+
+const HomeRedirect = () => {
+    const { user, loading } = useSelector((state) => state.auth);
+    if (loading) return <div>Loading...</div>;
+    if (!user) return <Navigate to="/login" replace />;
+
+    // Everyone goes to categories first as the main entry point
+    return <Navigate to="/categories" replace />;
+};
+
+const AdminIndexRedirect = () => {
+    const { user } = useSelector((state) => state.auth);
+    const role = user?.role || user?.Role;
+    const roleName = (role?.name || '').toLowerCase();
+    const permissions = role?.permissions || [];
+
+    // Super Admin: Focus on governance (User Management)
+    if (roleName === 'super_admin' || permissions.includes('users.manage')) {
+        return <Navigate to="/admin/users" replace />;
+    }
+
+    // Company Admin / Others: Focus on Operations (Products)
+    if (permissions.includes('analytics.view') || permissions.includes('products.manage')) {
+        return <Navigate to="/admin/products" replace />;
+    }
+
+    return <Navigate to="/products" replace />; 
+};
+
+import ProductDetailPage from './pages/ProductDetailPage';
 
 function App() {
+    const dispatch = useDispatch();
+
+    React.useEffect(() => {
+        dispatch(loadUser());
+    }, [dispatch]);
+
     return (
         <Router>
+            <Navbar />
             <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/pending-approval" element={<PendingApprovalPage />} />
+
+                <Route
+                    path="/categories"
+                    element={
+                        <ProtectedRoute>
+                            <CategoryPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/products"
+                    element={
+                        <ProtectedRoute>
+                            <ProductListPage />
+                        </ProtectedRoute>
+                    }
+                />
+
+                <Route
+                    path="/products/:id"
+                    element={
+                        <ProtectedRoute>
+                            <ProductDetailPage />
+                        </ProtectedRoute>
+                    }
+                />
+
                 <Route
                     path="/profile"
                     element={
@@ -19,7 +104,50 @@ function App() {
                         </ProtectedRoute>
                     }
                 />
-                <Route path="/" element={<Navigate to="/profile" replace />} />
+
+                {/* Admin Routes */}
+                <Route path="/admin" element={<CompanyAdminRoute><AdminLayout /></CompanyAdminRoute>}>
+                    <Route index element={<AdminIndexRedirect />} />
+
+                    {/* Products Management */}
+                    <Route
+                        path="products"
+                        element={<PermissionProtectedRoute permission="products.manage"><AdminPage /></PermissionProtectedRoute>}
+                    />
+                    <Route
+                        path="products/new"
+                        element={<PermissionProtectedRoute permission="products.manage"><ProductFormPage /></PermissionProtectedRoute>}
+                    />
+                    <Route
+                        path="products/:id/edit"
+                        element={<PermissionProtectedRoute permission="products.update"><ProductFormPage /></PermissionProtectedRoute>}
+                    />
+
+                    {/* Super Admin Restricted Features */}
+                    <Route
+                        path="users"
+                        element={<SuperAdminRoute><AdminUsersPage /></SuperAdminRoute>}
+                    />
+                    <Route
+                        path="categories"
+                        element={<SuperAdminRoute><AdminCategoryPage /></SuperAdminRoute>}
+                    />
+                    <Route
+                        path="companies"
+                        element={<SuperAdminRoute><AdminCompanyPage /></SuperAdminRoute>}
+                    />
+                    <Route
+                        path="guide-types"
+                        element={<SuperAdminRoute><AdminGuideTypePage /></SuperAdminRoute>}
+                    />
+
+                    {/* New Admin Features Stubs (Routes placeholder) */}
+                    <Route path="qr-generate" element={<PermissionProtectedRoute permission="qr.generate"><QRGeneratorPage /></PermissionProtectedRoute>} />
+                    <Route path="analytics" element={<PermissionProtectedRoute permission="analytics.view"><AnalyticsPage /></PermissionProtectedRoute>} />
+                    <Route path="audit-logs" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />
+                </Route>
+
+                <Route path="/" element={<HomeRedirect />} />
             </Routes>
         </Router>
     );

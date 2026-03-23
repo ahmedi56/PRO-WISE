@@ -1,9 +1,42 @@
-node_modules
+# Dependencies
+node_modules/
+
+# Environment variables
 .env
-dist
-build
+.env.*
+!.env.example
+
+# Production builds
+dist/
+build/
+mobile/web-build/
+
+# IDEs and OS
 .DS_Store
-coverage
-.vscode
-.idea
+.vscode/
+.idea/
+*.suo
+*.orig
+
+# Logs and testing
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+database.sqlite
+
+# Expo / React Native
+.expo/
+mobile/.expo/
+mobile/.expo-shared/
+
+# Python (Found some local python scripts)
+__pycache__/
+*.pyc
