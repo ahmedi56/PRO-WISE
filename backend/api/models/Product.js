@@ -54,6 +54,19 @@ module.exports = {
     totalScans: {
       type: 'number',
       defaultsTo: 0
+    },
+    components: {
+      type: 'json',
+      columnType: 'array',
+      description: 'Optional list of components, parts, or specifications that make up this product.'
+    },
+    embedding: {
+      type: 'json'
+    },
+    searchDocument: {
+      type: 'string',
+      columnType: 'text',
+      allowNull: true
     }
   }
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import { CATEGORY_ICON_MAP } from '../constants/icons';
 
 const CategoryCard = ({ category, onClick }) => {
     return (
@@ -7,7 +8,11 @@ const CategoryCard = ({ category, onClick }) => {
                 {category.image?.url ? (
                     <img src={category.image.url} alt={category.name} className="category-card-img" />
                 ) : (
-                    <ion-icon name={category.icon} size="large" style={{ color: 'var(--color-primary)' }}></ion-icon>
+                    <ion-icon 
+                        name={CATEGORY_ICON_MAP[category.name?.toLowerCase()] || category.icon || 'cube-outline'} 
+                        size="large" 
+                        style={{ color: 'var(--color-primary)' }}
+                    ></ion-icon>
                 )}
             </div>
             <div className="category-card-content">

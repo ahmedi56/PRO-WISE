@@ -19,6 +19,7 @@ module.exports.routes = {
   'POST /api/users/bulk-delete': 'UserController.bulkDelete',
   'GET /api/users': 'UserController.getAll',
   'GET /api/users/profile': 'AuthController.me',
+  'PUT /api/users/profile': 'UserController.updateProfile',
   'GET /api/users/:id': 'UserController.getOne',
   'PUT /api/users/:id/role': 'UserController.updateRole',
   'PUT /api/users/:id/validate': 'UserController.validateAdmin',
@@ -33,6 +34,7 @@ module.exports.routes = {
   // ─── Products ────────────────────────────────────────────
   'POST /api/products': { controller: 'ProductController', action: 'create', requiredPermission: 'products.manage' },
   'GET /api/products': 'ProductController.getAll',
+  'GET /api/products/search/semantic': 'ProductController.semanticSearch',
   'POST /api/products/:id/generate-qr': 'QRCodeController.generate',
 
   // Troubleshooting Guides Hierarchy
@@ -86,6 +88,9 @@ module.exports.routes = {
   'GET /api/audit-logs': 'AuditLogController.getAll',
 
   // ─── Health ──────────────────────────────────────────────
-  'GET /api/health': { fn: (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }) }
+  'GET /api/health': { fn: (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }) },
+
+  // ─── Utilities ───────────────────────────────────────────
+  'POST /api/products/backfill-embeddings': 'ProductController.triggerBackfill',
 
 };

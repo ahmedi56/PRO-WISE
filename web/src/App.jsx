@@ -23,10 +23,11 @@ import AuditLogPage from './pages/AuditLogPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import QRGeneratorPage from './pages/QRGeneratorPage';
 import CategoryPage from './pages/CategoryPage';
+import SearchPage from './pages/SearchPage';
 
 const HomeRedirect = () => {
-    const { user, loading } = useSelector((state) => state.auth);
-    if (loading) return <div>Loading...</div>;
+    const { user, token, loading } = useSelector((state) => state.auth);
+    if (loading || (token && !user)) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0B1220', color: '#F8FAFC' }}>Loading session...</div>;
     if (!user) return <Navigate to="/login" replace />;
 
     // Everyone goes to categories first as the main entry point
@@ -146,6 +147,15 @@ function App() {
                     <Route path="analytics" element={<PermissionProtectedRoute permission="analytics.view"><AnalyticsPage /></PermissionProtectedRoute>} />
                     <Route path="audit-logs" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />
                 </Route>
+
+                <Route
+                    path="/search"
+                    element={
+                        <ProtectedRoute>
+                            <SearchPage />
+                        </ProtectedRoute>
+                    }
+                />
 
                 <Route path="/" element={<HomeRedirect />} />
             </Routes>

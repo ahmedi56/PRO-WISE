@@ -7,8 +7,7 @@ import API_URL from '../constants/config';
 import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography, shadows } from '../theme';
-
-const ADMIN_ROLES = new Set(['administrator', 'admin', 'superadmin']);
+import { formatProductName } from '../utils/formatProduct';
 
 const CATEGORY_ICONS = {
     'electronics': 'hardware-chip-outline',
@@ -51,7 +50,8 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
     const { user, token } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const userRole = user?.role || user?.Role;
-    const isAdmin = ADMIN_ROLES.has(getRoleName(userRole));
+    const roleName = getRoleName(userRole);
+    const isAdmin = roleName === 'company_admin' || roleName === 'administrator';
 
     const handleUnauthorized = () => dispatch(logout());
 
@@ -219,7 +219,7 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
             onPress={() => navigation.navigate('ProductDetail', { id: item.id, product: item })}
         >
             <View style={styles.productHeader}>
-                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productName}>{formatProductName(item.name, item.manufacturer)}</Text>
                 {isAdmin && (
                     <View style={styles.adminActions}>
                         <TouchableOpacity style={styles.tinyAction} onPress={() => handleEdit(item)}>

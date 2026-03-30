@@ -7,8 +7,6 @@ import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography } from '../theme';
 
-const ADMIN_ROLES = new Set(['administrator', 'admin', 'superadmin']);
-
 const getRoleName = (role) => {
     if (!role) return '';
     if (typeof role === 'string') return role.toLowerCase();
@@ -16,20 +14,20 @@ const getRoleName = (role) => {
     return '';
 };
 
-
-
 const ProductFormScreen = ({ navigation, route }) => {
     const { id } = route.params || {};
     const isEdit = Boolean(id);
     const { user, token } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
-    const permissions = user?.role?.permissions || user?.Role?.permissions || [];
-    const hasPermission = isEdit ? permissions.includes('products.update') : permissions.includes('products.manage');
+    const roleName = getRoleName(user?.role || user?.Role);
+    const hasPermission = roleName === 'company_admin' || roleName === 'administrator';
 
     // ── State declarations ──────────────────────────────────
     const [formData, setFormData] = useState({
-        name: '', description: '', manufacturer: '', modelNumber: '',
-        category: null, company: null,
+        name: '', description: '', content: '', manufacturer: '', modelNumber: '',
+        category: null,
+        company: null,
+        components: [],
     });
     const [categories, setCategories] = useState([]);
     const [companies, setCompanies] = useState([]);
@@ -70,10 +68,12 @@ const ProductFormScreen = ({ navigation, route }) => {
                 setFormData({
                     name: product?.name || '',
                     description: product?.description || '',
+                    content: product?.content || '',
                     manufacturer: product?.manufacturer || '',
                     modelNumber: product?.modelNumber || '',
                     category: product?.category?.id || product?.category || null,
                     company: product?.company?.id || product?.company || null,
+                    components: Array.isArray(product?.components) ? product.components : [],
                 });
                 setSelectedCategoryName(product?.category?.name || '');
                 setSelectedCompanyName(product?.company?.name || '');
@@ -140,6 +140,28 @@ const ProductFormScreen = ({ navigation, route }) => {
         }
     };
 
+    const handleAddComponent = () => {
+        setFormData(prev => ({ 
+            ...prev, 
+            components: [...(prev.components || []), { name: '', type: '', manufacturer: '', modelNumber: '', specifications: '' }] 
+        }));
+    };
+
+    const handleRemoveComponent = (index) => {
+        setFormData(prev => ({ 
+            ...prev, 
+            components: (prev.components || []).filter((_, i) => i !== index) 
+        }));
+    };
+
+    const handleComponentChange = (index, field, value) => {
+        setFormData(prev => {
+            const newComponents = [...(prev.components || [])];
+            newComponents[index] = { ...newComponents[index], [field]: value };
+            return { ...prev, components: newComponents };
+        });
+    };
+
     const renderPickerItem = (item, onPress) => (
         <TouchableOpacity style={styles.pickerItem} onPress={onPress}>
             <Text style={styles.pickerItemText}>{item.name || 'Unnamed'}</Text>
@@ -175,10 +197,23 @@ const ProductFormScreen = ({ navigation, route }) => {
                     style={[styles.input, styles.textArea]}
                     value={formData.description}
                     onChangeText={(t) => setFormData({ ...formData, description: t })}
-                    placeholder="Product Description"
+                    placeholder="Clear summary. AI uses this for search intent."
                     placeholderTextColor={colors.textMuted}
                     multiline
                     numberOfLines={3}
+                />
+            </View>
+
+            <View style={styles.formGroup}>
+                <Text style={styles.label}>Technical Details / Components</Text>
+                <TextInput
+                    style={[styles.input, styles.textArea, { height: 120 }]}
+                    value={formData.content}
+                    onChangeText={(t) => setFormData({ ...formData, content: t })}
+                    placeholder="Parts, specs, materials... CRITICAL for AI search and related product accuracy."
+                    placeholderTextColor={colors.textMuted}
+                    multiline
+                    numberOfLines={6}
                 />
             </View>
 
@@ -189,7 +224,7 @@ const ProductFormScreen = ({ navigation, route }) => {
                         style={styles.input}
                         value={formData.manufacturer}
                         onChangeText={(t) => setFormData({ ...formData, manufacturer: t })}
-                        placeholder="Brand"
+                        placeholder="Brand (Atlas Copco, etc.)"
                         placeholderTextColor={colors.textMuted}
                     />
                 </View>
@@ -199,11 +234,70 @@ const ProductFormScreen = ({ navigation, route }) => {
                         style={styles.input}
                         value={formData.modelNumber}
                         onChangeText={(t) => setFormData({ ...formData, modelNumber: t })}
-                        placeholder="Model X"
+                        placeholder="e.g. GA-55"
                         placeholderTextColor={colors.textMuted}
                     />
                 </View>
             </View>
+
+            {/* --- COMPONENTS SECTION --- */}
+            <View style={[styles.formGroup, { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 15 }]}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <Text style={[styles.label, { marginBottom: 0 }]}>Components (AI Context)</Text>
+                    <TouchableOpacity onPress={handleAddComponent} style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceHover, borderRadius: 5 }}>
+                        <Text style={{ color: colors.primary, fontWeight: 'bold' }}>+ Add</Text>
+                    </TouchableOpacity>
+                </View>
+                
+                {(!formData.components || formData.components.length === 0) ? (
+                    <Text style={{ color: colors.textMuted, fontStyle: 'italic', marginBottom: 10 }}>No components added yet.</Text>
+                ) : (
+                    formData.components.map((comp, index) => (
+                        <View key={index} style={{ backgroundColor: colors.surface, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 10 }}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <Text style={{ fontWeight: 'bold', color: colors.text }}>Component #{index + 1}</Text>
+                                <TouchableOpacity onPress={() => handleRemoveComponent(index)}>
+                                    <Text style={{ color: colors.error }}>Remove</Text>
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <TextInput
+                                style={[styles.input, { marginBottom: 8 }]}
+                                value={comp.name}
+                                onChangeText={(t) => handleComponentChange(index, 'name', t)}
+                                placeholder="Component Name *"
+                                placeholderTextColor={colors.textMuted}
+                            />
+                            
+                            <View style={styles.row}>
+                                <TextInput
+                                    style={[styles.input, { flex: 1, marginRight: 5, marginBottom: 8 }]}
+                                    value={comp.type}
+                                    onChangeText={(t) => handleComponentChange(index, 'type', t)}
+                                    placeholder="Type/Category"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                                <TextInput
+                                    style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 8 }]}
+                                    value={comp.manufacturer}
+                                    onChangeText={(t) => handleComponentChange(index, 'manufacturer', t)}
+                                    placeholder="Brand"
+                                    placeholderTextColor={colors.textMuted}
+                                />
+                            </View>
+                            
+                            <TextInput
+                                style={styles.input}
+                                value={comp.specifications}
+                                onChangeText={(t) => handleComponentChange(index, 'specifications', t)}
+                                placeholder="Specifications (e.g. 16GB RAM)"
+                                placeholderTextColor={colors.textMuted}
+                            />
+                        </View>
+                    ))
+                )}
+            </View>
+            {/* -------------------- */}
 
             <View style={styles.formGroup}>
                 <Text style={styles.label}>Category</Text>

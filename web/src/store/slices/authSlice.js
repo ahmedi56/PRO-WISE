@@ -167,7 +167,12 @@ const authSlice = createSlice({
                 state.error = action.payload;
             })
             // Load User
+            .addCase(loadUser.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
             .addCase(loadUser.fulfilled, (state, action) => {
+                state.loading = false;
                 const user = action.payload;
                 if (user && user.role) {
                     user.role.name = normalizeRoleName(user.role);
@@ -175,6 +180,7 @@ const authSlice = createSlice({
                 state.user = user;
             })
             .addCase(loadUser.rejected, (state) => {
+                state.loading = false;
                 state.user = null;
                 state.token = null;
             })

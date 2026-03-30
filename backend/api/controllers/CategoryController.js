@@ -108,20 +108,38 @@ module.exports = {
 
   /**
      * GET /api/categories/:id
-     * Get a single category
+     * Get a single category with children and parent path
      */
   getOne: async function (req, res) {
     try {
       const category = await Category.findOne({ id: req.params.id })
                 .populate('children')
-                .populate('products')
                 .populate('parent');
 
       if (!category) {
         return res.status(404).json({ message: 'Category not found' });
       }
 
-      return res.json(category);
+      // Build parent path
+      const path = [];
+      let current = category.parent;
+      while (current) {
+        // If current is an ID, fetch it. If it's already an object (due to populate), use it.
+        const parentRecord = typeof current === 'object' ? current : await Category.findOne({ id: current });
+        if (parentRecord) {
+          path.unshift({ id: parentRecord.id, name: parentRecord.name });
+          current = parentRecord.parent;
+        } else {
+          current = null;
+        }
+      }
+      
+      const result = {
+        ...category,
+        path: path.concat({ id: category.id, name: category.name })
+      };
+
+      return res.json(result);
 
     } catch (err) {
       sails.log.error('Get category error:', err);

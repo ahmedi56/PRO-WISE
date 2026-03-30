@@ -5,6 +5,57 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
+const resolvePhoneCategory = async (categoryId, manufacturer, companyId, productName) => {
+  if (!categoryId) {return null;}
+
+  const phoneCat = await Category.findOne({ name: 'Phone' }).populate('children');
+  if (!phoneCat) {return categoryId;}
+  
+  const phoneCatId = String(phoneCat.id);
+  const inputCatId = typeof categoryId === 'object' && categoryId.id ? String(categoryId.id) : String(categoryId);
+  
+  const isRootPhone = inputCatId === phoneCatId;
+  const isChildOfPhone = phoneCat.children && phoneCat.children.some(c => String(c.id) === inputCatId);
+  
+  if (!isRootPhone && !isChildOfPhone) {
+    return categoryId;
+  }
+
+  if (isChildOfPhone) {
+    return categoryId;
+  }
+
+  const clues = [
+    String(manufacturer || '').toLowerCase(),
+    String(productName || '').toLowerCase()
+  ];
+  
+  if (companyId) {
+    const comp = await Company.findOne({ id: companyId });
+    if (comp && comp.name) {
+      clues.push(String(comp.name).toLowerCase());
+    }
+  }
+
+  let bestChild = null;
+  for (const child of (phoneCat.children || [])) {
+    const childName = String(child.name).toLowerCase();
+    for (const clue of clues) {
+      if (clue.includes(childName)) {
+        bestChild = child;
+        break;
+      }
+    }
+    if (bestChild) {break;}
+  }
+
+  if (bestChild) {
+    return bestChild.id;
+  }
+
+  return categoryId;
+};
+
 module.exports = {
 
   /**
@@ -13,7 +64,7 @@ module.exports = {
      */
   create: async function (req, res) {
     try {
-      let { name, description, content, manufacturer, modelNumber, category } = req.body;
+      let { name, description, content, manufacturer, modelNumber, category, components } = req.body;
       let company = req.body.company;
 
       if (!name) {
@@ -27,11 +78,13 @@ module.exports = {
       }
 
       // Validate category exists if provided
-      if (category) {
-        const cat = await Category.findOne({ id: category });
+      let finalCategory = category || null;
+      if (finalCategory) {
+        const cat = await Category.findOne({ id: finalCategory });
         if (!cat) {
           return res.status(400).json({ message: 'Category not found' });
         }
+        finalCategory = await resolvePhoneCategory(finalCategory, manufacturer, company, name);
       }
 
       // Validate company exists if provided
@@ -48,10 +101,18 @@ module.exports = {
         content: content || null,
         manufacturer: manufacturer || null,
         modelNumber: modelNumber || null,
-        category: category || null,
+        category: finalCategory,
         company: company || null,
-        status: 'published' // Default to published as per user request
+        components: Array.isArray(components) ? components : [],
+        status: 'published'
       }).fetch();
+
+      // NEW: Use ProductEmbeddingService for rich data embedding
+      try {
+        await ProductEmbeddingService.updateEmbedding(product.id);
+      } catch (e) {
+        sails.log.warn('Could not generate rich embedding for product:', product.name);
+      }
 
       return res.status(201).json(product);
 
@@ -179,10 +240,22 @@ module.exports = {
         return res.status(403).json({ message: 'Forbidden: Product is not published' });
       }
 
-      // We DO NOT enforce tenant isolation here for viewing! Everyone can view published products.
-      // Management specific actions (update, delete, publish) rely on the tenantIsolation policy instead.
+      // Build category path for breadcrumbs
+      const categoryPath = [];
+      if (product.category) {
+        let current = product.category;
+        while (current) {
+          const catRecord = typeof current === 'object' ? current : await Category.findOne({ id: current });
+          if (catRecord) {
+            categoryPath.unshift({ id: catRecord.id, name: catRecord.name });
+            current = catRecord.parent;
+          } else {
+            current = null;
+          }
+        }
+      }
 
-      return res.json(product);
+      return res.json({ ...product, categoryPath });
 
     } catch (err) {
       sails.log.error('Get product error:', err);
@@ -196,7 +269,7 @@ module.exports = {
      */
   update: async function (req, res) {
     try {
-      const { name, description, content, manufacturer, modelNumber, category, company } = req.body;
+      const { name, description, content, manufacturer, modelNumber, category, company, components } = req.body;
 
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {
@@ -208,11 +281,19 @@ module.exports = {
       }
 
       // Validate category exists if provided
-      if (category) {
-        const cat = await Category.findOne({ id: category });
+      let finalCategory = category;
+      if (finalCategory) {
+        const cat = await Category.findOne({ id: finalCategory });
         if (!cat) {
           return res.status(400).json({ message: 'Category not found' });
         }
+        
+        // When updating, we use the updated manufacturer/company/name or fallback to existing
+        const testManuf = manufacturer !== undefined ? manufacturer : existing.manufacturer;
+        const testComp = company !== undefined ? company : existing.company;
+        const testName = name !== undefined ? name : existing.name;
+        
+        finalCategory = await resolvePhoneCategory(finalCategory, testManuf, testComp, testName);
       }
 
       // Validate company exists if provided
@@ -229,7 +310,8 @@ module.exports = {
       if (content !== undefined) {updateData.content = content;}
       if (manufacturer !== undefined) {updateData.manufacturer = manufacturer;}
       if (modelNumber !== undefined) {updateData.modelNumber = modelNumber;}
-      if (category !== undefined) {updateData.category = category;}
+      if (category !== undefined) {updateData.category = finalCategory;}
+      if (components !== undefined) {updateData.components = Array.isArray(components) ? components : [];}
 
       // 1 & 4. Strict Tenant Isolation
       if ((req.user && req.user.companyId)) {
@@ -241,6 +323,18 @@ module.exports = {
       }
 
       const product = await Product.updateOne({ id: req.params.id }).set(updateData);
+
+      // NEW: Re-generate embedding if any relevant field changed
+      const fieldsThatTriggerEmbedding = ['name', 'description', 'content', 'manufacturer', 'modelNumber', 'category', 'components'];
+      const hasChanged = fieldsThatTriggerEmbedding.some(f => req.body[f] !== undefined);
+
+      if (hasChanged) {
+        try {
+          await ProductEmbeddingService.updateEmbedding(product.id);
+        } catch (e) {
+          sails.log.warn('Could not update rich embedding for product:', product.name);
+        }
+      }
 
       return res.json(product);
 
@@ -275,30 +369,13 @@ module.exports = {
     }
   },
 
-  /**
-     * GET /api/products/:id/recommendations
-     * Get product recommendations based on category
-     */
   getRecommendations: async function (req, res) {
     try {
-      const product = await Product.findOne({ id: req.params.id });
-      if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-
-      const where = { id: { '!=': product.id }, status: 'published' };
-      if (product.category) {
-        where.category = product.category;
-      }
-
-      const recommendations = await Product.find(where)
-                .populate('category')
-                .populate('company')
-                .limit(5)
-                .sort('createdAt DESC');
-
+      const recommendations = await sails.helpers.getSimilarityRecommendations.with({
+        productId: req.params.id,
+        limit: 5
+      });
       return res.json(recommendations);
-
     } catch (err) {
       sails.log.error('Get recommendations error:', err);
       return res.status(500).json({ message: 'Internal server error' });
@@ -363,6 +440,77 @@ module.exports = {
     } catch (err) {
       return res.status(500).json({ message: 'Internal server error' });
     }
-  }
+  },
 
+  /**
+   * GET /api/products/search/semantic
+   * Semantic search using embeddings
+   */
+  semanticSearch: async function (req, res) {
+    try {
+      const { q, limit = 10 } = req.query;
+      if (!q) {
+        return res.status(400).json({ message: 'Search query is required' });
+      }
+
+      const results = await sails.helpers.getSimilarityRecommendations.with({
+        query: q,
+        limit: parseInt(limit)
+      });
+
+      return res.json(results);
+    } catch (err) {
+      sails.log.error('Semantic search error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * POST /api/products/backfill-embeddings
+   * Reliably regenerate missing embeddings
+   */
+  triggerBackfill: async function(req, res) {
+    try {
+      const force = req.query.force === 'true';
+      const serviceReady = await sails.services.searchservice.ensureServiceReady();
+      if (!serviceReady) {
+        return res.status(503).json({ message: 'Embedding service (Flask) is not available. Please ensure it is running.' });
+      }
+
+      const query = force ? {} : { or: [ { embedding: null }, { searchDocument: null } ] };
+      const products = await Product.find(query);
+
+      if (products.length === 0) {
+        return res.json({ message: 'All products already have embeddings. Nothing to do.', count: 0 });
+      }
+
+      sails.log.info(`API triggered backfill for ${products.length} products...`);
+      
+      let successCount = 0;
+      let failCount = 0;
+
+      // Run synchronously so we can return result, or asynchronously if many. 
+      // For a small DB, awaiting is fine.
+      for (const p of products) {
+        try {
+          const success = await sails.services.productembeddingservice.updateEmbedding(p.id);
+          if (success) {
+            sails.log.info(`[✓] Generated embedding for: ${p.name}`);
+            successCount++;
+          } else {
+            sails.log.warn(`[✗] Failed to generate embedding for: ${p.name}`);
+            failCount++;
+          }
+        } catch(err) {
+          sails.log.error(`[!] Error embedding ${p.name}:`, err.message);
+          failCount++;
+        }
+      }
+
+      return res.json({ message: 'Backfill complete', successCount, failCount, total: products.length });
+    } catch (err) {
+      sails.log.error('triggerBackfill error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  }
 };

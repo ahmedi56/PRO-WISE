@@ -5,6 +5,9 @@ import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../config';
 import { Badge, Button, PageHeader, Skeleton, EmptyState } from '../components/ui';
+import RecommendationSection from '../components/RecommendationSection';
+import MainLayout from '../components/MainLayout';
+import { formatProductName } from '../utils/formatProduct';
 
 /* ── helpers ─────────────────────────────────────────────────── */
 
@@ -45,25 +48,19 @@ const ProductDetailPage = () => {
     const { token } = useSelector((state) => state.auth);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
         const fetchProductAndPath = async () => {
+            setLoading(true);
             try {
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 const response = await axios.get(`${API_URL}/products/${id}`, config);
                 const fetchedProduct = response.data;
                 setProduct(fetchedProduct);
-
-                if (fetchedProduct.category) {
-                    const path = [];
-                    let currentCatId = fetchedProduct.category.id;
-                    while (currentCatId) {
-                        const catRes = await axios.get(`${API_URL}/categories/${currentCatId}`, config);
-                        path.unshift(catRes.data);
-                        currentCatId = catRes.data.parent?.id || catRes.data.parent;
-                    }
-                    setCategoryPath(path);
+                if (fetchedProduct.categoryPath) {
+                    setCategoryPath(fetchedProduct.categoryPath);
                 }
             } catch (error) {
-                console.error('Failed to fetch product or category path:', error);
+                console.error('Failed to fetch product:', error);
             } finally {
                 setLoading(false);
             }
@@ -85,50 +82,59 @@ const ProductDetailPage = () => {
 
     if (loading) {
         return (
-            <div className="page">
-                <Skeleton height={40} width="60%" className="mb-6" />
-                <Skeleton height={200} width="100%" className="mb-6" />
-                <div className="product-grid">
-                    <Skeleton height={150} />
-                    <Skeleton height={150} />
+            <MainLayout>
+                <div className="page" style={{ padding: 0, maxWidth: 'none' }}>
+                    <Skeleton height={40} width="60%" className="mb-6" />
+                    <Skeleton height={200} width="100%" className="mb-6" />
+                    <div className="product-grid">
+                        <Skeleton height={150} />
+                        <Skeleton height={150} />
+                    </div>
                 </div>
-            </div>
+            </MainLayout>
         );
     }
 
     if (!product) {
         return (
-            <EmptyState
-                title="Product not found"
-                text="The product you are looking for does not exist or has been removed."
-                actions={<Button onClick={() => navigate('/products')}>Back to Products</Button>}
-            />
+            <MainLayout>
+                <EmptyState
+                    title="Product not found"
+                    text="The product you are looking for does not exist or has been removed."
+                    actions={<Button onClick={() => navigate('/products')}>Back to Products</Button>}
+                />
+            </MainLayout>
         );
     }
 
     /* ── render ───────────────────────────────────────────────── */
 
     return (
-        <div className="page product-detail-page">
-            {/* breadcrumb */}
-            <nav className="breadcrumb">
-                <Link to="/categories">Categories</Link>
-                {categoryPath.map((cat) => (
-                    <React.Fragment key={cat.id}>
-                        <span className="separator">/</span>
-                        <Link to={`/categories?parent=${cat.id}`}>{cat.name}</Link>
-                    </React.Fragment>
-                ))}
-                <span className="separator">/</span>
-                <span className="current">{product.name}</span>
-            </nav>
+        <MainLayout>
+            <div className="page" style={{ padding: 0, maxWidth: 'none' }}>
+                {/* breadcrumb */}
+                <nav className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                    <Link to="/categories" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Categories</Link>
+                    {categoryPath.map((cat, index) => (
+                        <React.Fragment key={cat.id}>
+                            <span className="separator" style={{ opacity: 0.5 }}>/</span>
+                            {index === categoryPath.length - 1 ? (
+                                <span className="current" style={{ color: 'var(--color-text)' }}>{cat.name}</span>
+                            ) : (
+                                <Link to={`/categories?parent=${cat.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{cat.name}</Link>
+                            )}
+                        </React.Fragment>
+                    ))}
+                    <span className="separator" style={{ opacity: 0.5 }}>/</span>
+                    <span className="current" style={{ color: 'var(--color-text)' }}>{formatProductName(product.name, product.manufacturer)}</span>
+                </nav>
 
             <div className="product-detail-layout">
                 <header className="product-detail-header">
                     <div className="header-main">
                         <PageHeader
-                            title={product.name}
-                            subtitle={product.manufacturer || 'General Manufacturer'}
+                            title={`${formatProductName(product.name, product.manufacturer)}${product.modelNumber ? ' (' + product.modelNumber + ')' : ''}`}
+                            subtitle={product.manufacturer ? `${product.manufacturer} • ${product.category?.name || 'General Product'}` : (product.category?.name || 'General Product')}
                             actions={
                                 <div style={{ display: 'flex', gap: '1rem' }}>
                                     <Badge tone={product.status === 'published' ? 'success' : 'warning'}>
@@ -170,6 +176,48 @@ const ProductDetailPage = () => {
                                 <span className="spec-label">Category</span>
                                 <span className="spec-value">{product.category?.name || 'Uncategorized'}</span>
                             </div>
+                        </div>
+
+                        {/* --- COMPONENTS SECTION --- */}
+                        <div className="product-components" style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
+                            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <ion-icon name="hardware-chip-outline" style={{ color: 'var(--color-primary)' }}></ion-icon>
+                                Components & Composition
+                            </h4>
+                            
+                            {(!product.components || product.components.length === 0) ? (
+                                <div style={{ background: 'var(--color-surface)', border: '1px dashed var(--color-border)', borderRadius: '8px', padding: '1.5rem', textAlign: 'center' }}>
+                                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
+                                        No component breakdown available yet.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    {product.components.map((comp, idx) => (
+                                        <div key={idx} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '1rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                                                <h5 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-strong)' }}>{comp.name}</h5>
+                                                {comp.type && (
+                                                    <Badge tone="neutral" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{comp.type}</Badge>
+                                                )}
+                                            </div>
+                                            
+                                            {(comp.manufacturer || comp.modelNumber) && (
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text)', marginBottom: '0.25rem' }}>
+                                                    <strong>Brand:</strong> {comp.manufacturer || 'N/A'} 
+                                                    {comp.modelNumber && <span style={{ opacity: 0.7 }}> • <strong>Model:</strong> {comp.modelNumber}</span>}
+                                                </div>
+                                            )}
+                                            
+                                            {comp.specifications && (
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+                                                    {comp.specifications}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </section>
 
@@ -310,10 +358,16 @@ const ProductDetailPage = () => {
                         )}
                     </section>
                 </div>
+
+                <RecommendationSection 
+                    currentProductId={id} 
+                    title="Recommended Similar Products" 
+                />
             </div>
 
             <style dangerouslySetInnerHTML={{ __html: DETAIL_STYLES }} />
-        </div>
+            </div>
+        </MainLayout>
     );
 };
 

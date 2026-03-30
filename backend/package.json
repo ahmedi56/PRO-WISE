@@ -6,6 +6,7 @@
   "keywords": [],
   "dependencies": {
     "@sailshq/lodash": "^3.10.6",
+    "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "connect-mongo": "^3.2.0",
     "dotenv": "^16.4.7",
@@ -18,12 +19,14 @@
     "sails-mongo": "^2.1.1"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "eslint": "^9.39.4"
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node app.js",
-    "dev": "node app.js",
+    "dev": "concurrently \"node app.js\" \"npm run search-service\"",
+    "search-service": "python search_service/app.py",
     "test": "npm run lint && npm run custom-tests && echo 'Done.'",
     "lint": "eslint . --max-warnings=0",
     "custom-tests": "echo \"(No other custom tests yet.)\" && echo"

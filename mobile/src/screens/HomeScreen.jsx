@@ -4,7 +4,6 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 
-const ADMIN_ROLES = new Set(['company_admin', 'super_admin']);
 
 const QUICK_ACTIONS = [
     { icon: 'pricetag-outline', title: 'Browse Products', desc: 'Explore our catalog', screen: 'Shop' },
@@ -22,7 +21,8 @@ const getRoleName = (role) => {
 const HomeScreen = ({ navigation }) => {
     const { user } = useSelector((state) => state.auth);
     const permissions = user?.role?.permissions || user?.Role?.permissions || [];
-    const hasProductsManage = permissions.includes('products.manage');
+    const roleName = getRoleName(user?.role || user?.Role);
+    const hasProductsManage = permissions.includes('products.manage') && (roleName === 'company_admin' || roleName === 'administrator');
     const hasUsersManage = permissions.includes('users.manage');
 
     const greeting = () => {

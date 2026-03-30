@@ -31,7 +31,12 @@ module.exports.custom = {
         'users.manage',
         'analytics.view',
         'audit.view',
-        'categories.manage'
+        'categories.manage',
+        'products.manage',
+        'products.update',
+        'guides.manage',
+        'guides.update',
+        'qr.generate'
       ]
     },
     {

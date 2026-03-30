@@ -7,6 +7,8 @@ import API_URL from '../constants/config';
 import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography, shadows } from '../theme';
+import RecommendationList from '../components/RecommendationList';
+import { formatProductName } from '../utils/formatProduct';
 
 
 
@@ -20,24 +22,21 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
     useEffect(() => {
         if (data?.name) {
-            navigation.setOptions({ title: data.name });
+            navigation.setOptions({ title: formatProductName(data.name, data.manufacturer) });
         }
-    }, [data?.name, navigation]);
+    }, [data?.name, data?.manufacturer, navigation]);
 
     useEffect(() => {
-        if (product) {
-            setLoading(false);
-            return;
-        }
         fetchProduct();
-    }, [id, product, token]);
+    }, [id, token]);
 
     const handleUnauthorized = () => dispatch(logout());
 
     const fetchProduct = async () => {
         try {
             if (!token) {
-                throw new Error('Session expired. Please sign in again.');
+                setLoading(false);
+                return;
             }
 
             setLoading(true);
@@ -81,6 +80,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
         );
     }
 
+    const guides = data.guides || [];
+    const components = data.components || [];
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <View style={styles.header}>
@@ -88,7 +90,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                     <Ionicons name="cube" size={32} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.title}>{data.name}</Text>
+                    <Text style={styles.title}>{formatProductName(data.name, data.manufacturer)}</Text>
                     <Text style={styles.subtitle}>{[data.manufacturer, data.modelNumber].filter(Boolean).join(' ')}</Text>
                 </View>
             </View>
@@ -103,19 +105,42 @@ const ProductDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.label}>Category</Text>
                     <Text style={styles.value}>{data.category?.name || 'N/A'}</Text>
                 </View>
-                <View style={[styles.imagePlaceholder, styles.glassPane]}>
-                    <Ionicons name="cube-outline" size={64} color={colors.primaryGlow} />
-                </View>
                 <View style={[styles.card, { flex: 1 }]}>
                     <Text style={styles.label}>Company</Text>
                     <Text style={styles.value}>{data.company?.name || 'N/A'}</Text>
                 </View>
             </View>
 
+            {components.length > 0 && (
+                <View style={styles.card}>
+                    <Text style={styles.sectionTitle}>Technical Components</Text>
+                    {components.map((comp, idx) => (
+                        <View key={idx} style={styles.componentRow}>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.componentName}>{comp.name}</Text>
+                                <Text style={styles.componentType}>{comp.type}</Text>
+                            </View>
+                            <Text style={styles.componentSpecs}>{comp.specifications}</Text>
+                        </View>
+                    ))}
+                </View>
+            )}
+
             <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Resources</Text>
-                <Text style={styles.bodyTextMuted}>No manuals or guides attached.</Text>
+                <Text style={styles.sectionTitle}>Repair Guides & Resources</Text>
+                {guides.length > 0 ? (
+                    guides.map((guide) => (
+                        <TouchableOpacity key={guide.id} style={styles.guideItem}>
+                            <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+                            <Text style={styles.guideName}>{guide.title}</Text>
+                        </TouchableOpacity>
+                    ))
+                ) : (
+                    <Text style={styles.bodyTextMuted}>No manuals or guides yet available for this model.</Text>
+                )}
             </View>
+
+            <RecommendationList productId={data.id} title="Recommended Similar Models" />
         </ScrollView>
     );
 };
@@ -150,6 +175,30 @@ const styles = StyleSheet.create({
     body: { fontSize: typography.body.fontSize, color: colors.text, lineHeight: 24 },
     bodyTextMuted: { fontSize: typography.body.fontSize, color: colors.textMuted, fontStyle: 'italic' },
     row: { flexDirection: 'row', marginBottom: spacing.lg },
+    componentRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: spacing.sm,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    componentName: { fontSize: typography.bodyBold.fontSize, color: colors.textStrong },
+    componentType: { fontSize: typography.xs.fontSize, color: colors.textMuted, textTransform: 'uppercase' },
+    componentSpecs: { fontSize: typography.sm.fontSize, color: colors.text, maxWidth: '50%', textAlign: 'right' },
+    guideItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    guideName: {
+        fontSize: typography.body.fontSize,
+        color: colors.primary,
+        marginLeft: spacing.sm,
+        fontWeight: '600',
+    },
     label: { fontSize: typography.xs.fontSize, color: colors.textMuted, textTransform: 'uppercase', marginBottom: 4, fontWeight: '600' },
     value: { fontSize: typography.bodyBold.fontSize, color: colors.textStrong, fontWeight: '600' },
     errorText: { fontSize: typography.body.fontSize, color: colors.error, textAlign: 'center' },

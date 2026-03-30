@@ -1,0 +1,644 @@
+﻿{
+  "totalProducts": 16,
+  "results": [
+    {
+      "id": "69c30e9366b4eec8299073f7",
+      "name": "NVIDIA GeForce RTX 4090 Founders Edition",
+      "category": "Computer Hardware",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5167",
+          "name": "MSI Codex R",
+          "score": "61.2",
+          "reason": "Similar Product",
+          "details": []
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5166",
+          "name": "MSI Aegis RS",
+          "score": "58.2",
+          "reason": "Similar Product",
+          "details": []
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5169",
+          "name": "Lenovo Legion Tower 5",
+          "score": "56.6",
+          "reason": "Similar Product",
+          "details": []
+        }
+      ]
+    },
+    {
+      "id": "69c30e9366b4eec8299073f8",
+      "name": "Samsung Galaxy S24 Ultra",
+      "category": "Samsung",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c68f71335b63486901997d",
+          "name": "Galaxy S24",
+          "score": "100.8",
+          "reason": "Also by Samsung Electronics",
+          "details": [
+            "Also by Samsung Electronics"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5163",
+          "name": "Galaxy S22 Ultra",
+          "score": "100.6",
+          "reason": "Also by Samsung Electronics",
+          "details": [
+            "Also by Samsung Electronics"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5162",
+          "name": "Galaxy S21",
+          "score": "99.1",
+          "reason": "Also by Samsung Electronics",
+          "details": [
+            "Also by Samsung Electronics"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1c73176aa885bf515e",
+      "name": "iPhone 12",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1c73176aa885bf515f",
+          "name": "iPhone 12 Pro Max",
+          "score": "272.6",
+          "reason": "Same CPU: Apple A14 Bionic",
+          "details": [
+            "Same CPU: Apple A14 Bionic",
+            "1 additional shared component",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf5160",
+          "name": "iPhone 13",
+          "score": "184.2",
+          "reason": "2 additional shared components",
+          "details": [
+            "2 additional shared components",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf5161",
+          "name": "iPhone 14",
+          "score": "181.8",
+          "reason": "2 additional shared components",
+          "details": [
+            "2 additional shared components",
+            "Also by Apple",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1c73176aa885bf515f",
+      "name": "iPhone 12 Pro Max",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1c73176aa885bf515e",
+          "name": "iPhone 12",
+          "score": "272.6",
+          "reason": "Same CPU: Apple A14 Bionic",
+          "details": [
+            "Same CPU: Apple A14 Bionic",
+            "1 additional shared component",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf5160",
+          "name": "iPhone 13",
+          "score": "148.6",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf5161",
+          "name": "iPhone 14",
+          "score": "146.1",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Apple",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1c73176aa885bf5160",
+      "name": "iPhone 13",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1c73176aa885bf5161",
+          "name": "iPhone 14",
+          "score": "303.4",
+          "reason": "Same CPU: Apple A15 Bionic",
+          "details": [
+            "Same CPU: Apple A15 Bionic",
+            "2 additional shared components",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf515e",
+          "name": "iPhone 12",
+          "score": "184.2",
+          "reason": "2 additional shared components",
+          "details": [
+            "2 additional shared components",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf515f",
+          "name": "iPhone 12 Pro Max",
+          "score": "148.6",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Apple",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1c73176aa885bf5161",
+      "name": "iPhone 14",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1c73176aa885bf5160",
+          "name": "iPhone 13",
+          "score": "303.4",
+          "reason": "Same CPU: Apple A15 Bionic",
+          "details": [
+            "Same CPU: Apple A15 Bionic",
+            "2 additional shared components",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf515e",
+          "name": "iPhone 12",
+          "score": "181.8",
+          "reason": "2 additional shared components",
+          "details": [
+            "2 additional shared components",
+            "Also by Apple",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1c73176aa885bf515f",
+          "name": "iPhone 12 Pro Max",
+          "score": "146.1",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Apple",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf5162",
+      "name": "Galaxy S21",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c68f71335b63486901997c",
+          "name": "Galaxy S23",
+          "score": "180.0",
+          "reason": "2 additional shared components",
+          "details": [
+            "2 additional shared components",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5163",
+          "name": "Galaxy S22 Ultra",
+          "score": "144.7",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c68f71335b63486901997d",
+          "name": "Galaxy S24",
+          "score": "144.4",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf5163",
+      "name": "Galaxy S22 Ultra",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c68f71335b63486901997c",
+          "name": "Galaxy S23",
+          "score": "145.3",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5162",
+          "name": "Galaxy S21",
+          "score": "144.7",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c68f71335b63486901997d",
+          "name": "Galaxy S24",
+          "score": "141.8",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf5166",
+      "name": "MSI Aegis RS",
+      "category": "Computer",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5169",
+          "name": "Lenovo Legion Tower 5",
+          "score": "235.0",
+          "reason": "Same GPU: NVIDIA RTX 4070",
+          "details": [
+            "Same CPU family: Intel i7-13700F",
+            "Same GPU: NVIDIA RTX 4070",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5167",
+          "name": "MSI Codex R",
+          "score": "150.2",
+          "reason": "Same GPU family: NVIDIA RTX 4060",
+          "details": [
+            "Same GPU family: NVIDIA RTX 4060",
+            "Also by MSI",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf516a",
+          "name": "Lenovo ThinkCentre M90t",
+          "score": "111.5",
+          "reason": "Same CPU family: Intel i7-13700",
+          "details": [
+            "Same CPU family: Intel i7-13700",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf5167",
+      "name": "MSI Codex R",
+      "category": "Computer",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5169",
+          "name": "Lenovo Legion Tower 5",
+          "score": "163.1",
+          "reason": "Same GPU family: NVIDIA RTX 4070",
+          "details": [
+            "Same GPU family: NVIDIA RTX 4070",
+            "1 additional shared component",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5166",
+          "name": "MSI Aegis RS",
+          "score": "150.2",
+          "reason": "Same GPU family: NVIDIA RTX 4070",
+          "details": [
+            "Same GPU family: NVIDIA RTX 4070",
+            "Also by MSI",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5168",
+          "name": "MSI PRO DP series desktop",
+          "score": "139.7",
+          "reason": "Same CPU family: Intel i5-13400",
+          "details": [
+            "Same CPU family: Intel i5-13400",
+            "Also by MSI",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf5168",
+      "name": "MSI PRO DP series desktop",
+      "category": "Computer",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5167",
+          "name": "MSI Codex R",
+          "score": "139.7",
+          "reason": "Same CPU family: Intel i5-13400F",
+          "details": [
+            "Same CPU family: Intel i5-13400F",
+            "Also by MSI",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5166",
+          "name": "MSI Aegis RS",
+          "score": "89.0",
+          "reason": "Also by MSI",
+          "details": [
+            "Also by MSI",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf516b",
+          "name": "Lenovo ThinkStation P360",
+          "score": "70.5",
+          "reason": "Same category",
+          "details": [
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf5169",
+      "name": "Lenovo Legion Tower 5",
+      "category": "Computer",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5166",
+          "name": "MSI Aegis RS",
+          "score": "235.0",
+          "reason": "Same GPU: NVIDIA RTX 4070",
+          "details": [
+            "Same CPU family: Intel i7-13700KF",
+            "Same GPU: NVIDIA RTX 4070",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf516a",
+          "name": "Lenovo ThinkCentre M90t",
+          "score": "177.1",
+          "reason": "Same CPU family: Intel i7-13700",
+          "details": [
+            "Same CPU family: Intel i7-13700",
+            "1 additional shared component",
+            "Also by Lenovo",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5167",
+          "name": "MSI Codex R",
+          "score": "163.1",
+          "reason": "Same GPU family: NVIDIA RTX 4060",
+          "details": [
+            "Same GPU family: NVIDIA RTX 4060",
+            "1 additional shared component",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf516a",
+      "name": "Lenovo ThinkCentre M90t",
+      "category": "Computer",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5169",
+          "name": "Lenovo Legion Tower 5",
+          "score": "177.1",
+          "reason": "Same CPU family: Intel i7-13700F",
+          "details": [
+            "Same CPU family: Intel i7-13700F",
+            "1 additional shared component",
+            "Also by Lenovo",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf516b",
+          "name": "Lenovo ThinkStation P360",
+          "score": "132.5",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Lenovo",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5166",
+          "name": "MSI Aegis RS",
+          "score": "111.5",
+          "reason": "Same CPU family: Intel i7-13700KF",
+          "details": [
+            "Same CPU family: Intel i7-13700KF",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c5bd1d73176aa885bf516b",
+      "name": "Lenovo ThinkStation P360",
+      "category": "Computer",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5169",
+          "name": "Lenovo Legion Tower 5",
+          "score": "135.2",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Lenovo",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf516a",
+          "name": "Lenovo ThinkCentre M90t",
+          "score": "132.5",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Lenovo",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5167",
+          "name": "MSI Codex R",
+          "score": "115.7",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c68f71335b63486901997c",
+      "name": "Galaxy S23",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c5bd1d73176aa885bf5162",
+          "name": "Galaxy S21",
+          "score": "180.0",
+          "reason": "2 additional shared components",
+          "details": [
+            "2 additional shared components",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5163",
+          "name": "Galaxy S22 Ultra",
+          "score": "145.3",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c68f71335b63486901997d",
+          "name": "Galaxy S24",
+          "score": "145.0",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "69c68f71335b63486901997d",
+      "name": "Galaxy S24",
+      "category": "Phone",
+      "embedding": "OK (384 dims)",
+      "recommendations": [
+        {
+          "id": "69c68f71335b63486901997c",
+          "name": "Galaxy S23",
+          "score": "145.0",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5162",
+          "name": "Galaxy S21",
+          "score": "144.4",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        },
+        {
+          "id": "69c5bd1d73176aa885bf5163",
+          "name": "Galaxy S22 Ultra",
+          "score": "141.8",
+          "reason": "1 additional shared component",
+          "details": [
+            "1 additional shared component",
+            "Also by Samsung Electronics",
+            "Same category"
+          ]
+        }
+      ]
+    }
+  ]
+}
+

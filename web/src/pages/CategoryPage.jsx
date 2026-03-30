@@ -5,32 +5,12 @@ import { useSelector } from 'react-redux';
 import axios from 'axios';
 import { API_URL } from '../config';
 import CategoryGrid from '../components/CategoryGrid';
+import RecommendationSection from '../components/RecommendationSection';
 import { PageHeader, Skeleton, EmptyState, Button } from '../components/ui';
+import MainLayout from '../components/MainLayout';
+import { CATEGORY_ICON_MAP } from '../constants/icons';
 
-const CATEGORY_ICON_MAP = {
-    'electronics': 'hardware-chip-outline',
-    'medical device': 'medkit-outline',
-    'camera': 'camera-outline',
-    'repair skills': 'build-outline',
-    'gaming console': 'game-controller-outline',
-    'in the home': 'home-outline',
-    'appliances': 'tv-outline',
-    'mac': 'desktop-outline',
-    'computer hardware': 'server-outline',
-    'computer': 'laptop-outline',
-    'tools': 'hammer-outline',
-    'tablet': 'tablet-landscape-outline',
-    'phone': 'phone-portrait-outline',
-    'samsung': 'logo-samsung',
-    'apple': 'logo-apple',
-    'google': 'logo-google',
-    'sony': 'logo-playstation',
-    'nintendo': 'game-controller-outline',
-    'microsoft': 'logo-microsoft',
-    'vehicle': 'car-outline',
-    'apparel & accessories': 'shirt-outline',
-    'car and truck': 'car-sport-outline'
-};
+// icon map moved to constants/icons.js
 
 const CategoryPage = () => {
     const [categories, setCategories] = useState([]);
@@ -49,35 +29,27 @@ const CategoryPage = () => {
             try {
                 const config = { headers: { Authorization: `Bearer ${token}` } };
                 
-                // Fetch current parent if drilling down
+                // Fetch category details (which now includes parent path)
                 if (parentId) {
-                    const path = [];
-                    let currentCatId = parentId;
-                    while (currentCatId) {
-                        const catRes = await axios.get(`${API_URL}/categories/${currentCatId}`, config);
-                        path.unshift(catRes.data);
-                        currentCatId = typeof catRes.data.parent === 'object' ? catRes.data.parent?.id : catRes.data.parent;
-                    }
-                    setCategoryPath(path);
-                    setParentCategory(path[path.length - 1]);
+                    const catRes = await axios.get(`${API_URL}/categories/${parentId}`, config);
+                    const catData = catRes.data;
+                    setCategoryPath(catData.path || []);
+                    setParentCategory(catData);
+                    setCategories(catData.children || []);
                 } else {
                     setCategoryPath([]);
                     setParentCategory(null);
+                    // Fetch root categories
+                    const response = await axios.get(`${API_URL}/categories`, {
+                        ...config,
+                        params: { level: 0 }
+                    });
+                    const data = response.data.map(cat => ({
+                        ...cat,
+                        icon: cat.icon || CATEGORY_ICON_MAP[cat.name?.toLowerCase()] || 'cube-outline'
+                    }));
+                    setCategories(data);
                 }
-
-                // Fetch child categories
-                const params = parentId ? { parent: parentId } : { level: 0 };
-                const response = await axios.get(`${API_URL}/categories`, {
-                    ...config,
-                    params
-                });
-
-                const data = response.data.map(cat => ({
-                    ...cat,
-                    icon: cat.icon || CATEGORY_ICON_MAP[cat.name?.toLowerCase()] || 'cube-outline'
-                }));
-
-                setCategories(data);
             } catch (error) {
                 console.error('Failed to fetch categories:', error);
             } finally {
@@ -88,29 +60,25 @@ const CategoryPage = () => {
         fetchData();
     }, [parentId, token]);
 
-    const handleCategoryClick = async (category) => {
-        // Check if category has children to decide whether to drill down or go to products
-        try {
-            const config = { headers: { Authorization: `Bearer ${token}` } };
-            const response = await axios.get(`${API_URL}/categories`, {
-                ...config,
-                params: { parent: category.id, limit: 1 }
-            });
-            
-            if (response.data && response.data.length > 0) {
-                navigate(`/categories?parent=${category.id}`);
-            } else {
-                navigate(`/products?category=${category.id}`);
-            }
-        } catch (error) {
+    const handleCategoryClick = (category) => {
+        // Decide whether to go to subcategories or products based on children count
+        // Instead of a separate API call, we can check category.children if available,
+        // but since we might be in the root list, we can just use a smarter navigation
+        // If it's a leaf node (no children in the tree), go to products.
+        // For now, keep it simple: always go to subcategories page, it will handle empty children.
+        // OR better: if we have the data, use it.
+        if (category.children && category.children.length === 0) {
             navigate(`/products?category=${category.id}`);
+        } else {
+            navigate(`/categories?parent=${category.id}`);
         }
     };
 
     const handleBack = () => {
-        if (parentCategory?.parent) {
-            const pid = typeof parentCategory.parent === 'object' ? parentCategory.parent.id : parentCategory.parent;
-            navigate(`/categories?parent=${pid}`);
+        // Breadcrumb-based back navigation is more stable
+        if (categoryPath.length > 1) {
+            const prevCat = categoryPath[categoryPath.length - 2];
+            navigate(`/categories?parent=${prevCat.id}`);
         } else {
             navigate('/categories');
         }
@@ -118,55 +86,74 @@ const CategoryPage = () => {
 
 
     return (
-        <div className="page">
-            {categoryPath.length > 0 && (
-                <nav className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
-                    <Link to="/categories" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Categories</Link>
-                    {categoryPath.map((cat, index) => (
-                        <React.Fragment key={cat.id}>
-                            <span className="separator" style={{ opacity: 0.5 }}>/</span>
-                            {index === categoryPath.length - 1 ? (
-                                <span className="current" style={{ color: 'var(--color-text)' }}>{cat.name}</span>
-                            ) : (
-                                <Link to={`/categories?parent=${cat.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{cat.name}</Link>
-                            )}
-                        </React.Fragment>
-                    ))}
-                </nav>
-            )}
-            <PageHeader
-                title={parentCategory ? parentCategory.name : "Explore Categories"}
-                subtitle={parentCategory ? parentCategory.summary : "Browse our platform to find repair guides, parts, and expert assistance for all your devices."}
-                actions={parentId && (
-                    <Button variant="secondary" onClick={handleBack}>
-                        <ion-icon name="arrow-back-outline" style={{ marginRight: '8px' }}></ion-icon>
-                        Back
-                    </Button>
+        <MainLayout>
+            <div className="page" style={{ padding: 0, maxWidth: 'none' }}>
+                {categoryPath.length > 0 && (
+                    <nav className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                        <Link to="/categories" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Categories</Link>
+                        {categoryPath.map((cat, index) => (
+                            <React.Fragment key={cat.id}>
+                                <span className="separator" style={{ opacity: 0.5 }}>/</span>
+                                {index === categoryPath.length - 1 ? (
+                                    <span className="current" style={{ color: 'var(--color-text)' }}>{cat.name}</span>
+                                ) : (
+                                    <Link to={`/categories?parent=${cat.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{cat.name}</Link>
+                                )}
+                            </React.Fragment>
+                        ))}
+                    </nav>
                 )}
-            />
+                <PageHeader
+                    title={parentCategory ? parentCategory.name : "Explore Categories"}
+                    subtitle={parentCategory ? parentCategory.summary : "Browse our platform to find repair guides, parts, and expert assistance for all your devices."}
+                    actions={parentId && (
+                        <Button variant="secondary" onClick={handleBack}>
+                            <ion-icon name="arrow-back-outline" style={{ marginRight: '8px' }}></ion-icon>
+                            Back
+                        </Button>
+                    )}
+                />
 
 
-            {loading ? (
-                <div className="category-grid">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="category-card-skeleton">
-                            <Skeleton width={120} height={120} borderRadius={12} />
-                        </div>
-                    ))}
-                </div>
-            ) : categories.length === 0 ? (
-                <EmptyState
-                    title="No categories found"
-                    text={parentId ? "This category has no subcategories." : "We couldn't find any categories. Please make sure the database is seeded and you have the correct permissions."}
-                    icon="search-outline"
-                />
-            ) : (
-                <CategoryGrid
-                    categories={categories}
-                    onCategoryClick={handleCategoryClick}
-                />
-            )}
-        </div>
+                {loading ? (
+                    <div className="category-grid">
+                        {Array.from({ length: 8 }).map((_, i) => (
+                            <div key={i} className="category-card-skeleton" style={{ background: 'var(--color-surface)', borderRadius: '12px', height: '140px' }}>
+                                <Skeleton width="100%" height="100%" borderRadius={12} />
+                            </div>
+                        ))}
+                    </div>
+                ) : categories.length === 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                        <EmptyState
+                            title="No subcategories found"
+                            text={parentId ? "This category has no subcategories. You can check the products directly." : "We couldn't find any categories."}
+                            icon="folder-open-outline"
+                        >
+                            {parentId && (
+                                <Button variant="primary" onClick={() => navigate(`/products?category=${parentId}`)}>
+                                    View Products in {parentCategory?.name}
+                                </Button>
+                            )}
+                        </EmptyState>
+                    </div>
+                ) : (
+                    <>
+                        <CategoryGrid
+                            categories={categories}
+                            onCategoryClick={handleCategoryClick}
+                        />
+                    </>
+                )}
+
+                {!loading && (
+                    <RecommendationSection 
+                        categoryId={parentId} 
+                        title={parentId ? `Recommended in ${parentCategory?.name}` : "Popular Products"} 
+                    />
+                )}
+            </div>
+        </MainLayout>
     );
 };
 

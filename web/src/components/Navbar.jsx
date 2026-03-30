@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import Button from './ui/Button';
+import SemanticSearch from './SemanticSearch';
 
 const Navbar = () => {
     const { user } = useSelector((state) => state.auth);
@@ -34,6 +35,8 @@ const Navbar = () => {
             <Link to="/categories" className="navbar-brand" onClick={closeMenu}>
                 <img src="/pro-wise.png" alt="PRO-WISE Logo" className="brand-logo" />
             </Link>
+
+            <SemanticSearch />
 
             <button
                 type="button"

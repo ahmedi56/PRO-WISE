@@ -30,6 +30,7 @@ const ProductFormPage = () => {
         modelNumber: '',
         category: '',
         company: '',
+        components: [],
     });
 
     useEffect(() => {
@@ -54,6 +55,7 @@ const ProductFormPage = () => {
                 modelNumber: currentProduct.modelNumber || '',
                 category: currentProduct.category?.id || currentProduct.category || '',
                 company: currentProduct.company?.id || currentProduct.company || '',
+                components: Array.isArray(currentProduct.components) ? currentProduct.components : [],
             });
         }
     }, [isEdit, currentProduct]);
@@ -67,6 +69,28 @@ const ProductFormPage = () => {
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleAddComponent = () => {
+        setFormData(prev => ({ 
+            ...prev, 
+            components: [...prev.components, { name: '', type: '', manufacturer: '', modelNumber: '', specifications: '' }] 
+        }));
+    };
+
+    const handleRemoveComponent = (index) => {
+        setFormData(prev => ({ 
+            ...prev, 
+            components: prev.components.filter((_, i) => i !== index) 
+        }));
+    };
+
+    const handleComponentChange = (index, field, value) => {
+        setFormData(prev => {
+            const newComponents = [...prev.components];
+            newComponents[index] = { ...newComponents[index], [field]: value };
+            return { ...prev, components: newComponents };
+        });
     };
 
     const handleSubmit = (event) => {
@@ -83,8 +107,8 @@ const ProductFormPage = () => {
     };
 
     return (
-        <div className="page-center">
-            <Card className="w-full" style={{ maxWidth: 560 }}>
+        <div className="page-center" style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+            <Card className="w-full">
                 <h2 className="text-center mb-6">{isEdit ? 'Edit Product' : 'New Product'}</h2>
 
                 {error ? <Alert tone="error">{error}</Alert> : null}
@@ -109,13 +133,13 @@ const ProductFormPage = () => {
                             rows={4}
                             value={formData.description}
                             onChange={handleChange}
-                            placeholder="Detailed product description..."
+                            placeholder="A clear, professional summary. The AI search uses this to understand the product's purpose."
                             style={{ resize: 'vertical' }}
                         />
                     </div>
 
                     <div className="input-group">
-                        <label className="label" htmlFor="product-content">Product Content / Details</label>
+                        <label className="label" htmlFor="product-content">Technical Specifications / Components</label>
                         <textarea
                             id="product-content"
                             name="content"
@@ -123,7 +147,7 @@ const ProductFormPage = () => {
                             rows={8}
                             value={formData.content}
                             onChange={handleChange}
-                            placeholder="Full product details, specifications, technical content..."
+                            placeholder="Add components, parts, technical specs, and materials. This rich data is CRITICAL for high-quality semantic search and related product recommendations."
                             style={{ resize: 'vertical' }}
                         />
                     </div>
@@ -134,7 +158,7 @@ const ProductFormPage = () => {
                         name="manufacturer"
                         value={formData.manufacturer}
                         onChange={handleChange}
-                        placeholder="e.g. Atlas Copco"
+                        placeholder="e.g. Atlas Copco (Helps AI group similar brands)"
                     />
 
                     <InputField
@@ -143,10 +167,75 @@ const ProductFormPage = () => {
                         name="modelNumber"
                         value={formData.modelNumber}
                         onChange={handleChange}
-                        placeholder="e.g. GA-55-VSD"
+                        placeholder="e.g. GA-55-VSD (Essential for technical accuracy)"
                     />
 
-                    <div className="input-group">
+                    {/* --- COMPONENTS SECTION --- */}
+                    <div className="input-group" style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--color-border)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <div>
+                                <label className="label" style={{ marginBottom: '0.25rem', fontSize: '1.1rem' }}>Components & Composition</label>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                                    Break down the product into its core parts (e.g., GPU, CPU, Battery). 
+                                    <strong style={{ color: 'var(--color-primary)' }}> This dramatically improves AI semantic search and recommendations.</strong>
+                                </p>
+                            </div>
+                            <Button type="button" variant="secondary" size="sm" onClick={handleAddComponent}>
+                                + Add Component
+                            </Button>
+                        </div>
+
+                        {formData.components.length === 0 ? (
+                            <div style={{ padding: '1.5rem', textAlign: 'center', background: 'var(--color-surface-hover)', borderRadius: '8px', border: '1px dashed var(--color-border)' }}>
+                                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                                    No components added. Add parts to help the AI understand this product better.
+                                </p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {formData.components.map((comp, index) => (
+                                    <div key={index} style={{ padding: '1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', position: 'relative' }}>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => handleRemoveComponent(index)}
+                                            style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '1.2rem', padding: '0.25rem' }}
+                                            title="Remove component"
+                                        >
+                                            <ion-icon name="close-circle-outline"></ion-icon>
+                                        </button>
+                                        
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', marginBottom: '0.75rem', paddingRight: '1.5rem' }}>
+                                            <div>
+                                                <label className="label" style={{ fontSize: '0.8rem' }}>Component Name *</label>
+                                                <input className="input" style={{ padding: '0.5rem' }} placeholder="e.g. Graphics Card" value={comp.name} onChange={e => handleComponentChange(index, 'name', e.target.value)} required />
+                                            </div>
+                                            <div>
+                                                <label className="label" style={{ fontSize: '0.8rem' }}>Type / Category</label>
+                                                <input className="input" style={{ padding: '0.5rem' }} placeholder="e.g. GPU" value={comp.type} onChange={e => handleComponentChange(index, 'type', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', marginBottom: '0.75rem' }}>
+                                            <div>
+                                                <label className="label" style={{ fontSize: '0.8rem' }}>Manufacturer / Brand</label>
+                                                <input className="input" style={{ padding: '0.5rem' }} placeholder="e.g. NVIDIA" value={comp.manufacturer} onChange={e => handleComponentChange(index, 'manufacturer', e.target.value)} />
+                                            </div>
+                                            <div>
+                                                <label className="label" style={{ fontSize: '0.8rem' }}>Model Number</label>
+                                                <input className="input" style={{ padding: '0.5rem' }} placeholder="e.g. RTX 4090" value={comp.modelNumber} onChange={e => handleComponentChange(index, 'modelNumber', e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div style={{ paddingRight: '0' }}>
+                                            <label className="label" style={{ fontSize: '0.8rem' }}>Specifications / Specs</label>
+                                            <input className="input" style={{ padding: '0.5rem' }} placeholder="e.g. 24GB GDDR6X, 384-bit" value={comp.specifications} onChange={e => handleComponentChange(index, 'specifications', e.target.value)} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                    {/* --------------------------- */}
+
+                    <div className="input-group" style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--color-border)' }}>
                         <label className="label" htmlFor="product-category">Category</label>
                         <select
                             id="product-category"
@@ -160,6 +249,12 @@ const ProductFormPage = () => {
                                 <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))}
                         </select>
+                        {categories.find(c => String(c.id) === String(formData.category))?.name === 'Phone' && (
+                            <p style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginTop: '0.5rem', fontWeight: 500 }}>
+                                <ion-icon name="information-circle-outline" style={{ verticalAlign: 'middle', marginRight: '4px' }}></ion-icon>
+                                Note: Selecting "Phone" will automatically route this product to the correct brand subcategory (e.g. Samsung/Apple) based on the manufacturer name.
+                            </p>
+                        )}
                     </div>
 
                     {useSelector(state => state.auth.user?.role?.name) === 'super_admin' && (

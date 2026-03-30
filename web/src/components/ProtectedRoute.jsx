@@ -3,7 +3,11 @@ import { Navigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 
 const ProtectedRoute = ({ children }) => {
-    const { token } = useSelector((state) => state.auth);
+    const { token, user, loading } = useSelector((state) => state.auth);
+
+    if (loading || (token && !user)) {
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0B1220', color: '#F8FAFC' }}>Loading session...</div>;
+    }
 
     if (!token) {
         return <Navigate to="/login" replace />;

@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "start:server": "npm run start --workspace=backend",
+    "dev:server": "concurrently \"npm run dev --workspace=backend\" \"npm run search-service --workspace=backend\"",
+    "dev": "npm run dev:server",
     "dev:web": "npm run dev --workspace=web",
     "start:mobile": "npm run start --workspace=mobile",
     "lint": "eslint ."
@@ -19,6 +21,7 @@
     "sails-mongo": "1.2.0"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.4",
     "metro": "^0.80.12",
     "metro-config": "^0.80.12",
