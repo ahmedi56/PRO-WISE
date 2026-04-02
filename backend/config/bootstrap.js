@@ -9,136 +9,124 @@
  */
 
 module.exports.bootstrap = async function () {
-
-
-  // check if ORM loaded
-  // sails.log.info('Loaded hooks:', Object.keys(sails.hooks));
-  if (!sails.models) {
-    sails.log.error('ORM hook present in hooks?', !!sails.hooks.orm);
-    throw new Error('ORM hook not loaded! The application cannot start without a database connection. Please ensure MongoDB is running (mongod) and try again.');
-  }
-
-  // Seed default roles if they don't exist
-
-  const defaultRoles = sails.config.custom.defaultRoles || [];
+  const isForced = process.env.FORCE_SEED === 'true';
+  const Category = sails.models.category;
   const Role = sails.models.role;
   const User = sails.models.user;
+  const Company = sails.models.company;
+  const Product = sails.models.product;
+  const GuideType = sails.models.guidetype;
+  const Guide = sails.models.guide;
 
-  if (Role && User) {
-    for (const roleData of defaultRoles) {
-      const existing = await Role.findOne({ name: roleData.name });
-      if (!existing) {
-        await Role.create(roleData);
-        sails.log.info(`Seeded role: ${roleData.name}`);
-      } else {
-        // Update existing roles with latest permissions and description
-        await Role.updateOne({ id: existing.id }).set({
-          description: roleData.description,
-          permissions: roleData.permissions
-        });
-        sails.log.info(`Updated profile for role: ${roleData.name}`);
-      }
-    }
+  // check if ORM loaded
+  if (!sails.models) {
+    throw new Error('ORM hook not loaded! The application cannot start without a database connection.');
+  }
 
-    // Seed a default super_admin user if no super_admins exist
-    const superAdminRole = await Role.findOne({ name: 'super_admin' });
-    if (superAdminRole) {
-      const superAdminExists = await User.findOne({ username: 'superadmin' });
-      if (!superAdminExists) {
-        await User.create({
-          name: 'Super Admin',
-          username: 'superadmin',
-          email: 'superadmin@prowise.com',
-          password: process.env.INITIAL_ADMIN_PASSWORD || 'Admin123!',
-          role: superAdminRole.id,
-          status: 'active'
-        });
-        sails.log.info(`Seeded default Super Admin: superadmin@prowise.com / ${process.env.INITIAL_ADMIN_PASSWORD ? '********' : 'Admin123!'}`);
-      }
-    }
+  // Fast-path: If categories exist and we aren't forcing a seed, skip the heavy loops
+  const hasData = (await Category.count()) > 0;
+  if (hasData && !isForced) {
+    sails.log.info('BOOTSTRAP: Data already seeded. Resetting popularity for clean start...');
+    // Ensure all categories and products start at 0 for strict visit-driven popularity
+    await Category.update({}).set({ totalScans: 0 });
+    await Product.update({}).set({ totalScans: 0 });
+    return;
+  }
 
-    // Seed a default company_admin user if no admins exist
-    const adminRole = await Role.findOne({ name: 'company_admin' }) || await Role.findOne({ name: 'administrator' });
-    if (adminRole) {
-      const adminExists = await User.findOne({ username: 'admin' });
-      if (!adminExists) {
-        // We'll assign it to the company seeded below if it exists, but for now just seed it
-        await User.create({
-          name: 'Company Admin',
-          username: 'admin',
-          email: 'admin@prowise.com',
-          password: process.env.INITIAL_ADMIN_PASSWORD || 'Admin123!',
-          role: adminRole.id,
-          status: 'active'
-        });
-        sails.log.info(`Seeded default Company Admin: admin@prowise.com / ${process.env.INITIAL_ADMIN_PASSWORD ? '********' : 'Admin123!'}`);
-      }
-    }
+  sails.log.info(`BOOTSTRAP: Starting ${isForced ? 'FORCED ' : ''}seeding process...`);
 
-    // Seed a default technician user
-    const techRole = await Role.findOne({ name: 'technician' });
-    if (techRole) {
-      const techExists = await User.findOne({ username: 'technician' });
-      if (!techExists) {
-        await User.create({
-          name: 'Tech Person',
-          username: 'technician',
-          email: 'technician@prowise.com',
-          password: process.env.INITIAL_ADMIN_PASSWORD || 'Admin123!',
-          role: techRole.id,
-          status: 'active'
-        });
-        sails.log.info(`Seeded default Technician: technician@prowise.com / ${process.env.INITIAL_ADMIN_PASSWORD ? '********' : 'Admin123!'}`);
-      }
-    }
-
-    // Seed a default company for initial testing
-    const Company = sails.models.company;
-    if (Company) {
-      const companyExists = await Company.count();
-      if (companyExists === 0) {
-        const seededCompany = await Company.create({
-          name: 'Atlas Copco (Industrial)',
-          description: 'A world-leading provider of sustainable productivity solutions.'
-        }).fetch();
-        sails.log.info('Seeded default company: Atlas Copco');
-        // We'll use this company for product seeding below
-        sails.config.custom.defaultCompanyId = seededCompany.id;
-
-        // Assign default users to this company
-        await User.update({ username: ['admin', 'technician'] }).set({ company: seededCompany.id });
-        sails.log.info('Assigned default admin and technician to Atlas Copco');
-      } else {
-        const existingCompany = await Company.findOne({ name: 'Atlas Copco (Industrial)' });
-        if (existingCompany) {
-          sails.config.custom.defaultCompanyId = existingCompany.id;
-          await User.update({ username: ['admin', 'technician'] }).set({ company: existingCompany.id });
-          sails.log.info('Ensured default admin and technician are assigned to Atlas Copco');
+  // Seed default roles, company, and guide types in parallel
+  const defaultRoles = sails.config.custom.defaultRoles || [];
+  
+  await Promise.all([
+    // 1. Roles
+    (async () => {
+      for (const roleData of defaultRoles) {
+        const existing = await Role.findOne({ name: roleData.name });
+        if (!existing) {
+          await Role.create(roleData);
+          sails.log.info(`Seeded role: ${roleData.name}`);
+        } else {
+          await Role.updateOne({ id: existing.id }).set({
+            description: roleData.description,
+            permissions: roleData.permissions
+          });
         }
       }
+    })(),
+
+    // 2. Guide Types
+    (async () => {
+      const guideTypes = [
+        { name: 'Replacement', slug: 'replacement', description: 'Step-by-step part swap instructions', icon: 'swap' },
+        { name: 'Disassembly', slug: 'disassembly', description: 'How to open/take apart a device', icon: 'tool' },
+        { name: 'Technique', slug: 'technique', description: 'Skill-based instruction', icon: 'book' },
+        { name: 'Troubleshooting', slug: 'troubleshooting', description: 'Diagnostic flowcharts or Q&A', icon: 'question' },
+        { name: 'Maintenance', slug: 'maintenance', description: 'Routine care instructions', icon: 'clean' },
+        { name: 'Teardown', slug: 'teardown', description: 'Informative analysis of internal components', icon: 'eye' }
+      ];
+
+      for (const gt of guideTypes) {
+        const existing = await GuideType.findOne({ name: gt.name });
+        if (!existing) {
+          await GuideType.create(gt);
+          sails.log.info(`Seeded guide type: ${gt.name}`);
+        }
+      }
+    })()
+  ]);
+
+  // Seed default users and company (Requires roles to be finished, but we'll do sequential here for safety as it's small)
+  // Seed a default super_admin user if no super_admins exist
+  const superAdminRole = await Role.findOne({ name: 'super_admin' });
+  if (superAdminRole) {
+    const superAdminExists = await User.findOne({ username: 'superadmin' });
+    if (!superAdminExists) {
+      await User.create({
+        name: 'Super Admin',
+        username: 'superadmin',
+        email: 'superadmin@prowise.com',
+        password: process.env.INITIAL_ADMIN_PASSWORD || 'Admin123!',
+        role: superAdminRole.id,
+        status: 'active'
+      });
+      sails.log.info(`Seeded default Super Admin`);
     }
   }
 
-  // Seed Guide Types
-  const GuideType = sails.models.guidetype;
-  if (!GuideType) {
-    sails.log.warn('GuideType model not found, skipping seed.');
+  // Seed a default company for initial testing
+  let seededCompanyId;
+  const companyExists = await Company.count();
+  if (companyExists === 0) {
+    const seededCompany = await Company.create({
+      name: 'Atlas Copco (Industrial)',
+      description: 'A world-leading provider of sustainable productivity solutions.'
+    }).fetch();
+    seededCompanyId = seededCompany.id;
+    sails.log.info('Seeded default company: Atlas Copco');
+    sails.config.custom.defaultCompanyId = seededCompanyId;
   } else {
-    const guideTypes = [
-      { name: 'Replacement', slug: 'replacement', description: 'Step-by-step part swap instructions', icon: 'swap' },
-      { name: 'Disassembly', slug: 'disassembly', description: 'How to open/take apart a device', icon: 'tool' },
-      { name: 'Technique', slug: 'technique', description: 'Skill-based instruction', icon: 'book' },
-      { name: 'Troubleshooting', slug: 'troubleshooting', description: 'Diagnostic flowcharts or Q&A', icon: 'question' },
-      { name: 'Maintenance', slug: 'maintenance', description: 'Routine care instructions', icon: 'clean' },
-      { name: 'Teardown', slug: 'teardown', description: 'Informative analysis of internal components', icon: 'eye' }
-    ];
+    const existingCompany = await Company.findOne({ name: 'Atlas Copco (Industrial)' });
+    if (existingCompany) {
+      seededCompanyId = existingCompany.id;
+      sails.config.custom.defaultCompanyId = seededCompanyId;
+    }
+  }
 
-    for (const gt of guideTypes) {
-      const existing = await GuideType.findOne({ name: gt.name });
-      if (!existing) {
-        await GuideType.create(gt);
-        sails.log.info(`Seeded guide type: ${gt.name}`);
-      }
+  // Seed default company admin
+  const adminRole = await Role.findOne({ name: 'company_admin' }) || await Role.findOne({ name: 'administrator' });
+  if (adminRole && seededCompanyId) {
+    const adminExists = await User.findOne({ username: 'admin' });
+    if (!adminExists) {
+      await User.create({
+        name: 'Company Admin',
+        username: 'admin',
+        email: 'admin@prowise.com',
+        password: process.env.INITIAL_ADMIN_PASSWORD || 'Admin123!',
+        role: adminRole.id,
+        company: seededCompanyId,
+        status: 'active'
+      });
     }
   }
 
@@ -150,7 +138,6 @@ module.exports.bootstrap = async function () {
     'PRO-WISE Creator Workstation', 'Founders Edition Graphics Card', 
     'Galaxy S24 Ultra', 'PRO-WISE Ultrabook', 'Galaxy S24'
   ];
-  const Product = sails.models.product;
   if (Product) {
     const removed = await Product.destroy({ name: { in: DEMO_PRODUCT_NAMES } }).fetch();
     if (removed.length > 0) {
@@ -159,7 +146,6 @@ module.exports.bootstrap = async function () {
   }
 
   // Seed Root Categories (L0)
-  const Category = sails.models.category;
   if (!Category) {
     sails.log.warn('Category model not found, skipping seed.');
   } else {
@@ -246,9 +232,6 @@ module.exports.bootstrap = async function () {
 
   // --- SEED REALISTIC COMPONENTS / SEMANTIC SEARCH DATA ---
   if (Product) {
-    const Company = sails.models.company;
-    const Category = sails.models.category;
-
     // Ensure Companies
     const companiesToSeed = ['Apple', 'Samsung Electronics', 'MSI', 'Lenovo'];
     for (const c of companiesToSeed) {
@@ -493,40 +476,39 @@ module.exports.bootstrap = async function () {
       ];
 
       // --- WAIT FOR EMBEDDING SERVICE ---
-      // We do this once here so we don't spam attempts for every product if it's down.
-      const serviceReady = await sails.services.searchservice.ensureServiceReady();
+      // Faster check for bootstrap (5 retries, 1s delay)
+      const serviceReady = await sails.services.searchservice.ensureServiceReady(5, 1000);
       if (!serviceReady) {
-        sails.log.error('BOOTSTRAP: Embedding service is NOT available. Products will be seeded without embeddings.');
+        sails.log.warn('BOOTSTRAP: Embedding service not ready yet. Generating embeddings for new products will be skipped today.');
       }
 
       for (const p of productsToSeed) {
         let currentProduct;
         const existing = await Product.findOne({ name: p.name });
+        
         if (!existing) {
           currentProduct = await Product.create(p).fetch();
           sails.log.info(`Seeded realistic product: ${p.name}`);
         } else {
+          // Only update if forced or if data looks basic
           currentProduct = await Product.updateOne({ id: existing.id }).set({ 
             components: p.components, 
             description: p.description, 
-            content: p.content, 
             manufacturer: p.manufacturer, 
             modelNumber: p.modelNumber, 
             company: p.company 
           });
         }
 
-        // Generate embedding so it's ready for semantic search
-        if (serviceReady && currentProduct) {
+        // Generate embedding ONLY if missing or forced
+        const needsEmbedding = currentProduct && (!currentProduct.embedding || currentProduct.embedding.length === 0);
+        
+        if (serviceReady && (needsEmbedding || isForced)) {
           try {
-            const success = await sails.services.productembeddingservice.updateEmbedding(currentProduct.id);
-            if (success) {
-              sails.log.info(`Generated embedding for: ${p.name}`);
-            } else {
-              sails.log.warn(`Failed to generate embedding for: ${p.name}`);
-            }
+            await sails.services.productembeddingservice.updateEmbedding(currentProduct.id);
+            sails.log.info(`Generated embedding for: ${p.name}`);
           } catch (e) {
-            sails.log.warn(`Could not generate embedding for: ${p.name}`, e.message || e);
+            sails.log.debug(`Could not generate embedding for: ${p.name}`);
           }
         }
       }

@@ -16,7 +16,7 @@
     "sails": "^1.5.11",
     "sails-hook-orm": "^4.0.3",
     "sails-hook-sockets": "^3.0.0",
-    "sails-mongo": "^2.1.1"
+    "sails-mongo": "^2.1.2"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
@@ -25,7 +25,7 @@
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node app.js",
-    "dev": "concurrently \"node app.js\" \"npm run search-service\"",
+    "dev": "concurrently \"node app.js\" \"python search_service/app.py\"",
     "search-service": "python search_service/app.py",
     "test": "npm run lint && npm run custom-tests && echo 'Done.'",
     "lint": "eslint . --max-warnings=0",

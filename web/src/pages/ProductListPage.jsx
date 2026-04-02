@@ -184,11 +184,13 @@ const ProductListPage = () => {
                 {loading ? (
                     <div className="product-grid">
                         {Array.from({ length: 6 }).map((_, index) => (
-                            <div className="product-card" key={`product-skeleton-${index}`}>
-                                <Skeleton width="68%" height={20} className="mb-6" />
-                                <Skeleton width="100%" className="mb-6" />
-                                <Skeleton width="82%" className="mb-6" />
-                                <Skeleton width={112} height={22} borderRadius={999} />
+                            <div key={`product-skeleton-${index}`} style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--color-border)', height: '160px', display: 'flex', gap: '1rem' }}>
+                                <Skeleton width={48} height={48} borderRadius={12} />
+                                <div style={{ flex: 1 }}>
+                                    <Skeleton width="60%" height={24} className="mb-4" />
+                                    <Skeleton width="100%" height={16} className="mb-2" />
+                                    <Skeleton width="80%" height={16} />
+                                </div>
                             </div>
                         ))}
                     </div>

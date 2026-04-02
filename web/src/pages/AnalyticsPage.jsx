@@ -31,11 +31,17 @@ const AnalyticsPage = () => {
 
     if (loading) return (
         <div className="page">
-            <Skeleton height={40} width="40%" className="mb-6" />
+            <div className="page-header" style={{ marginBottom: 'var(--space-8)' }}>
+                <div style={{ flex: 1 }}>
+                    <Skeleton height={40} width="40%" className="mb-2" />
+                    <Skeleton height={20} width="60%" />
+                </div>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                <Skeleton height={120} />
-                <Skeleton height={120} />
-                <Skeleton height={120} />
+                <Skeleton height={140} />
+                <Skeleton height={140} />
+                <Skeleton height={140} />
+                <Skeleton height={140} />
             </div>
         </div>
     );

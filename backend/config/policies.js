@@ -51,6 +51,7 @@ module.exports.policies = {
     'getAll': 'isAuthenticated',
     'getOne': 'isAuthenticated',
     'getRecommendations': 'isAuthenticated',
+    'getComponentRecommendations': 'isAuthenticated',
     'semanticSearch': 'isAuthenticated',
     'triggerBackfill': ['isAuthenticated', 'isSuperAdmin'],
     'create': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],

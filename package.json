@@ -9,16 +9,17 @@
   ],
   "scripts": {
     "start:server": "npm run start --workspace=backend",
-    "dev:server": "concurrently \"npm run dev --workspace=backend\" \"npm run search-service --workspace=backend\"",
+    "dev:server": "npm run dev --workspace=backend",
     "dev": "npm run dev:server",
     "dev:web": "npm run dev --workspace=web",
+    "dev:all": "concurrently \"npm run dev:server\" \"npm run dev:web\"",
     "start:mobile": "npm run start --workspace=mobile",
     "lint": "eslint ."
   },
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sails-mongo": "1.2.0"
+    "sails-mongo": "^0.0.3"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

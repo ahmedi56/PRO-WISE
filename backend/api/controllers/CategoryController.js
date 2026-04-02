@@ -231,6 +231,36 @@ module.exports = {
       sails.log.error('Delete category error:', err);
       return res.status(500).json({ message: 'Internal server error' });
     }
+  },
+
+  /**
+   * GET /api/categories/popular
+   * Get categories sorted by totalScans (visit-driven popularity).
+   */
+  getPopular: async function (req, res) {
+    try {
+      const { limit = 8, level } = req.query;
+      
+      const criteria = {
+        visibility: 'public',
+        totalScans: { '>': 0 } // Only show categories that have actually been visited
+      };
+      
+      if (level !== undefined) {
+        criteria.level = parseInt(level, 10);
+      }
+
+      const categories = await Category.find(criteria)
+        .limit(parseInt(limit, 10))
+        .sort('totalScans DESC')
+        .sort('sortOrder ASC')
+        .sort('name ASC');
+
+      return res.json(categories);
+    } catch (err) {
+      sails.log.error('Get popular categories error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   }
 
 };

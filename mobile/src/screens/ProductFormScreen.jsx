@@ -7,6 +7,40 @@ import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography } from '../theme';
 
+const COMPONENT_FIELDS = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'];
+
+const normalizeComponentRow = (component = {}) => {
+    const normalized = {};
+    COMPONENT_FIELDS.forEach((field) => {
+        normalized[field] = String(component?.[field] || '').trim();
+    });
+    return normalized;
+};
+
+const validateComponentRows = (components = []) => {
+    const sanitizedComponents = [];
+    const invalidIndexes = [];
+
+    components.forEach((component, index) => {
+        const normalized = normalizeComponentRow(component);
+        const isEmpty = COMPONENT_FIELDS.every((field) => !normalized[field]);
+        if (isEmpty) {
+            return;
+        }
+
+        const hasPrimaryLabel = !!normalized.name;
+        const hasMatchingSignal = !!(normalized.type || normalized.manufacturer || normalized.modelNumber || normalized.specifications);
+        if (!hasPrimaryLabel || !hasMatchingSignal) {
+            invalidIndexes.push(index);
+            return;
+        }
+
+        sanitizedComponents.push(normalized);
+    });
+
+    return { sanitizedComponents, invalidIndexes };
+};
+
 const getRoleName = (role) => {
     if (!role) return '';
     if (typeof role === 'string') return role.toLowerCase();
@@ -106,6 +140,15 @@ const ProductFormScreen = ({ navigation, route }) => {
             Alert.alert('Validation Error', 'Name is required');
             return;
         }
+
+        const { sanitizedComponents, invalidIndexes } = validateComponentRows(formData.components);
+        if (invalidIndexes.length > 0) {
+            Alert.alert(
+                'Validation Error',
+                `Component rows ${invalidIndexes.map((index) => index + 1).join(', ')} are incomplete. Each non-empty row needs a name and at least one matching signal.`
+            );
+            return;
+        }
         if (!token) {
             Alert.alert('Session expired', 'Please log in again.');
             return;
@@ -119,6 +162,7 @@ const ProductFormScreen = ({ navigation, route }) => {
             const payload = {
                 ...formData,
                 name: trimmedName,
+                components: sanitizedComponents,
             };
 
             const res = await apiFetch(url, {
@@ -250,7 +294,9 @@ const ProductFormScreen = ({ navigation, route }) => {
                 </View>
                 
                 {(!formData.components || formData.components.length === 0) ? (
-                    <Text style={{ color: colors.textMuted, fontStyle: 'italic', marginBottom: 10 }}>No components added yet.</Text>
+                    <Text style={{ color: colors.textMuted, fontStyle: 'italic', marginBottom: 10 }}>
+                        No components added yet. Each non-empty row should include a component name and at least one of type, brand, model number, or specs.
+                    </Text>
                 ) : (
                     formData.components.map((comp, index) => (
                         <View key={index} style={{ backgroundColor: colors.surface, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 10 }}>
@@ -285,6 +331,14 @@ const ProductFormScreen = ({ navigation, route }) => {
                                     placeholderTextColor={colors.textMuted}
                                 />
                             </View>
+
+                            <TextInput
+                                style={[styles.input, { marginBottom: 8 }]}
+                                value={comp.modelNumber}
+                                onChangeText={(t) => handleComponentChange(index, 'modelNumber', t)}
+                                placeholder="Model Number"
+                                placeholderTextColor={colors.textMuted}
+                            />
                             
                             <TextInput
                                 style={styles.input}

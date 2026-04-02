@@ -1074,8 +1074,16 @@ a:hover {
   width: 0;
   min-width: 0;
   padding: 0;
-  border-right-color: transparent;
+  border-right: none;
   opacity: 0;
+  pointer-events: none;
+}
+
+.layout-main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-8);
+  transition: all 0.3s var(--ease);
 }
 
 .sidebar-title {

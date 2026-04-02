@@ -39,11 +39,26 @@ module.exports = {
         const deactivatedCompanies = await Company.count({ status: 'deactivated' });
         companyStats = { total: totalCompanies, pending: pendingCompanies, deactivated: deactivatedCompanies };
 
+        // Global Operational stats for Super Admin
+        const totalProducts = await Product.count();
+        const publishedProducts = await Product.count({ status: 'published' });
+        const productsWithScans = await Product.find().select(['totalScans']);
+        const totalScans = productsWithScans.reduce((acc, p) => acc + (p.totalScans || 0), 0);
+        const totalGuides = await Guide.count();
+
         return res.json({
           success: true,
           summary: {
             users: userStats,
-            companies: companyStats
+            companies: companyStats,
+            products: {
+              total: totalProducts,
+              published: publishedProducts,
+              scans: totalScans
+            },
+            guides: {
+              total: totalGuides
+            }
           }
         });
       }

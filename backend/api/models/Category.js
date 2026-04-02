@@ -56,6 +56,11 @@ module.exports = {
       type: 'number',
       defaultsTo: 0
     },
+    totalScans: {
+      type: 'number',
+      defaultsTo: 0,
+      description: 'Aggregated visit count from all products in this category (and its children).'
+    },
     parent: {
       model: 'category'
     },

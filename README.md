@@ -117,6 +117,59 @@ The application implements strict Role-Based Access Control (RBAC):
 2.  **Company Admin (`administrator`)**: Company-level oversight, manages their own tenant's data.
 3.  **Client (`client`)**: End-users who view devices and guides.
 
+## Search & Embedding Service
+
+PRO-WISE uses a local Python Flask service for semantic embeddings. This powers semantic search, product recommendations, and component-to-product discovery.
+
+### Embedding Model: `BAAI/bge-small-en-v1.5`
+
+| Property | Value |
+|----------|-------|
+| **Model** | `BAAI/bge-small-en-v1.5` |
+| **Parameters** | ~33M |
+| **Embedding Dimension** | 384 |
+| **Disk Size** | ~130 MB |
+| **RAM Usage** | ~300 MB |
+| **Hardware Target** | Intel i5 vPro, 16 GB RAM, no GPU |
+
+**Why this model:**
+- Significantly better retrieval quality than `all-MiniLM-L6-v2` (+24% on MTEB benchmarks)
+- Same 384-dimensional output — drop-in compatible with existing data
+- Lightweight enough for CPU-only inference (~20-40ms per query)
+- No external API keys required — fully local and private
+
+### Running the Search Service
+
+The search service starts automatically with the backend:
+```bash
+cd backend
+npm run dev          # Starts both Sails.js + Flask search service
+```
+
+Or run standalone:
+```bash
+python backend/search_service/app.py    # Runs on port 5001
+```
+
+### Regenerating Embeddings
+
+After model changes or data migration, regenerate all product embeddings:
+```bash
+cd backend
+node scripts/backfill-embeddings.js --force
+```
+
+> **Important:** Embeddings from different models are not comparable. Always run `--force` backfill after changing the embedding model.
+
+### Model Role
+
+The embedding model is a **retrieval support system**, not a text generator:
+- ✅ Encodes product information into dense vectors for similarity search
+- ✅ Powers product-to-product recommendations via cosine similarity
+- ✅ Supports component-to-product discovery (reverse lookup)
+- ❌ Does NOT generate text, invent products, or act as a chatbot
+- ❌ All results come from real database records
+
 ## Architecture
 ```
 PRO-WISE/
@@ -125,7 +178,9 @@ PRO-WISE/
 │   │   ├── controllers/
 │   │   ├── models/
 │   │   └── policies/
-│   └── config/
+│   ├── config/
+│   └── search_service/  # Python Flask embedding service
+│       └── app.py       # BAAI/bge-small-en-v1.5 model
 ├── web/              # React + Vite web client
 │   └── src/
 ├── mobile/           # React Native + Expo mobile client

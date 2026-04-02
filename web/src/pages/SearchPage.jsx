@@ -12,11 +12,24 @@ const CATEGORY_ICON_MAP = {
     // ... can be expanded
 };
 
+const parseRecommendationPayload = (payload) => {
+    if (Array.isArray(payload)) {
+        return { items: payload, meta: null };
+    }
+
+    if (payload && Array.isArray(payload.data)) {
+        return { items: payload.data, meta: payload.meta || null };
+    }
+
+    return { items: [], meta: payload?.meta || null };
+};
+
 const SearchPage = () => {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q');
     const [results, setResults] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [serviceWarning, setServiceWarning] = useState('');
     const { token } = useSelector((state) => state.auth);
     const navigate = useNavigate();
 
@@ -24,14 +37,21 @@ const SearchPage = () => {
         if (query) {
             const fetchResults = async () => {
                 setLoading(true);
+                setServiceWarning('');
                 try {
                     const response = await axios.get(`${API_URL}/products/search/semantic`, {
                         params: { q: query },
                         headers: { Authorization: `Bearer ${token}` }
                     });
-                    setResults(response.data);
+                    const { items, meta } = parseRecommendationPayload(response.data);
+                    setResults(items);
+                    if (meta?.embedding?.requested && !meta?.embedding?.available) {
+                        setServiceWarning('Semantic service is currently unavailable. Showing fallback results.');
+                    }
                 } catch (error) {
                     console.error('Search error:', error);
+                    setResults([]);
+                    setServiceWarning('');
                 } finally {
                     setLoading(false);
                 }
@@ -46,6 +66,22 @@ const SearchPage = () => {
                 title={query ? `Results for "${query}"` : 'Semantic Search'} 
                 subtitle="Artificial intelligence finding exactly what you need based on meaning."
             />
+
+            {serviceWarning ? (
+                <div
+                    style={{
+                        marginBottom: '1rem',
+                        padding: '0.75rem 1rem',
+                        borderRadius: '10px',
+                        border: '1px solid rgba(var(--color-warning-rgb, 245, 158, 11), 0.35)',
+                        background: 'rgba(var(--color-warning-rgb, 245, 158, 11), 0.12)',
+                        color: 'var(--color-text)',
+                        fontSize: '0.88rem',
+                    }}
+                >
+                    {serviceWarning}
+                </div>
+            ) : null}
 
             {loading ? (
                 <div className="product-grid">

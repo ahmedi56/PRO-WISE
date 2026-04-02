@@ -53,7 +53,7 @@ module.exports = {
       // Note: we can't easily mock the req/res for controller actions like this in 'sails run', 
       // so let's just test the logic or call the SearchService directly.
       
-      const queryEmbedding = await sails.services.searchservice.getEmbedding('Graphene cooling');
+      const queryEmbedding = await sails.services.searchservice.getEmbedding('Graphene cooling', { mode: 'query' });
       const allProducts = await sails.models.product.find({ status: 'published', embedding: { '!=': null } });
       
       const calculateSimilarity = (vecA, vecB) => {

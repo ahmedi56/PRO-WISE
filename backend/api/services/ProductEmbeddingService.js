@@ -13,6 +13,7 @@ module.exports = {
    */
   buildSearchDocument: async function (product) {
     if (!product) { return ''; }
+    const componentMatching = sails.services.componentmatchingservice;
 
     // 1. Core Identification (Highest Importance)
     let doc = `Product: ${product.name || ''}\n`;
@@ -22,15 +23,23 @@ module.exports = {
     // 2. Technical Composition (Critical for hybrid matching and semantic alignment)
     if (product.components && Array.isArray(product.components) && product.components.length > 0) {
       doc += `\nTechnical Specifications & Components:\n`;
-      product.components.forEach((comp, idx) => {
+      const normalizedComponents = componentMatching
+        ? componentMatching.getNormalizedProductComponents(product)
+        : product.components;
+
+      normalizedComponents.forEach((comp) => {
         const cType = comp.type || 'Component';
         const brand = comp.manufacturer || '';
         const model = comp.modelNumber || '';
         const name = comp.name || '';
         const specs = comp.specifications || '';
+        const signature = comp.signature ? ` signature ${comp.signature}` : '';
+        const family = Array.isArray(comp.familyTokens) && comp.familyTokens.length
+          ? ` family ${comp.familyTokens.join(' ')}`
+          : '';
 
         // Emphasize the type and model for better vector search
-        doc += `- ${cType}: ${brand} ${model} ${name} ${specs}\n`.replace(/\s+/g, ' ');
+        doc += `- ${cType}: ${brand} ${model} ${name} ${specs}${signature}${family}\n`.replace(/\s+/g, ' ');
       });
     }
 
@@ -90,9 +99,15 @@ module.exports = {
       let embedding = null;
 
       try {
+        const isHealthy = await sails.services.searchservice.checkHealth();
+        if (!isHealthy) {
+          throw new Error('Embedding service is not healthy or unreachable');
+        }
+
         // Use the existing SearchService (Flask wrapper)
         sails.log.info(`ProductEmbeddingService: Generating embedding for "${product.name}" (doc length: ${searchDocument.length})`);
-        embedding = await SearchService.getEmbedding(searchDocument);
+        const result = await sails.services.searchservice.getEmbedding(searchDocument, { mode: 'document', retries: 3 });
+        embedding = result && result.embedding ? result.embedding : null;
       } catch (err) {
         sails.log.warn(`ProductEmbeddingService.updateEmbedding: Couldn't generate embedding for "${product.name}". Service error: ${err.message}`);
         // We update the searchDocument and leave embedding as is

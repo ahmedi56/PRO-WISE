@@ -56,6 +56,47 @@ const resolvePhoneCategory = async (categoryId, manufacturer, companyId, product
   return categoryId;
 };
 
+const validateAndSanitizeComponents = (components) => {
+  const componentMatching = sails.services.componentmatchingservice;
+
+  if (!componentMatching) {
+    return {
+      sanitizedComponents: Array.isArray(components) ? components : [],
+      invalidIndexes: [],
+    };
+  }
+
+  return componentMatching.validateComponents(components);
+};
+
+const getAccessContext = async (req) => {
+  if (!req.user || !req.user.id) {
+    return { roleName: '', companyId: null };
+  }
+
+  const user = await sails.models.user.findOne({ id: req.user.id }).populate('role');
+  return {
+    roleName: (user && user.role && user.role.name ? user.role.name : '').toLowerCase(),
+    companyId: user && user.company ? user.company : (req.user.companyId || null),
+  };
+};
+
+const canAccessProduct = ({ roleName, companyId, product }) => {
+  if (!product) {
+    return false;
+  }
+
+  if (roleName === 'super_admin') {
+    return true;
+  }
+
+  const isOwnerAdmin = ['company_admin', 'administrator'].includes(roleName)
+    && companyId
+    && String(product.company) === String(companyId);
+
+  return isOwnerAdmin || product.status === 'published';
+};
+
 module.exports = {
 
   /**
@@ -66,9 +107,16 @@ module.exports = {
     try {
       let { name, description, content, manufacturer, modelNumber, category, components } = req.body;
       let company = req.body.company;
+      const { sanitizedComponents, invalidIndexes } = validateAndSanitizeComponents(components);
 
       if (!name) {
         return res.status(400).json({ message: 'Product name is required' });
+      }
+
+      if (invalidIndexes.length > 0) {
+        return res.status(400).json({
+          message: `Component rows ${invalidIndexes.map((index) => index + 1).join(', ')} are incomplete. Each non-empty component needs a name and at least one matching signal.`,
+        });
       }
 
       // 1 & 4. Strict Tenant Isolation
@@ -103,7 +151,7 @@ module.exports = {
         modelNumber: modelNumber || null,
         category: finalCategory,
         company: company || null,
-        components: Array.isArray(components) ? components : [],
+        components: sanitizedComponents,
         status: 'published'
       }).fetch();
 
@@ -128,7 +176,7 @@ module.exports = {
      */
   getAll: async function (req, res) {
     try {
-      const { category, company, search, page = 1, limit = 20 } = req.query;
+      const { category, company, search, page = 1, limit = 20, sort = 'createdAt DESC' } = req.query;
 
       // Resolve role from DB for accurate permission checks
       let roleName = '';
@@ -182,7 +230,7 @@ module.exports = {
                 .populate('company')
                 .skip(skip)
                 .limit(parseInt(limit))
-                .sort('createdAt DESC');
+                .sort(sort);
 
       return res.json({
         data: products,
@@ -234,7 +282,7 @@ module.exports = {
 
       // Clients OR Admins in public view can only see published products
       // Only the owning company admin or super_admin can see non-published products
-      const isOwnerAdmin = (roleName === 'administrator' || roleName === 'company_admin') && String(product.company) === String((req.user && req.user.companyId));
+      const isOwnerAdmin = (roleName === 'administrator' || roleName === 'company_admin') && String(product.company?.id || product.company) === String((req.user && req.user.companyId));
       
       if (roleName !== 'super_admin' && !isOwnerAdmin && product.status !== 'published') {
         return res.status(403).json({ message: 'Forbidden: Product is not published' });
@@ -255,6 +303,28 @@ module.exports = {
         }
       }
 
+      // Increment totalScans as a proxy for popularity
+      await Product.updateOne({ id: req.params.id }).set({
+        totalScans: (product.totalScans || 0) + 1
+      });
+
+      // Also increment popularity for the category and all its ancestors
+      if (product.category) {
+        let currentCatId = typeof product.category === 'object' ? product.category.id : product.category;
+        
+        // Use a loop to climb up the category tree and increment each parent
+        while (currentCatId) {
+          const cat = await Category.findOne({ id: currentCatId });
+          if (!cat) {break;}
+          
+          await Category.updateOne({ id: currentCatId }).set({
+            totalScans: (cat.totalScans || 0) + 1
+          });
+          
+          currentCatId = cat.parent; // Climb up
+        }
+      }
+
       return res.json({ ...product, categoryPath });
 
     } catch (err) {
@@ -270,13 +340,20 @@ module.exports = {
   update: async function (req, res) {
     try {
       const { name, description, content, manufacturer, modelNumber, category, company, components } = req.body;
+      const { sanitizedComponents, invalidIndexes } = validateAndSanitizeComponents(components);
 
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {
         return res.status(404).json({ message: 'Product not found' });
       }
 
-      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+      if (invalidIndexes.length > 0) {
+        return res.status(400).json({
+          message: `Component rows ${invalidIndexes.map((index) => index + 1).join(', ')} are incomplete. Each non-empty component needs a name and at least one matching signal.`,
+        });
+      }
+
+      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
         return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
       }
 
@@ -311,7 +388,7 @@ module.exports = {
       if (manufacturer !== undefined) {updateData.manufacturer = manufacturer;}
       if (modelNumber !== undefined) {updateData.modelNumber = modelNumber;}
       if (category !== undefined) {updateData.category = finalCategory;}
-      if (components !== undefined) {updateData.components = Array.isArray(components) ? components : [];}
+      if (components !== undefined) {updateData.components = sanitizedComponents;}
 
       // 1 & 4. Strict Tenant Isolation
       if ((req.user && req.user.companyId)) {
@@ -355,7 +432,7 @@ module.exports = {
         return res.status(404).json({ message: 'Product not found' });
       }
 
-      if ((req.user && req.user.companyId) && product.company !== (req.user && req.user.companyId)) {
+      if ((req.user && req.user.companyId) && String(product.company?.id || product.company) !== String(req.user && req.user.companyId)) {
         return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
       }
 
@@ -373,11 +450,71 @@ module.exports = {
     try {
       const recommendations = await sails.helpers.getSimilarityRecommendations.with({
         productId: req.params.id,
-        limit: 5
+        limit: 5,
+        includeDiagnostics: true,
       });
       return res.json(recommendations);
     } catch (err) {
       sails.log.error('Get recommendations error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * POST /api/products/recommend/by-components
+   * Reverse lookup finished products from one or more selected components.
+   */
+  getComponentRecommendations: async function (req, res) {
+    try {
+      const {
+        components,
+        productId,
+        currentProductId,
+        categoryId,
+        companyId,
+        limit = 6,
+      } = req.body || {};
+
+      let sourceComponents = components;
+      let sourceProduct = null;
+
+      if ((!Array.isArray(sourceComponents) || sourceComponents.length === 0) && productId) {
+        sourceProduct = await Product.findOne({ id: productId }).populate('category').populate('company');
+        if (!sourceProduct) {
+          return res.status(404).json({ message: 'Source product not found' });
+        }
+
+        const access = await getAccessContext(req);
+        if (!canAccessProduct({ ...access, product: sourceProduct })) {
+          return res.status(403).json({ message: 'Forbidden: Product is not accessible' });
+        }
+
+        sourceComponents = sourceProduct.components || [];
+      }
+
+      const { sanitizedComponents, invalidIndexes } = validateAndSanitizeComponents(sourceComponents);
+      if (invalidIndexes.length > 0) {
+        return res.status(400).json({
+          message: `Component rows ${invalidIndexes.map((index) => index + 1).join(', ')} are incomplete. Each non-empty component needs a name and at least one matching signal.`,
+        });
+      }
+
+      if (!sanitizedComponents.length) {
+        return res.status(400).json({ message: 'At least one valid component is required' });
+      }
+
+      const recommendations = await sails.helpers.getSimilarityRecommendations.with({
+        components: sanitizedComponents,
+        excludeProductId: currentProductId || productId || undefined,
+        filterCompanyId: companyId || undefined,
+        categoryId: categoryId || (sourceProduct && sourceProduct.category?.id ? sourceProduct.category.id : undefined),
+        limit: parseInt(limit, 10) || 6,
+        includeDiagnostics: true,
+      });
+
+      return res.json(recommendations);
+    } catch (err) {
+      sails.log.error('Get component recommendations error:', err);
       return res.status(500).json({ message: 'Internal server error' });
     }
   },
@@ -391,7 +528,7 @@ module.exports = {
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
-      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -411,7 +548,7 @@ module.exports = {
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
-      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -431,7 +568,7 @@ module.exports = {
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
-      if ((req.user && req.user.companyId) && existing.company !== (req.user && req.user.companyId)) {
+      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -455,7 +592,8 @@ module.exports = {
 
       const results = await sails.helpers.getSimilarityRecommendations.with({
         query: q,
-        limit: parseInt(limit)
+        limit: parseInt(limit),
+        includeDiagnostics: true,
       });
 
       return res.json(results);

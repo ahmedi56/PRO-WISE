@@ -55,7 +55,11 @@ export const registerUser = createAsyncThunk(
 export const loadUser = createAsyncThunk(
     'auth/loadUser',
     async (_, { rejectWithValue }) => {
-        // We let the axios interceptor handle 401s if this fails
+        const token = localStorage.getItem('token');
+        if (!token) {
+            return rejectWithValue('No token found');
+        }
+
         try {
             const response = await axios.get(`${API_URL}/auth/me`);
             return response.data;

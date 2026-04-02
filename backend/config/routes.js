@@ -35,6 +35,7 @@ module.exports.routes = {
   'POST /api/products': { controller: 'ProductController', action: 'create', requiredPermission: 'products.manage' },
   'GET /api/products': 'ProductController.getAll',
   'GET /api/products/search/semantic': 'ProductController.semanticSearch',
+  'POST /api/products/recommend/by-components': 'ProductController.getComponentRecommendations',
   'POST /api/products/:id/generate-qr': 'QRCodeController.generate',
 
   // Troubleshooting Guides Hierarchy
@@ -65,6 +66,7 @@ module.exports.routes = {
   // ─── Categories ──────────────────────────────────────────
   'POST /api/categories': 'CategoryController.create',
   'GET /api/categories': 'CategoryController.getAll',
+  'GET /api/categories/popular': 'CategoryController.getPopular',
   'GET /api/categories/:id': 'CategoryController.getOne',
   'PUT /api/categories/:id': 'CategoryController.update',
   'DELETE /api/categories/:id': 'CategoryController.delete',

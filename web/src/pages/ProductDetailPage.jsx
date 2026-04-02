@@ -1,27 +1,31 @@
-
-import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../config';
-import { Badge, Button, PageHeader, Skeleton, EmptyState } from '../components/ui';
+import { Badge, Button, EmptyState, PageHeader, Skeleton } from '../components/ui';
 import RecommendationSection from '../components/RecommendationSection';
 import MainLayout from '../components/MainLayout';
 import { formatProductName } from '../utils/formatProduct';
 
-/* ── helpers ─────────────────────────────────────────────────── */
-
-/** Walk every guide → step → media and collect items by type */
 function classifyMedia(guides) {
     const videos = [];
-    const pdfs   = [];
+    const pdfs = [];
 
-    (guides || []).forEach(guide => {
-        (guide.steps || []).forEach(step => {
-            (step.media || []).forEach(m => {
-                const ctx = { guideTitle: guide.title, stepTitle: step.title, stepNumber: step.stepNumber };
-                if (m.type === 'video') videos.push({ ...m, _ctx: ctx });
-                if (m.type === 'pdf')   pdfs.push({ ...m, _ctx: ctx });
+    (guides || []).forEach((guide) => {
+        (guide.steps || []).forEach((step) => {
+            (step.media || []).forEach((mediaItem) => {
+                const context = {
+                    guideTitle: guide.title,
+                    stepTitle: step.title,
+                    stepNumber: step.stepNumber,
+                };
+                if (mediaItem.type === 'video') {
+                    videos.push({ ...mediaItem, _ctx: context });
+                }
+                if (mediaItem.type === 'pdf') {
+                    pdfs.push({ ...mediaItem, _ctx: context });
+                }
             });
         });
     });
@@ -29,14 +33,36 @@ function classifyMedia(guides) {
     return { videos, pdfs };
 }
 
-/* ── tab configuration ───────────────────────────────────────── */
-const TABS = [
-    { key: 'videos', label: 'Videos',            icon: '🎬' },
-    { key: 'pdfs',   label: 'PDFs',              icon: '📄' },
-    { key: 'steps',  label: 'Steps with Images', icon: '📋' },
-];
+function buildComponentSelection(component, index) {
+    return {
+        name: component?.name || '',
+        type: component?.type || '',
+        manufacturer: component?.manufacturer || '',
+        modelNumber: component?.modelNumber || '',
+        specifications: component?.specifications || '',
+        selectionKey: [
+            index,
+            component?.name || '',
+            component?.type || '',
+            component?.manufacturer || '',
+            component?.modelNumber || '',
+        ].join('|'),
+    };
+}
 
-/* ── component ───────────────────────────────────────────────── */
+function getComponentLabel(component) {
+    const name = component?.name || component?.modelNumber || component?.type || 'Component';
+    const brand = component?.manufacturer;
+    return brand && !name.toLowerCase().startsWith(brand.toLowerCase())
+        ? `${brand} ${name}`.trim()
+        : name;
+}
+
+const TABS = [
+    { key: 'videos', label: 'Videos' },
+    { key: 'pdfs', label: 'PDFs' },
+    { key: 'steps', label: 'Steps' },
+];
 
 const ProductDetailPage = () => {
     const { id } = useParams();
@@ -44,51 +70,107 @@ const ProductDetailPage = () => {
     const [categoryPath, setCategoryPath] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('steps');
+    const [selectedComponents, setSelectedComponents] = useState([]);
     const navigate = useNavigate();
     const { token } = useSelector((state) => state.auth);
 
     useEffect(() => {
         window.scrollTo(0, 0);
-        const fetchProductAndPath = async () => {
+        const fetchProduct = async () => {
             setLoading(true);
             try {
-                const config = { headers: { Authorization: `Bearer ${token}` } };
-                const response = await axios.get(`${API_URL}/products/${id}`, config);
+                const response = await axios.get(`${API_URL}/products/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
                 const fetchedProduct = response.data;
                 setProduct(fetchedProduct);
-                if (fetchedProduct.categoryPath) {
-                    setCategoryPath(fetchedProduct.categoryPath);
-                }
+                setCategoryPath(Array.isArray(fetchedProduct.categoryPath) ? fetchedProduct.categoryPath : []);
             } catch (error) {
                 console.error('Failed to fetch product:', error);
+                setProduct(null);
             } finally {
                 setLoading(false);
             }
         };
-        if (id) fetchProductAndPath();
+
+        if (id) {
+            fetchProduct();
+        }
     }, [id, token]);
 
-    /* derived classified media */
-    const { videos, pdfs } = useMemo(() => classifyMedia(product?.guides), [product]);
+    useEffect(() => {
+        setSelectedComponents([]);
+    }, [id]);
 
-    /* badge counts per tab */
+    const { videos, pdfs } = useMemo(() => classifyMedia(product?.guides), [product]);
     const tabCounts = useMemo(() => ({
         videos: videos.length,
-        pdfs:   pdfs.length,
-        steps:  (product?.guides || []).reduce((n, g) => n + (g.steps?.length || 0), 0),
+        pdfs: pdfs.length,
+        steps: (product?.guides || []).reduce((count, guide) => count + (guide.steps?.length || 0), 0),
     }), [videos, pdfs, product]);
 
-    /* ── loading / not-found states ──────────────────────────── */
+    const toggleComponentSelection = (component, index) => {
+        const nextSelection = buildComponentSelection(component, index);
+        setSelectedComponents((previous) => (
+            previous.some((entry) => entry.selectionKey === nextSelection.selectionKey)
+                ? previous.filter((entry) => entry.selectionKey !== nextSelection.selectionKey)
+                : [...previous, nextSelection]
+        ));
+    };
 
     if (loading) {
         return (
             <MainLayout>
                 <div className="page" style={{ padding: 0, maxWidth: 'none' }}>
-                    <Skeleton height={40} width="60%" className="mb-6" />
-                    <Skeleton height={200} width="100%" className="mb-6" />
-                    <div className="product-grid">
-                        <Skeleton height={150} />
-                        <Skeleton height={150} />
+                    {/* Breadcrumb Skeleton */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem' }}>
+                        <Skeleton width={80} height={20} />
+                        <Skeleton width={100} height={20} />
+                        <Skeleton width={150} height={20} />
+                    </div>
+
+                    <div className="product-detail-layout">
+                        {/* Header Skeleton */}
+                        <header className="product-detail-header" style={{ marginBottom: '2rem' }}>
+                            <Skeleton height={40} width="60%" className="mb-2" />
+                            <Skeleton height={20} width="30%" />
+                        </header>
+
+                        <div className="product-detail-grid">
+                            {/* Left Column Skeleton (Info Card) */}
+                            <section className="product-info-card card">
+                                <Skeleton height={24} width="40%" className="mb-4" />
+                                <Skeleton height={100} width="100%" className="mb-6" />
+                                <div className="specifications">
+                                    <Skeleton height={40} width="100%" />
+                                    <Skeleton height={40} width="100%" />
+                                    <Skeleton height={40} width="100%" />
+                                </div>
+                                <div style={{ marginTop: '2rem' }}>
+                                    <Skeleton height={24} width="50%" className="mb-4" />
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        <Skeleton height={60} width="100%" />
+                                        <Skeleton height={60} width="100%" />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Right Column Skeleton (Support Content) */}
+                            <section className="product-support-content">
+                                <Skeleton height={32} width="30%" className="mb-6" />
+                                <div className="support-tabs" style={{ marginBottom: '1.5rem' }}>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <Skeleton height={36} width={100} />
+                                        <Skeleton height={36} width={100} />
+                                        <Skeleton height={36} width={100} />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gap: '1rem' }}>
+                                    <Skeleton height={200} width="100%" />
+                                    <Skeleton height={200} width="100%" />
+                                </div>
+                            </section>
+                        </div>
                     </div>
                 </div>
             </MainLayout>
@@ -107,292 +189,331 @@ const ProductDetailPage = () => {
         );
     }
 
-    /* ── render ───────────────────────────────────────────────── */
-
     return (
         <MainLayout>
             <div className="page" style={{ padding: 0, maxWidth: 'none' }}>
-                {/* breadcrumb */}
-                <nav className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                <nav className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
                     <Link to="/categories" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Categories</Link>
-                    {categoryPath.map((cat, index) => (
-                        <React.Fragment key={cat.id}>
-                            <span className="separator" style={{ opacity: 0.5 }}>/</span>
+                    {categoryPath.map((category, index) => (
+                        <React.Fragment key={category.id}>
+                            <span style={{ opacity: 0.5 }}>/</span>
                             {index === categoryPath.length - 1 ? (
-                                <span className="current" style={{ color: 'var(--color-text)' }}>{cat.name}</span>
+                                <span style={{ color: 'var(--color-text)' }}>{category.name}</span>
                             ) : (
-                                <Link to={`/categories?parent=${cat.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>{cat.name}</Link>
+                                <Link to={`/categories?parent=${category.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                                    {category.name}
+                                </Link>
                             )}
                         </React.Fragment>
                     ))}
-                    <span className="separator" style={{ opacity: 0.5 }}>/</span>
-                    <span className="current" style={{ color: 'var(--color-text)' }}>{formatProductName(product.name, product.manufacturer)}</span>
+                    <span style={{ opacity: 0.5 }}>/</span>
+                    <span style={{ color: 'var(--color-text)' }}>{formatProductName(product.name, product.manufacturer)}</span>
                 </nav>
 
-            <div className="product-detail-layout">
-                <header className="product-detail-header">
-                    <div className="header-main">
-                        <PageHeader
-                            title={`${formatProductName(product.name, product.manufacturer)}${product.modelNumber ? ' (' + product.modelNumber + ')' : ''}`}
-                            subtitle={product.manufacturer ? `${product.manufacturer} • ${product.category?.name || 'General Product'}` : (product.category?.name || 'General Product')}
-                            actions={
-                                <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <Badge tone={product.status === 'published' ? 'success' : 'warning'}>
-                                        {product.status}
-                                    </Badge>
-                                </div>
-                            }
-                        />
-                    </div>
-                </header>
-
-                <div className="product-detail-grid">
-                    {/* ── left column: about card ─────────────────────── */}
-                    <section className="product-info-card card">
-                        <h3>About this Product</h3>
-                        <p className="description" style={{ marginBottom: '1.5rem' }}>
-                            {product.description || 'No description available for this product.'}
-                        </p>
-
-                        {product.content && (
-                            <div className="full-content" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
-                                <h4 style={{ marginBottom: '1rem' }}>Detailed Information</h4>
-                                <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: 'var(--color-text-muted)' }}>
-                                    {product.content}
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="specifications">
-                            <div className="spec-item">
-                                <span className="spec-label">Manufacturer</span>
-                                <span className="spec-value">{product.manufacturer || 'N/A'}</span>
-                            </div>
-                            <div className="spec-item">
-                                <span className="spec-label">Model Number</span>
-                                <span className="spec-value">{product.modelNumber || 'N/A'}</span>
-                            </div>
-                            <div className="spec-item">
-                                <span className="spec-label">Category</span>
-                                <span className="spec-value">{product.category?.name || 'Uncategorized'}</span>
-                            </div>
+                <div className="product-detail-layout">
+                    <header className="product-detail-header">
+                        <div className="header-main">
+                            <PageHeader
+                                title={`${formatProductName(product.name, product.manufacturer)}${product.modelNumber ? ` (${product.modelNumber})` : ''}`}
+                                subtitle={product.manufacturer ? `${product.manufacturer} - ${product.category?.name || 'General Product'}` : (product.category?.name || 'General Product')}
+                                actions={(
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <Badge tone={product.status === 'published' ? 'success' : 'warning'}>
+                                            {product.status}
+                                        </Badge>
+                                    </div>
+                                )}
+                            />
                         </div>
+                    </header>
 
-                        {/* --- COMPONENTS SECTION --- */}
-                        <div className="product-components" style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
-                            <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ion-icon name="hardware-chip-outline" style={{ color: 'var(--color-primary)' }}></ion-icon>
-                                Components & Composition
-                            </h4>
-                            
-                            {(!product.components || product.components.length === 0) ? (
-                                <div style={{ background: 'var(--color-surface)', border: '1px dashed var(--color-border)', borderRadius: '8px', padding: '1.5rem', textAlign: 'center' }}>
-                                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
-                                        No component breakdown available yet.
-                                    </p>
+                    <div className="product-detail-grid">
+                        <section className="product-info-card card">
+                            <h3>About this Product</h3>
+                            <p className="description" style={{ marginBottom: '1.5rem' }}>
+                                {product.description || 'No description available for this product.'}
+                            </p>
+
+                            {product.content ? (
+                                <div className="full-content" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
+                                    <h4 style={{ marginBottom: '1rem' }}>Detailed Information</h4>
+                                    <div style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6', color: 'var(--color-text-muted)' }}>
+                                        {product.content}
+                                    </div>
                                 </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    {product.components.map((comp, idx) => (
-                                        <div key={idx} style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px', padding: '1rem' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                                <h5 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-strong)' }}>{comp.name}</h5>
-                                                {comp.type && (
-                                                    <Badge tone="neutral" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>{comp.type}</Badge>
-                                                )}
-                                            </div>
-                                            
-                                            {(comp.manufacturer || comp.modelNumber) && (
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text)', marginBottom: '0.25rem' }}>
-                                                    <strong>Brand:</strong> {comp.manufacturer || 'N/A'} 
-                                                    {comp.modelNumber && <span style={{ opacity: 0.7 }}> • <strong>Model:</strong> {comp.modelNumber}</span>}
+                            ) : null}
+
+                            <div className="specifications">
+                                <div className="spec-item">
+                                    <span className="spec-label">Manufacturer</span>
+                                    <span className="spec-value">{product.manufacturer || 'N/A'}</span>
+                                </div>
+                                <div className="spec-item">
+                                    <span className="spec-label">Model Number</span>
+                                    <span className="spec-value">{product.modelNumber || 'N/A'}</span>
+                                </div>
+                                <div className="spec-item">
+                                    <span className="spec-label">Category</span>
+                                    <span className="spec-value">{product.category?.name || 'Uncategorized'}</span>
+                                </div>
+                            </div>
+
+                            <div className="product-components" style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
+                                <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <ion-icon name="hardware-chip-outline" style={{ color: 'var(--color-primary)' }}></ion-icon>
+                                    Components and Composition
+                                </h4>
+                                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', margin: '0 0 1rem' }}>
+                                    Click one or more components to find real catalog products built with matching parts.
+                                </p>
+
+                                {(!product.components || product.components.length === 0) ? (
+                                    <div style={{ background: 'var(--color-surface)', border: '1px dashed var(--color-border)', borderRadius: '8px', padding: '1.5rem', textAlign: 'center' }}>
+                                        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem', margin: 0 }}>
+                                            No component breakdown available yet.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                        {product.components.map((component, index) => {
+                                            const selection = buildComponentSelection(component, index);
+                                            const isSelected = selectedComponents.some((entry) => entry.selectionKey === selection.selectionKey);
+
+                                            return (
+                                                <button
+                                                    key={selection.selectionKey}
+                                                    type="button"
+                                                    onClick={() => toggleComponentSelection(component, index)}
+                                                    style={{
+                                                        background: isSelected ? 'rgba(var(--color-primary-rgb), 0.12)' : 'var(--color-surface)',
+                                                        border: isSelected ? '1px solid rgba(var(--color-primary-rgb), 0.35)' : '1px solid var(--color-border)',
+                                                        borderRadius: '8px',
+                                                        padding: '1rem',
+                                                        textAlign: 'left',
+                                                        cursor: 'pointer',
+                                                        color: 'inherit',
+                                                    }}
+                                                >
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                                                        <h5 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-strong)' }}>{component.name}</h5>
+                                                        {component.type ? (
+                                                            <Badge tone="neutral" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                                                                {component.type}
+                                                            </Badge>
+                                                        ) : null}
+                                                    </div>
+
+                                                    {(component.manufacturer || component.modelNumber) ? (
+                                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text)', marginBottom: '0.25rem' }}>
+                                                            <strong>Brand:</strong> {component.manufacturer || 'N/A'}
+                                                            {component.modelNumber ? <span style={{ opacity: 0.7 }}> - <strong>Model:</strong> {component.modelNumber}</span> : null}
+                                                        </div>
+                                                    ) : null}
+
+                                                    {component.specifications ? (
+                                                        <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
+                                                            {component.specifications}
+                                                        </div>
+                                                    ) : null}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+
+                                {selectedComponents.length > 0 ? (
+                                    <div style={{ marginTop: '1rem', display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                                        {selectedComponents.map((component) => (
+                                            <span
+                                                key={component.selectionKey}
+                                                style={{
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    padding: '0.35rem 0.65rem',
+                                                    borderRadius: '999px',
+                                                    background: 'rgba(var(--color-primary-rgb), 0.12)',
+                                                    color: 'var(--color-primary)',
+                                                    border: '1px solid rgba(var(--color-primary-rgb), 0.22)',
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                {getComponentLabel(component)}
+                                            </span>
+                                        ))}
+                                        <Button type="button" variant="secondary" size="sm" onClick={() => setSelectedComponents([])}>
+                                            Clear
+                                        </Button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </section>
+
+                        <section className="product-support-content">
+                            <h3 style={{ margin: '0 0 1rem 0' }}>Support Content</h3>
+
+                            <div className="support-tabs">
+                                {TABS.map((tab) => (
+                                    <button
+                                        key={tab.key}
+                                        className={`support-tab ${activeTab === tab.key ? 'active' : ''}`}
+                                        onClick={() => setActiveTab(tab.key)}
+                                    >
+                                        <span className="tab-label">{tab.label}</span>
+                                        {tabCounts[tab.key] > 0 ? (
+                                            <span className="tab-count">{tabCounts[tab.key]}</span>
+                                        ) : null}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {activeTab === 'videos' ? (
+                                <div className="tab-panel">
+                                    {videos.length > 0 ? (
+                                        <div className="video-list">
+                                            {videos.map((video, index) => (
+                                                <div key={video.id || index} className="video-card card">
+                                                    <video controls className="video-player">
+                                                        <source src={video.url} type="video/mp4" />
+                                                        Your browser does not support the video tag.
+                                                    </video>
+                                                    <div className="video-info">
+                                                        <span className="video-title">{video.title || 'Video'}</span>
+                                                        <span className="video-context">
+                                                            {video._ctx.guideTitle} - Step {video._ctx.stepNumber}: {video._ctx.stepTitle}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                            )}
-                                            
-                                            {comp.specifications && (
-                                                <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
-                                                    {comp.specifications}
-                                                </div>
-                                            )}
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </section>
-
-                    {/* ── right column: support content ──────────────── */}
-                    <section className="product-support-content">
-                        <h3 style={{ margin: '0 0 1rem 0' }}>Support Content</h3>
-
-                        {/* tab bar */}
-                        <div className="support-tabs">
-                            {TABS.map(t => (
-                                <button
-                                    key={t.key}
-                                    className={`support-tab ${activeTab === t.key ? 'active' : ''}`}
-                                    onClick={() => setActiveTab(t.key)}
-                                >
-                                    <span className="tab-icon">{t.icon}</span>
-                                    <span className="tab-label">{t.label}</span>
-                                    {tabCounts[t.key] > 0 && (
-                                        <span className="tab-count">{tabCounts[t.key]}</span>
+                                    ) : (
+                                        <SupportEmptyState message="No videos available for this product yet." />
                                     )}
-                                </button>
-                            ))}
-                        </div>
+                                </div>
+                            ) : null}
 
-                        {/* ── Videos tab ─────────────────────────────── */}
-                        {activeTab === 'videos' && (
-                            <div className="tab-panel">
-                                {videos.length > 0 ? (
-                                    <div className="video-list">
-                                        {videos.map((v, i) => (
-                                            <div key={v.id || i} className="video-card card">
-                                                <video controls className="video-player">
-                                                    <source src={v.url} type="video/mp4" />
-                                                    Your browser does not support the video tag.
-                                                </video>
-                                                <div className="video-info">
-                                                    <span className="video-title">{v.title || 'Video'}</span>
-                                                    <span className="video-context">
-                                                        {v._ctx.guideTitle} — Step {v._ctx.stepNumber}: {v._ctx.stepTitle}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <SupportEmptyState icon="🎬" message="No videos available for this product yet." />
-                                )}
-                            </div>
-                        )}
-
-                        {/* ── PDFs tab ───────────────────────────────── */}
-                        {activeTab === 'pdfs' && (
-                            <div className="tab-panel">
-                                {pdfs.length > 0 ? (
-                                    <div className="pdf-list">
-                                        {pdfs.map((p, i) => (
-                                            <div key={p.id || i} className="pdf-row card">
-                                                <div className="pdf-row-left">
-                                                    <span className="pdf-icon">📄</span>
-                                                    <div className="pdf-meta">
-                                                        <span className="pdf-title">{p.title || 'Document'}</span>
-                                                        <span className="pdf-context">
-                                                            {p._ctx.guideTitle} — Step {p._ctx.stepNumber}: {p._ctx.stepTitle}
-                                                        </span>
+                            {activeTab === 'pdfs' ? (
+                                <div className="tab-panel">
+                                    {pdfs.length > 0 ? (
+                                        <div className="pdf-list">
+                                            {pdfs.map((pdf, index) => (
+                                                <div key={pdf.id || index} className="pdf-row card">
+                                                    <div className="pdf-row-left">
+                                                        <span className="pdf-icon">PDF</span>
+                                                        <div className="pdf-meta">
+                                                            <span className="pdf-title">{pdf.title || 'Document'}</span>
+                                                            <span className="pdf-context">
+                                                                {pdf._ctx.guideTitle} - Step {pdf._ctx.stepNumber}: {pdf._ctx.stepTitle}
+                                                            </span>
+                                                        </div>
                                                     </div>
+                                                    <Button variant="ghost" size="sm" onClick={() => window.open(pdf.url, '_blank')}>
+                                                        Open PDF
+                                                    </Button>
                                                 </div>
-                                                <Button variant="ghost" size="sm" onClick={() => window.open(p.url, '_blank')}>
-                                                    Open PDF ↗
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <SupportEmptyState icon="📄" message="No PDF documents available for this product yet." />
-                                )}
-                            </div>
-                        )}
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <SupportEmptyState message="No PDF documents available for this product yet." />
+                                    )}
+                                </div>
+                            ) : null}
 
-                        {/* ── Steps with Images tab ──────────────────── */}
-                        {activeTab === 'steps' && (
-                            <div className="tab-panel">
-                                {(product.guides && product.guides.length > 0) ? (
-                                    <div className="guides-step-list">
-                                        {product.guides.map(guide => (
-                                            <div key={guide.id} className="guide-block card">
-                                                <div className="guide-block-header">
-                                                    <h4 className="guide-title">{guide.title}</h4>
-                                                    <div className="guide-meta-tags">
-                                                        <Badge tone={guide.difficulty === 'hard' ? 'error' : guide.difficulty === 'medium' ? 'warning' : 'success'} size="sm">
-                                                            {guide.difficulty?.toUpperCase()}
-                                                        </Badge>
-                                                        <span className="meta-item" style={{ marginLeft: '0.75rem' }}>
-                                                            {guide.estimatedTime || 'N/A'}
-                                                        </span>
-                                                        <span className="meta-item" style={{ marginLeft: '0.75rem' }}>
-                                                            {guide.steps?.length || 0} Steps
-                                                        </span>
+                            {activeTab === 'steps' ? (
+                                <div className="tab-panel">
+                                    {(product.guides && product.guides.length > 0) ? (
+                                        <div className="guides-step-list">
+                                            {product.guides.map((guide) => (
+                                                <div key={guide.id} className="guide-block card">
+                                                    <div className="guide-block-header">
+                                                        <h4 className="guide-title">{guide.title}</h4>
+                                                        <div className="guide-meta-tags">
+                                                            <Badge tone={guide.difficulty === 'hard' ? 'error' : guide.difficulty === 'medium' ? 'warning' : 'success'} size="sm">
+                                                                {guide.difficulty?.toUpperCase()}
+                                                            </Badge>
+                                                            <span className="meta-item" style={{ marginLeft: '0.75rem' }}>
+                                                                {guide.estimatedTime || 'N/A'}
+                                                            </span>
+                                                            <span className="meta-item" style={{ marginLeft: '0.75rem' }}>
+                                                                {guide.steps?.length || 0} Steps
+                                                            </span>
+                                                        </div>
                                                     </div>
-                                                </div>
 
-                                                {guide.steps && guide.steps.length > 0 ? (
-                                                    <div className="vertical-steps">
-                                                        {guide.steps.map((step, sIdx) => {
-                                                            const images = (step.media || []).filter(m => m.type === 'image');
-                                                            return (
-                                                                <div key={step.id} className="hierarchy-step-item">
-                                                                    <div className="step-indicator">
-                                                                        <div className="step-number">{sIdx + 1}</div>
-                                                                        {sIdx < guide.steps.length - 1 && <div className="step-line"></div>}
+                                                    {guide.steps && guide.steps.length > 0 ? (
+                                                        <div className="vertical-steps">
+                                                            {guide.steps.map((step, stepIndex) => {
+                                                                const images = (step.media || []).filter((mediaItem) => mediaItem.type === 'image');
+                                                                return (
+                                                                    <div key={step.id} className="hierarchy-step-item">
+                                                                        <div className="step-indicator">
+                                                                            <div className="step-number">{stepIndex + 1}</div>
+                                                                            {stepIndex < guide.steps.length - 1 ? <div className="step-line"></div> : null}
+                                                                        </div>
+                                                                        <div className="step-content-box">
+                                                                            <h5 className="step-header">{step.title}</h5>
+                                                                            {step.description ? <p className="step-desc">{step.description}</p> : null}
+                                                                            {images.length > 0 ? (
+                                                                                <div className="step-media-gallery">
+                                                                                    {images.map((mediaItem) => (
+                                                                                        <div key={mediaItem.id} className="media-item-container">
+                                                                                            <img src={mediaItem.url} alt={mediaItem.title || 'Step image'} />
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                            ) : null}
+                                                                        </div>
                                                                     </div>
-                                                                    <div className="step-content-box">
-                                                                        <h5 className="step-header">{step.title}</h5>
-                                                                        {step.description && <p className="step-desc">{step.description}</p>}
-                                                                        {images.length > 0 && (
-                                                                            <div className="step-media-gallery">
-                                                                                {images.map(m => (
-                                                                                    <div key={m.id} className="media-item-container">
-                                                                                        <img src={m.url} alt={m.title || 'Step image'} />
-                                                                                    </div>
-                                                                                ))}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                ) : (
-                                                    <p className="empty-text">This guide has no steps yet.</p>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <SupportEmptyState icon="📋" message="No step-by-step guides available for this product yet." />
-                                )}
-                            </div>
-                        )}
-                    </section>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    ) : (
+                                                        <p className="empty-text">This guide has no steps yet.</p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <SupportEmptyState message="No step-by-step guides available for this product yet." />
+                                    )}
+                                </div>
+                            ) : null}
+                        </section>
+                    </div>
+
+                    {selectedComponents.length > 0 && (
+                        <RecommendationSection
+                            mode="components"
+                            currentProductId={id}
+                            categoryId={product.category?.id || product.category}
+                            selectedComponents={selectedComponents}
+                            onClearSelection={() => setSelectedComponents([])}
+                        />
+                    )}
+
+                    <RecommendationSection
+                        mode="product"
+                        currentProductId={id}
+                        categoryId={product.category?.id || product.category}
+                        title="Related Products"
+                    />
                 </div>
 
-                <RecommendationSection 
-                    currentProductId={id} 
-                    title="Recommended Similar Products" 
-                />
-            </div>
-
-            <style dangerouslySetInnerHTML={{ __html: DETAIL_STYLES }} />
+                <style dangerouslySetInnerHTML={{ __html: DETAIL_STYLES }} />
             </div>
         </MainLayout>
     );
 };
 
-/* ── small empty-state sub-component ─────────────────────────── */
-
-function SupportEmptyState({ icon, message }) {
+function SupportEmptyState({ message }) {
     return (
         <div className="support-empty-state card">
-            <span className="empty-icon">{icon}</span>
             <p>{message}</p>
         </div>
     );
 }
 
-/* ── styles ──────────────────────────────────────────────────── */
-
 const DETAIL_STYLES = `
-    .product-detail-page {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-        color: var(--color-text);
-    }
-
-    /* grid */
     .product-detail-grid {
         display: grid;
         grid-template-columns: 1fr 2fr;
@@ -403,7 +524,30 @@ const DETAIL_STYLES = `
         .product-detail-grid { grid-template-columns: 1fr; }
     }
 
-    /* about card */
+    .specifications {
+        display: grid;
+        gap: 0.75rem;
+    }
+    .spec-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.6rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .spec-item:last-child {
+        border-bottom: none;
+    }
+    .spec-label {
+        font-weight: 600;
+        color: var(--color-text);
+        font-size: 0.9rem;
+    }
+    .spec-value {
+        color: var(--color-text-muted);
+        font-size: 0.9rem;
+    }
+
     .product-info-card {
         padding: 1.5rem;
         height: fit-content;
@@ -413,16 +557,14 @@ const DETAIL_STYLES = `
         background: rgba(255,255,255,0.01);
     }
 
-    /* ── tabs ───────────────────────────────────────── */
     .support-tabs {
         display: flex;
         gap: 0.25rem;
         margin-bottom: 1.5rem;
         border-bottom: 2px solid var(--color-border);
-        padding-bottom: 0;
     }
     .support-tab {
-        display: flex;
+        display: inline-flex;
         align-items: center;
         gap: 0.45rem;
         padding: 0.65rem 1.1rem;
@@ -434,10 +576,6 @@ const DETAIL_STYLES = `
         cursor: pointer;
         border-bottom: 2px solid transparent;
         margin-bottom: -2px;
-        transition: color 0.2s, border-color 0.2s;
-    }
-    .support-tab:hover {
-        color: var(--color-text);
     }
     .support-tab.active {
         color: var(--color-primary);
@@ -453,52 +591,47 @@ const DETAIL_STYLES = `
         font-weight: 700;
         line-height: 1.4;
     }
-    .tab-panel {
-        animation: fadeIn 0.2s ease;
-    }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-    /* ── video tab ──────────────────────────────────── */
-    .video-list {
+    .video-list,
+    .guides-step-list,
+    .pdf-list {
         display: grid;
-        gap: 1.25rem;
+        gap: 1rem;
     }
-    .video-card {
-        overflow: hidden;
+
+    .video-card,
+    .pdf-row,
+    .guide-block {
         border: 1px solid var(--color-border);
+        overflow: hidden;
     }
+
     .video-player {
         width: 100%;
         max-height: 400px;
         background: #000;
         display: block;
     }
-    .video-info {
+    .video-info,
+    .guide-block-header {
         padding: 0.85rem 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.2rem;
     }
-    .video-title {
+    .video-title,
+    .guide-title,
+    .pdf-title {
         font-weight: 600;
-        font-size: 0.95rem;
     }
-    .video-context {
+    .video-context,
+    .pdf-context {
         color: var(--color-text-muted);
         font-size: 0.82rem;
     }
 
-    /* ── pdf tab ────────────────────────────────────── */
-    .pdf-list {
-        display: grid;
-        gap: 0.75rem;
-    }
     .pdf-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding: 0.9rem 1.1rem;
-        border: 1px solid var(--color-border);
     }
     .pdf-row-left {
         display: flex;
@@ -506,48 +639,16 @@ const DETAIL_STYLES = `
         gap: 0.75rem;
     }
     .pdf-icon {
-        font-size: 1.6rem;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--color-primary);
     }
     .pdf-meta {
         display: flex;
         flex-direction: column;
-    }
-    .pdf-title {
-        font-weight: 600;
-        font-size: 0.95rem;
-    }
-    .pdf-context {
-        font-size: 0.8rem;
-        color: var(--color-text-muted);
+        gap: 0.2rem;
     }
 
-    /* ── steps tab ──────────────────────────────────── */
-    .guides-step-list {
-        display: grid;
-        gap: 1.5rem;
-    }
-    .guide-block {
-        border: 1px solid var(--color-border);
-        overflow: hidden;
-        padding: 0;
-    }
-    .guide-block-header {
-        padding: 1.25rem 1.5rem;
-        border-bottom: 1px solid var(--color-border);
-        background: rgba(255,255,255,0.03);
-    }
-    .guide-title {
-        margin: 0 0 0.35rem 0;
-        font-size: 1.3rem;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-    }
-    .guide-meta-tags {
-        display: flex;
-        align-items: center;
-        color: var(--color-text-muted);
-        font-size: 0.85rem;
-    }
     .vertical-steps {
         display: flex;
         flex-direction: column;
@@ -575,7 +676,6 @@ const DETAIL_STYLES = `
         justify-content: center;
         font-weight: 800;
         font-size: 0.9rem;
-        box-shadow: 0 0 15px rgba(var(--color-primary-rgb), 0.3);
     }
     .step-line {
         width: 2px;
@@ -612,27 +712,15 @@ const DETAIL_STYLES = `
         border-radius: 8px;
         border: 1px solid var(--color-border);
     }
-    .empty-text {
-        padding: 1.5rem;
-        color: var(--color-text-muted);
-        text-align: center;
-    }
 
-    /* ── empty state ───────────────────────────────── */
     .support-empty-state {
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 4rem 2rem;
+        padding: 2rem;
         text-align: center;
         border: 1px dashed var(--color-border);
-        opacity: 0.7;
-    }
-    .empty-icon {
-        font-size: 3rem;
-        margin-bottom: 0.75rem;
-        opacity: 0.35;
+        color: var(--color-text-muted);
     }
 `;
 
