@@ -19,7 +19,7 @@
   "dependencies": {
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sails-mongo": "^0.0.3"
+    "sails-mongo": "^1.2.0"
   },
   "devDependencies": {
     "concurrently": "^9.2.1",

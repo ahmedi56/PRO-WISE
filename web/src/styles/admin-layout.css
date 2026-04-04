@@ -2,23 +2,23 @@
 .admin-shell {
     display: flex;
     min-height: 100vh;
-    background-color: var(--color-background);
+    background-color: var(--color-bg);
+    transition: background-color var(--duration-slow) var(--ease), color var(--duration-slow) var(--ease);
 }
 
 .admin-sidebar {
     width: 260px;
-    background-color: #0F172A;
-    /* Dark sidebar */
-    color: #E2E8F0;
+    background-color: var(--color-surface);
+    color: var(--color-text);
     display: flex;
     flex-direction: column;
-    border-right: 1px solid #1E293B;
+    border-right: 1px solid var(--color-border);
     position: fixed;
     top: 0;
     bottom: 0;
     left: 0;
     z-index: 50;
-    transition: transform var(--duration-normal) var(--ease);
+    transition: transform var(--duration-normal) var(--ease), background-color var(--duration-slow) var(--ease);
 }
 
 .admin-sidebar-header {
@@ -26,14 +26,14 @@
     display: flex;
     align-items: center;
     padding: 0 var(--space-5);
-    border-bottom: 1px solid #1E293B;
+    border-bottom: 1px solid var(--color-border);
     gap: var(--space-3);
 }
 
 .brand-text {
     font-weight: 700;
     font-size: 1.1rem;
-    color: #fff;
+    color: var(--color-text-strong);
     letter-spacing: -0.01em;
 }
 
@@ -56,7 +56,7 @@
     font-size: 0.65rem;
     font-weight: 800;
     text-transform: uppercase;
-    color: #64748B; /* Slightly lighter gray */
+    color: var(--color-text-muted);
     letter-spacing: 0.1em;
     padding: 0 var(--space-4) var(--space-2);
     opacity: 0.8;
@@ -68,7 +68,7 @@
     gap: var(--space-3);
     padding: 10px var(--space-4); /* Consistent padding */
     border-radius: var(--radius-md);
-    color: #94A3B8;
+    color: var(--color-text-muted);
     text-decoration: none;
     font-weight: 500;
     transition: all var(--duration-fast);
@@ -77,14 +77,15 @@
 }
 
 .admin-nav-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-strong);
     transform: translateX(2px); /* Subtle hover interaction */
 }
 
 .admin-nav-item.active {
     background-color: var(--color-primary);
     color: #fff;
+    /* Active item keeps white text on primary bg */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
@@ -112,12 +113,12 @@
 }
 
 .admin-user-profile {
-    padding: var(--space-5) var(--space-4); /* More padding */
-    border-top: 1px solid #1E293B;
+    padding: var(--space-5) var(--space-4);
+    border-top: 1px solid var(--color-border);
     display: flex;
     align-items: center;
     gap: var(--space-3);
-    background-color: rgba(15, 23, 42, 0.8);
+    background-color: var(--color-surface-raised);
 }
 
 .user-avatar {
@@ -142,7 +143,7 @@
 .user-name {
     font-weight: 600;
     font-size: 0.85rem;
-    color: #fff;
+    color: var(--color-text-strong);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -150,7 +151,7 @@
 
 .user-role {
     font-size: 0.7rem;
-    color: #64748B;
+    color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.02em;
     font-weight: 700;
@@ -174,19 +175,20 @@
 .admin-mobile-header {
     display: none;
     height: 60px;
-    background: #0F172A;
+    background: var(--color-surface);
     align-items: center;
     padding: 0 var(--space-4);
-    color: white;
+    color: var(--color-text-strong);
     position: sticky;
     top: 0;
     z-index: 40;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .menu-toggle {
     background: none;
     border: none;
-    color: white;
+    color: var(--color-text-strong);
     font-size: 1.5rem;
     cursor: pointer;
     margin-right: var(--space-4);

@@ -183,10 +183,11 @@ const authSlice = createSlice({
                 }
                 state.user = user;
             })
-            .addCase(loadUser.rejected, (state) => {
+            .addCase(loadUser.rejected, (state, action) => {
                 state.loading = false;
                 state.user = null;
                 state.token = null;
+                state.error = action.payload || 'Session expired';
             })
             // Update User
             .addCase(updateUser.pending, (state) => {

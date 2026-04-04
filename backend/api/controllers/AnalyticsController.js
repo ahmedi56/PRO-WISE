@@ -24,27 +24,53 @@ module.exports = {
       let companyStats = null;
 
       if (isSuperAdmin) {
-        const totalUsers = await User.count();
-        const adminRoles = await Role.find({ name: ['company_admin', 'administrator'] });
-        const adminRoleIds = adminRoles.map(r => r.id);
-        const pendingAdmins = await User.count({ 
-          status: 'pending', 
-          role: adminRoleIds 
-        });
-        const activeUsers = await User.count({ status: 'active' });
-        userStats = { totalUsers, pendingAdmins, activeUsers };
+        // Detailed user breakdown by role
+        const allRoles = await sails.models.role.find();
+        const roleBreakdown = [];
+        for (const r of allRoles) {
+          const countForRole = await sails.models.user.count({ role: r.id });
+          roleBreakdown.push({
+            name: r.name,
+            displayName: (r.name || '').replace(/_/g, ' ').toUpperCase(),
+            count: countForRole
+          });
+        }
 
-        const totalCompanies = await Company.count();
-        const pendingCompanies = await Company.count({ status: 'pending' });
-        const deactivatedCompanies = await Company.count({ status: 'deactivated' });
-        companyStats = { total: totalCompanies, pending: pendingCompanies, deactivated: deactivatedCompanies };
+        const totalUsers = await sails.models.user.count();
+        const activeUsers = await sails.models.user.count({ status: 'active' });
+        const pendingUsers = await sails.models.user.count({ status: 'pending' });
+        userStats = { totalUsers, activeUsers, pendingUsers, roles: roleBreakdown };
+
+        const totalCompanies = await sails.models.company.count();
+        const pendingCompanies = await sails.models.company.count({ status: 'pending' });
+        const deactivatedCompanies = await sails.models.company.count({ status: 'deactivated' });
+        
+        // Calculate Top Companies by Engagement
+        const allProducts = await sails.models.product.find().select(['company', 'totalScans']);
+        const companyScanMap = {};
+        allProducts.forEach(p => {
+          if (p.company) {
+            companyScanMap[p.company] = (companyScanMap[p.company] || 0) + (p.totalScans || 0);
+          }
+        });
+        
+        let topCompanies = [];
+        const companyIds = Object.keys(companyScanMap);
+        if (companyIds.length > 0) {
+          const companiesData = await sails.models.company.find({ id: companyIds }).select(['id', 'name']);
+          topCompanies = companiesData.map(c => ({
+            name: c.name,
+            visits: companyScanMap[c.id] || 0
+          })).sort((a, b) => b.visits - a.visits).slice(0, 5);
+        }
+
+        companyStats = { total: totalCompanies, pending: pendingCompanies, deactivated: deactivatedCompanies, topCompanies };
 
         // Global Operational stats for Super Admin
-        const totalProducts = await Product.count();
-        const publishedProducts = await Product.count({ status: 'published' });
-        const productsWithScans = await Product.find().select(['totalScans']);
-        const totalScans = productsWithScans.reduce((acc, p) => acc + (p.totalScans || 0), 0);
-        const totalGuides = await Guide.count();
+        const totalProducts = await sails.models.product.count();
+        const publishedProducts = await sails.models.product.count({ status: 'published' });
+        const totalScans = allProducts.reduce((acc, p) => acc + (p.totalScans || 0), 0);
+        const totalGuides = await sails.models.guide.count();
 
         return res.json({
           success: true,
@@ -63,28 +89,8 @@ module.exports = {
         });
       }
 
-      // Operational stats (Company Admin only)
-      if (companyId) {
-        const products = await Product.find({ company: companyId });
-        const totalProducts = products.length;
-        const publishedProducts = products.filter(p => p.status === 'published').length;
-        const totalScans = products.reduce((acc, p) => acc + (p.totalScans || 0), 0);
-        const totalGuides = await Guide.count({ product: products.map(p => p.id) });
-
-        return res.json({
-          success: true,
-          summary: {
-            products: {
-              total: totalProducts,
-              published: publishedProducts,
-              scans: totalScans
-            },
-            guides: {
-              total: totalGuides
-            }
-          }
-        });
-      }
+      // If we reached here without a response, it means the user was NOT a Super Admin
+      return res.status(403).json({ message: 'Forbidden: Analytics are restricted to Super Administrators only.' });
 
       return res.status(403).json({ message: 'Forbidden: No management metrics available for this role.' });
 

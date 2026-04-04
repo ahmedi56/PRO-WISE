@@ -6,7 +6,7 @@ const ProtectedRoute = ({ children }) => {
     const { token, user, loading } = useSelector((state) => state.auth);
 
     if (loading || (token && !user)) {
-        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0B1220', color: '#F8FAFC' }}>Loading session...</div>;
+        return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-text-strong)' }}>Loading session...</div>;
     }
 
     if (!token) {

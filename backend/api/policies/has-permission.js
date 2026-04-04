@@ -38,6 +38,11 @@ module.exports = async function (req, res, proceed) {
   // Standard permission check — ALL roles are checked, including super_admin
   const permissions = userWithRole.role.permissions || [];
 
+  // --- HOTFIX: Always allow Super Admin to view analytics, even if DB is out of sync
+  if (roleName === 'super_admin' && ['analytics.view', 'categories.manage'].includes(requiredPermission)) {
+    return proceed();
+  }
+
   if (!permissions.includes(requiredPermission)) {
     return res.status(403).json({
       message: `Forbidden: Missing required permission [${requiredPermission}]`,

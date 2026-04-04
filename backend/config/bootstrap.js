@@ -10,6 +10,12 @@
 
 module.exports.bootstrap = async function () {
   const isForced = process.env.FORCE_SEED === 'true';
+
+  // check if ORM loaded
+  if (!sails.models) {
+    throw new Error('ORM hook not loaded! The application cannot start without a database connection.');
+  }
+
   const Category = sails.models.category;
   const Role = sails.models.role;
   const User = sails.models.user;
@@ -18,9 +24,19 @@ module.exports.bootstrap = async function () {
   const GuideType = sails.models.guidetype;
   const Guide = sails.models.guide;
 
-  // check if ORM loaded
-  if (!sails.models) {
-    throw new Error('ORM hook not loaded! The application cannot start without a database connection.');
+  sails.log.info('BOOTSTRAP: Synchronizing system roles and permissions...');
+  const defaultRoles = sails.config.custom.defaultRoles || [];
+  for (const roleData of defaultRoles) {
+    const existing = await Role.findOne({ name: roleData.name });
+    if (!existing) {
+      await Role.create(roleData);
+      sails.log.info(`Seeded new role: ${roleData.name}`);
+    } else {
+      await Role.updateOne({ id: existing.id }).set({
+        description: roleData.description,
+        permissions: roleData.permissions
+      });
+    }
   }
 
   // Fast-path: If categories exist and we aren't forcing a seed, skip the heavy loops
@@ -33,48 +49,23 @@ module.exports.bootstrap = async function () {
     return;
   }
 
-  sails.log.info(`BOOTSTRAP: Starting ${isForced ? 'FORCED ' : ''}seeding process...`);
+  // 2. Guide Types
+  const guideTypes = [
+    { name: 'Replacement', slug: 'replacement', description: 'Step-by-step part swap instructions', icon: 'swap' },
+    { name: 'Disassembly', slug: 'disassembly', description: 'How to open/take apart a device', icon: 'tool' },
+    { name: 'Technique', slug: 'technique', description: 'Skill-based instruction', icon: 'book' },
+    { name: 'Troubleshooting', slug: 'troubleshooting', description: 'Diagnostic flowcharts or Q&A', icon: 'question' },
+    { name: 'Maintenance', slug: 'maintenance', description: 'Routine care instructions', icon: 'clean' },
+    { name: 'Teardown', slug: 'teardown', description: 'Informative analysis of internal components', icon: 'eye' }
+  ];
 
-  // Seed default roles, company, and guide types in parallel
-  const defaultRoles = sails.config.custom.defaultRoles || [];
-  
-  await Promise.all([
-    // 1. Roles
-    (async () => {
-      for (const roleData of defaultRoles) {
-        const existing = await Role.findOne({ name: roleData.name });
-        if (!existing) {
-          await Role.create(roleData);
-          sails.log.info(`Seeded role: ${roleData.name}`);
-        } else {
-          await Role.updateOne({ id: existing.id }).set({
-            description: roleData.description,
-            permissions: roleData.permissions
-          });
-        }
-      }
-    })(),
-
-    // 2. Guide Types
-    (async () => {
-      const guideTypes = [
-        { name: 'Replacement', slug: 'replacement', description: 'Step-by-step part swap instructions', icon: 'swap' },
-        { name: 'Disassembly', slug: 'disassembly', description: 'How to open/take apart a device', icon: 'tool' },
-        { name: 'Technique', slug: 'technique', description: 'Skill-based instruction', icon: 'book' },
-        { name: 'Troubleshooting', slug: 'troubleshooting', description: 'Diagnostic flowcharts or Q&A', icon: 'question' },
-        { name: 'Maintenance', slug: 'maintenance', description: 'Routine care instructions', icon: 'clean' },
-        { name: 'Teardown', slug: 'teardown', description: 'Informative analysis of internal components', icon: 'eye' }
-      ];
-
-      for (const gt of guideTypes) {
-        const existing = await GuideType.findOne({ name: gt.name });
-        if (!existing) {
-          await GuideType.create(gt);
-          sails.log.info(`Seeded guide type: ${gt.name}`);
-        }
-      }
-    })()
-  ]);
+  for (const gt of guideTypes) {
+    const existing = await GuideType.findOne({ name: gt.name });
+    if (!existing) {
+      await GuideType.create(gt);
+      sails.log.info(`Seeded guide type: ${gt.name}`);
+    }
+  }
 
   // Seed default users and company (Requires roles to be finished, but we'll do sequential here for safety as it's small)
   // Seed a default super_admin user if no super_admins exist

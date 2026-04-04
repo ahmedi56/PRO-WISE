@@ -10,11 +10,11 @@ const NAV_ITEMS = [
     { label: 'Users', path: '/admin/users', icon: '👥', permission: 'users.manage', section: 'Governance' },
     { label: 'Categories', path: '/admin/categories', icon: '🏷️', permission: 'categories.manage', section: 'Governance' },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: '📜', permission: 'audit.view', section: 'Governance' },
+    { label: 'Analytics', path: '/admin/analytics', icon: '📊', permission: 'analytics.view', section: 'Governance' },
     
     // Operations
     { label: 'Products', path: '/admin/products', icon: '📦', permission: 'products.manage', section: 'Operations' },
-    { label: 'QR Codes', path: '/admin/qr-generate', icon: '📱', permission: 'qr.generate', section: 'Operations' },
-    { label: 'Analytics', path: '/admin/analytics', icon: '📊', permission: 'analytics.view', section: 'Operations' }
+    { label: 'QR Codes', path: '/admin/qr-generate', icon: '📱', permission: 'qr.generate', section: 'Operations' }
 ];
 
 const AdminLayout = () => {
@@ -28,6 +28,12 @@ const AdminLayout = () => {
     const permissions = user?.role?.permissions || user?.Role?.permissions || [];
 
     const visibleItems = NAV_ITEMS.filter(item => {
+        // Hard-restriction: Super Admin ONLY manages Governance, but ALWAYS sees everything in Governance
+        if (userRole === 'super_admin') {
+            return item.section === 'Governance';
+        }
+        
+        // For Company Admins, strictly rely on backend permissions
         return permissions.includes(item.permission);
     });
 
@@ -36,7 +42,7 @@ const AdminLayout = () => {
     );
 
     // Determine title based on current path for mobile header
-    const currentTitle = NAV_ITEMS.find(item => location.pathname.startsWith(item.path))?.label || 'Admin Workspace';
+    const currentTitle = NAV_ITEMS.find(item => location.pathname.startsWith(item.path))?.label || (userRole === 'super_admin' ? 'Super Admin Workspace' : 'Operations Workspace');
 
     return (
         <div className="admin-shell">
@@ -44,13 +50,15 @@ const AdminLayout = () => {
             <aside className={`admin-sidebar ${mobileOpen ? 'open' : ''}`}>
                 <div className="admin-sidebar-header">
                     <img src="/pro-wise.png" alt="PRO-WISE Logo" className="brand-logo" />
-                    <span className="brand-text">Admin Console</span>
+                    <div className="sidebar-title">
+                        {userRole === 'super_admin' ? 'Super Admin Workspace' : 'Operations Workspace'}
+                    </div>
                 </div>
 
                 <nav className="admin-nav">
                     {sections.map((section) => (
                         <div key={section} className="admin-nav-section">
-                            <div className="admin-nav-section-title">{section}</div>
+                            <div className="admin-nav-section-title">{userRole === 'super_admin' ? section : 'Operation'}</div>
                             {visibleItems.filter(item => item.section === section).map((item) => (
                                 <NavLink
                                     key={item.path}
@@ -72,9 +80,9 @@ const AdminLayout = () => {
                 <div className="admin-user-profile">
                     <div className="user-avatar">{user?.name?.charAt(0) || 'A'}</div>
                     <div className="user-info">
-                        <span className="user-name">{user?.name || 'Admin'}</span>
+                        <span className="user-name">{user?.name || (userRole === 'super_admin' ? 'Super Admin' : 'Operations Admin')}</span>
                         <span className="user-role">
-                            {(user?.role?.name || 'Administrator').replace(/_/g, ' ').toUpperCase()}
+                            {(user?.role?.name || (userRole === 'super_admin' ? 'Platform Governance' : 'Operations Manager')).replace(/_/g, ' ').toUpperCase()}
                         </span>
                     </div>
                 </div>

@@ -24,15 +24,24 @@ module.exports = {
         return res.status(404).json({ message: 'Product not found' });
       }
 
-      // Tenant isolation
-      const userCompanyId = String(req.companyId || req.user?.companyId || '');
-      const productCompanyId = String(product.company || '');
+      // Strict Tenant Isolation
+      const userCompanyId = (req.companyId || req.user?.companyId || '').toString();
+      const productCompanyId = (product.company || '').toString();
 
       sails.log.info(`QR Generation attempt for product ${product.id}. User Company: ${userCompanyId}, Product Company: ${productCompanyId}`);
 
-      if (userCompanyId && productCompanyId && productCompanyId !== userCompanyId) {
+      // 1. Ensure the user HAS a company (Platform users without a company cannot generate QR codes for now)
+      if (!userCompanyId) {
         return res.status(403).json({ 
-          message: 'Forbidden: Product does not belong to your company',
+          message: 'Forbidden: You must be associated with a company to generate QR codes.'
+        });
+      }
+
+      // 2. Ensure high-integrity match: 
+      //    Allow if the product belongs to the user's company OR if the product is "global" (no company assigned yet).
+      if (productCompanyId && productCompanyId !== userCompanyId) {
+        return res.status(403).json({ 
+          message: 'Forbidden: Product belongs to a different company',
           debug: { userCompanyId, productCompanyId }
         });
       }

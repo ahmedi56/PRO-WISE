@@ -29,14 +29,9 @@ module.exports.custom = {
       description: 'Platform Super Administrator — approves/rejects companies, manages users, views platform analytics.',
       permissions: [
         'users.manage',
-        'analytics.view',
-        'audit.view',
         'categories.manage',
-        'products.manage',
-        'products.update',
-        'guides.manage',
-        'guides.update',
-        'qr.generate'
+        'audit.view',
+        'analytics.view'
       ]
     },
     {
@@ -48,8 +43,7 @@ module.exports.custom = {
         'guides.manage',
         'guides.update',
         'technicians.manage',
-        'qr.generate',
-        'analytics.view'
+        'qr.generate'
       ]
     },
     {
@@ -61,8 +55,7 @@ module.exports.custom = {
         'guides.manage',
         'guides.update',
         'technicians.manage',
-        'qr.generate',
-        'analytics.view'
+        'qr.generate'
       ]
     },
     {

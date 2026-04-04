@@ -22,8 +22,10 @@ const ProfilePage = () => {
     const [activeTab, setActiveTab] = useState('profile'); // 'profile' or 'company'
 
     useEffect(() => {
-        dispatch(loadUser());
-    }, [dispatch]);
+        if (!user) {
+            dispatch(loadUser());
+        }
+    }, [dispatch, user]);
 
     useEffect(() => {
         if (user) {
@@ -118,14 +120,14 @@ const ProfilePage = () => {
                         <button 
                             className={`tab-item ${activeTab === 'profile' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('profile'); setIsEditing(false); }}
-                            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid var(--color-primary)' : 'none', cursor: 'pointer', fontWeight: activeTab === 'profile' ? '600' : '400' }}
+                            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', borderBottom: activeTab === 'profile' ? '2px solid var(--color-primary)' : 'none', cursor: 'pointer', fontWeight: activeTab === 'profile' ? '600' : '400', color: activeTab === 'profile' ? 'var(--color-primary)' : 'var(--color-text-muted)', fontFamily: 'inherit', fontSize: 'inherit' }}
                         >
                             My Profile
                         </button>
                         <button 
                             className={`tab-item ${activeTab === 'company' ? 'active' : ''}`}
                             onClick={() => { setActiveTab('company'); setIsEditing(false); }}
-                            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', borderBottom: activeTab === 'company' ? '2px solid var(--color-primary)' : 'none', cursor: 'pointer', fontWeight: activeTab === 'company' ? '600' : '400' }}
+                            style={{ padding: '0.5rem 1rem', background: 'none', border: 'none', borderBottom: activeTab === 'company' ? '2px solid var(--color-primary)' : 'none', cursor: 'pointer', fontWeight: activeTab === 'company' ? '600' : '400', color: activeTab === 'company' ? 'var(--color-primary)' : 'var(--color-text-muted)', fontFamily: 'inherit', fontSize: 'inherit' }}
                         >
                             Company Profile
                         </button>

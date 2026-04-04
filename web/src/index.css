@@ -97,6 +97,65 @@
   --z-toast: 500;
 }
 
+/* --- â‚¬─ â‚¬ Light Mode Overrides ─ â‚¬─ â‚¬ */
+[data-theme='light'] {
+  --color-bg: #F8FAFC;
+  --color-surface: #FFFFFF;
+  --color-surface-raised: #F1F5F9;
+  --color-surface-hover: #E2E8F0;
+  --color-glass: rgba(255, 255, 255, 0.8);
+  --color-glass-border: rgba(0, 0, 0, 0.05);
+  --color-text: #475569;
+  --color-text-strong: #0F172A;
+  --color-text-muted: #94A3B8;
+  --color-border: #E2E8F0;
+  --color-border-hover: #CBD5E1;
+
+  /* Shadows — lighten for light mode */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Light mode component overrides */
+[data-theme='light'] .glassmorphism {
+  background: rgba(255, 255, 255, 0.7) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-theme='light'] .glass-input {
+  background: rgba(0, 0, 0, 0.02) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='light'] .glass-input:focus {
+  background: rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme='light'] .auth-form-panel .glassmorphism {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='light'] .auth-form-header h2 {
+  color: var(--color-text-strong);
+}
+
+[data-theme='light'] .input-field-dark .input {
+  background: rgba(0, 0, 0, 0.03) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme='light'] .input-field-dark .input:focus {
+  background: rgba(15, 118, 110, 0.04) !important;
+}
+
+[data-theme='light'] .circle-core {
+  background-color: var(--color-bg);
+}
+
 /* ─â‚¬─â‚¬ Reset & Base ─â‚¬─â‚¬ */
 *,
 *::before,
@@ -114,6 +173,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   line-height: 1.6;
+  transition: background-color var(--duration-slow) var(--ease), color var(--duration-slow) var(--ease);
 }
 
 #root {
@@ -184,6 +244,7 @@ a:hover {
   padding: var(--space-8);
   width: 100%;
   margin: 0 auto;
+  transition: background-color var(--duration-base) var(--ease), border-color var(--duration-base) var(--ease);
 }
 
 .card-glass {
@@ -495,6 +556,7 @@ a:hover {
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
+  transition: background-color var(--duration-slow) var(--ease), border-color var(--duration-slow) var(--ease);
 }
 
 .navbar-brand {
@@ -543,6 +605,31 @@ a:hover {
   font-weight: 700;
   font-size: var(--text-sm);
   margin-left: var(--space-3);
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease);
+  outline: none;
+}
+
+.theme-toggle-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-surface-hover);
+}
+
+.theme-icon {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2px;
 }
 
 /* ─â‚¬─â‚¬ Tables ─â‚¬─â‚¬ */
@@ -625,7 +712,7 @@ a:hover {
 .auth-layout {
   display: flex;
   min-height: 100vh;
-  background-color: #05080d;
+  background-color: var(--color-bg);
   overflow: hidden;
 }
 
@@ -642,7 +729,7 @@ a:hover {
   justify-content: center;
   align-items: center;
   padding: var(--space-12);
-  background: #05080d;
+  background: var(--color-bg);
   position: relative;
   z-index: 10;
 }
@@ -683,7 +770,7 @@ a:hover {
 /* ── BRAND PANEL (Right Side) ─────────── */
 .auth-brand {
   flex: 1;
-  background: radial-gradient(circle at 70% 50%, #112d45 0%, #05080d 100%);
+  background: radial-gradient(circle at 70% 50%, var(--color-surface) 0%, var(--color-bg) 100%);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -1654,7 +1741,7 @@ a:hover {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(11, 18, 32, 0.85);
+  background: var(--color-glass);
   backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;

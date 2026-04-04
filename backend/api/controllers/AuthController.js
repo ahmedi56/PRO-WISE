@@ -204,6 +204,18 @@ module.exports = {
         }
       }
 
+      // --- TEMP HOTFIX: Force Super Admin Permissions Sync Without Restart ---
+      if (user.role && user.role.name === 'super_admin') {
+        const requiredPerms = ['users.manage', 'categories.manage', 'audit.view', 'analytics.view'];
+        const hasAll = requiredPerms.every(p => (user.role.permissions || []).includes(p));
+        if (!hasAll) {
+          sails.log.info('Hotfixing missing Super Admin permissions in DB during login...');
+          const updatedRole = await Role.updateOne({ id: user.role.id }).set({ permissions: requiredPerms });
+          user.role = updatedRole; // update the output
+        }
+      }
+      // ------------------------------------------------------------------------
+
       const secret = sails.config.custom.jwtSecret;
       const roleName = normalizeRoleName(user.role.name);
       
@@ -317,6 +329,19 @@ module.exports = {
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
       }
+
+      // --- TEMP HOTFIX: Force Super Admin Permissions Sync Without Restart ---
+      if (user.role && user.role.name === 'super_admin') {
+        const requiredPerms = ['users.manage', 'categories.manage', 'audit.view', 'analytics.view'];
+        const hasAll = requiredPerms.every(p => (user.role.permissions || []).includes(p));
+        if (!hasAll) {
+          sails.log.info('Hotfixing missing Super Admin permissions in DB...');
+          const updatedRole = await Role.updateOne({ id: user.role.id }).set({ permissions: requiredPerms });
+          user.role = updatedRole; // update the response object
+        }
+      }
+      // ------------------------------------------------------------------------
+
       return res.json(sanitizeUser(user));
     } catch (err) {
       sails.log.error('Me error:', err);

@@ -27,7 +27,7 @@ import SearchPage from './pages/SearchPage';
 
 const HomeRedirect = () => {
     const { user, token, loading } = useSelector((state) => state.auth);
-    if (loading || (token && !user)) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0B1220', color: '#F8FAFC' }}>Loading session...</div>;
+    if (loading || (token && !user)) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: 'var(--color-bg)', color: 'var(--color-text-strong)' }}>Loading session...</div>;
     if (!user) return <Navigate to="/login" replace />;
 
     // Everyone goes to categories first as the main entry point
@@ -144,7 +144,7 @@ function App() {
 
                     {/* New Admin Features Stubs (Routes placeholder) */}
                     <Route path="qr-generate" element={<PermissionProtectedRoute permission="qr.generate"><QRGeneratorPage /></PermissionProtectedRoute>} />
-                    <Route path="analytics" element={<PermissionProtectedRoute permission="analytics.view"><AnalyticsPage /></PermissionProtectedRoute>} />
+                    <Route path="analytics" element={<SuperAdminRoute><AnalyticsPage /></SuperAdminRoute>} />
                     <Route path="audit-logs" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />
                 </Route>
 

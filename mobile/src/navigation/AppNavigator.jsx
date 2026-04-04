@@ -43,6 +43,7 @@ const AppNavigator = () => {
                     <>
                         <Stack.Screen name="Main" component={MainTabNavigator} options={{ headerShown: false }} />
                         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+                        <Stack.Screen name="QRScanner" component={require('../screens/QRScannerScreen').default} options={{ title: 'Scan QR Code' }} />
                         <Stack.Screen name="ProductDetail" component={require('../screens/ProductDetailScreen').default} />
                         <Stack.Screen name="ProductForm" component={require('../screens/ProductFormScreen').default} options={({ route }) => ({ title: route.params?.id ? 'Edit Product' : 'Add Product' })} />
                         <Stack.Screen name="Register" component={RegisterScreen} />
