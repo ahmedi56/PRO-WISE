@@ -82,6 +82,7 @@ def extract_technical_ids(text):
         r'\br[3579]-\d{4,5}[A-Za-z]{0,2}\b',       # r7-5800X
         r'\b(?:RTX|GTX|RX|XT|ARC|A)\s?\d{3,4}(?:\s?Ti|\s?XT)?\b', # RTX 3080, RX 6800XT
         r'\b[A-Z0-9]{2,5}-[A-Z0-9]{4,10}\b',       # SM-G998B, GA-B450
+        r'\b(?:IPHONE|GALAXY|PIXEL|SURFACE)\s?\d{1,2}(?:\s?PRO|\s?ULTRA|\s?PLUS|\s?MAX)?\b', # iPhone 15, Galaxy S22
     ]
     
     detected = set()
@@ -157,11 +158,11 @@ def rank():
                 is_exact_id = any(m in c_name or m in c_model for m in detected_models)
 
             # Thresholds
-            if is_exact_id or score_val >= 0.88:
+            if is_exact_id or score_val >= 0.86:
                 exact.append({"id": candidate["id"], "score": score_val, "reason": "Exact technical match" if is_exact_id else "High precision AI match"})
-            elif score_val >= 0.70:
+            elif score_val >= 0.60:
                 similar.append({"id": candidate["id"], "score": score_val, "reason": "Similar product"})
-            elif score_val >= 0.40:
+            elif score_val >= 0.35:
                 related.append({"id": candidate["id"], "score": score_val, "reason": "Discovery option"})
 
         # Sort by score within each category

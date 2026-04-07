@@ -14,6 +14,7 @@ const NAV_ITEMS = [
     
     // Operations
     { label: 'Products', path: '/admin/products', icon: '📦', permission: 'products.manage', section: 'Operations' },
+    { label: 'Support Content', path: '/admin/support', icon: '🛠️', permission: 'products.manage', section: 'Operations' },
     { label: 'QR Codes', path: '/admin/qr-generate', icon: '📱', permission: 'qr.generate', section: 'Operations' }
 ];
 

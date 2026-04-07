@@ -17,7 +17,7 @@ module.exports = async function (req, res, proceed) {
 
   const roleName = (user.role && user.role.name ? user.role.name : '').toLowerCase();
 
-  if (roleName === 'company_admin' || roleName === 'administrator') {
+  if (roleName === 'company_admin' || roleName === 'administrator' || roleName === 'super_admin') {
     return proceed();
   }
 

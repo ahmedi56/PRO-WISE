@@ -111,6 +111,34 @@ module.exports.policies = {
   },
   AuditLogController: {
     '*': ['isAuthenticated', 'isSuperAdmin']
+  },
+
+  // ─── Repair Support Content System ──────────────────────
+  SupportController: {
+    'getProductSupport': 'isAuthenticated'
+  },
+  RepairGuideController: {
+    'create': ['isAuthenticated', 'isCompanyAdmin'],
+    'getOne': 'isAuthenticated',
+    'delete': ['isAuthenticated', 'isCompanyAdmin']
+  },
+  RepairStepController: {
+    'create': ['isAuthenticated', 'isCompanyAdmin'],
+    'getByGuide': 'isAuthenticated',
+    'update': ['isAuthenticated', 'isCompanyAdmin'],
+    'delete': ['isAuthenticated', 'isCompanyAdmin']
+  },
+  SupportVideoController: {
+    'create': ['isAuthenticated', 'isCompanyAdmin'],
+    'getByProduct': 'isAuthenticated',
+    'delete': ['isAuthenticated', 'isCompanyAdmin']
+  },
+  SupportPDFController: {
+    'upload': ['isAuthenticated', 'isCompanyAdmin'],
+    'create': ['isAuthenticated', 'isCompanyAdmin'],
+    'view': ['isAuthenticated'], // Customers can view
+    'getByProduct': 'isAuthenticated',
+    'delete': ['isAuthenticated', 'isCompanyAdmin']
   }
 
 };

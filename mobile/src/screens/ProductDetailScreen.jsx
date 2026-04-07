@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Image } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { logout } from '../store/slices/authSlice';
 import API_URL from '../constants/config';
@@ -42,13 +42,70 @@ const collectGuideStats = (guides = []) => {
     return { steps, media };
 };
 
+const classifyMedia = (guides = [], supportVideos = [], supportPDFs = []) => {
+    const videos = [];
+    const pdfs = [];
+
+    // Aggregate Legacy Guides
+    guides.forEach((guide) => {
+        (guide.steps || []).forEach((step) => {
+            (step.media || []).forEach((mediaItem) => {
+                const context = {
+                    guideTitle: guide.title,
+                    stepTitle: step.title,
+                    stepNumber: step.stepNumber,
+                };
+                if (mediaItem.type === 'video') {
+                    videos.push({ ...mediaItem, author: 'Legacy Support', _ctx: context });
+                }
+                if (mediaItem.type === 'pdf') {
+                    pdfs.push({ ...mediaItem, author: 'Legacy Support', _ctx: context });
+                }
+            });
+        });
+    });
+
+    // Aggregate Native Support Videos
+    supportVideos.forEach((video) => {
+        videos.push({
+            id: video.id,
+            videoId: video.videoId,
+            videoUrl: video.videoUrl,
+            title: video.title,
+            author: video.author || 'Internal Support',
+            _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Video' }
+        });
+    });
+
+    // Aggregate Native Support PDFs
+    supportPDFs.forEach((pdf) => {
+        pdfs.push({
+            id: pdf.id,
+            title: pdf.title,
+            url: pdf.fileUrl,
+            author: pdf.author || 'Internal Support',
+            _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Document' }
+        });
+    });
+
+    return { videos, pdfs };
+};
+
+const SUPPORT_TABS = [
+    { key: 'steps', label: 'Steps', icon: 'list-outline' },
+    { key: 'videos', label: 'Videos', icon: 'videocam-outline' },
+    { key: 'pdfs', label: 'PDFs', icon: 'document-text-outline' },
+];
+
 const ProductDetailScreen = ({ route, navigation }) => {
     const { id, product } = route.params || {};
     const dispatch = useDispatch();
+    const { token } = useSelector((state) => state.auth);
     const [data, setData] = useState(product || null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedComponents, setSelectedComponents] = useState([]);
+    const [activeTab, setActiveTab] = useState('steps');
 
     const handleUnauthorized = () => dispatch(logout());
 
@@ -97,6 +154,13 @@ const ProductDetailScreen = ({ route, navigation }) => {
     };
 
     const guideStats = useMemo(() => collectGuideStats(data?.guides || []), [data?.guides]);
+    const { videos, pdfs } = useMemo(() => classifyMedia(data?.guides, data?.supportVideos, data?.supportPDFs), [data]);
+
+    const tabCounts = useMemo(() => ({
+        steps: (data?.guides || []).reduce((count, guide) => count + (guide.steps?.length || 0), 0),
+        videos: videos.length,
+        pdfs: pdfs.length,
+    }), [data?.guides, videos, pdfs]);
 
     if (loading) {
         return (
@@ -216,24 +280,150 @@ const ProductDetailScreen = ({ route, navigation }) => {
             </View>
 
             <View style={styles.card}>
-                <Text style={styles.sectionTitle}>Repair Guides and Resources</Text>
-                {guides.length > 0 ? (
-                    <>
-                        <Text style={styles.helperText}>{guideStats.steps} steps across {guides.length} guides with {guideStats.media} media items.</Text>
-                        {guides.map((guide) => (
-                            <View key={guide.id} style={styles.guideItem}>
-                                <Ionicons name="document-text-outline" size={20} color={colors.primary} />
-                                <View style={{ flex: 1 }}>
-                                    <Text style={styles.guideName}>{guide.title}</Text>
-                                    <Text style={styles.guideMeta}>
-                                        {[guide.difficulty, guide.estimatedTime, `${guide.steps?.length || 0} steps`].filter(Boolean).join(' - ')}
-                                    </Text>
-                                </View>
-                            </View>
+                <View style={styles.supportHeader}>
+                    <Text style={styles.sectionTitle}>Repair Guides & Support</Text>
+                    <View style={styles.tabsContainer}>
+                        {SUPPORT_TABS.map((tab) => (
+                            <TouchableOpacity
+                                key={tab.key}
+                                style={[styles.tab, activeTab === tab.key && styles.activeTab]}
+                                onPress={() => setActiveTab(tab.key)}
+                            >
+                                <Ionicons 
+                                    name={tab.icon} 
+                                    size={18} 
+                                    color={activeTab === tab.key ? colors.primary : colors.textMuted} 
+                                />
+                                <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabLabel]}>
+                                    {tab.label}
+                                </Text>
+                                {tabCounts[tab.key] > 0 && (
+                                    <View style={styles.tabBadge}>
+                                        <Text style={styles.tabBadgeText}>{tabCounts[tab.key]}</Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
                         ))}
-                    </>
-                ) : (
-                    <Text style={styles.bodyTextMuted}>No manuals or guides are attached to this product yet.</Text>
+                    </View>
+                </View>
+
+                {activeTab === 'steps' && (
+                    <View style={styles.tabPanel}>
+                        {guides.length > 0 ? (
+                            guides.map((guide) => (
+                                <View key={guide.id} style={styles.guideBlock}>
+                                    <View style={styles.guideHeader}>
+                                        <Text style={styles.guideTitle}>{guide.title}</Text>
+                                        <View style={styles.guideMetaRow}>
+                                            <View style={[styles.badge, { backgroundColor: guide.difficulty === 'hard' ? colors.errorLight : guide.difficulty === 'medium' ? colors.warningLight : colors.successLight }]}>
+                                                <Text style={[styles.badgeText, { color: guide.difficulty === 'hard' ? colors.error : guide.difficulty === 'medium' ? colors.warning : colors.success }]}>
+                                                    {guide.difficulty?.toUpperCase()}
+                                                </Text>
+                                            </View>
+                                            <Text style={styles.guideMetaText}>{guide.estimatedTime || 'N/A'}</Text>
+                                            <Text style={styles.guideMetaText}>{guide.steps?.length || 0} Steps</Text>
+                                        </View>
+                                    </View>
+
+                                    {guide.steps && guide.steps.length > 0 ? (
+                                        <View style={styles.stepsList}>
+                                            {guide.steps.map((step, index) => {
+                                                const images = (step.media || []).filter(m => m.type === 'image');
+                                                return (
+                                                    <View key={step.id} style={styles.stepItem}>
+                                                        <View style={styles.stepIndicator}>
+                                                            <View style={styles.stepCircle}>
+                                                                <Text style={styles.stepNumber}>{index + 1}</Text>
+                                                            </View>
+                                                            {index < guide.steps.length - 1 && <View style={styles.stepLine} />}
+                                                        </View>
+                                                        <View style={styles.stepContent}>
+                                                            <Text style={styles.stepTitle}>{step.title}</Text>
+                                                            {step.description ? <Text style={styles.stepDesc}>{step.description}</Text> : null}
+                                                            {images.length > 0 && (
+                                                                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stepGallery}>
+                                                                    {images.map((img) => (
+                                                                        <Image 
+                                                                            key={img.id} 
+                                                                            source={{ uri: img.url }} 
+                                                                            style={styles.stepImage} 
+                                                                            resizeMode="cover"
+                                                                        />
+                                                                    ))}
+                                                                </ScrollView>
+                                                            )}
+                                                        </View>
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
+                                    ) : (
+                                        <Text style={styles.emptyText}>No steps available for this guide.</Text>
+                                    )}
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>No repair guides available yet.</Text>
+                        )}
+                    </View>
+                )}
+
+                {activeTab === 'videos' && (
+                    <View style={styles.tabPanel}>
+                        {videos.length > 0 ? (
+                            videos.map((video, index) => (
+                                <TouchableOpacity 
+                                    key={video.id || index} 
+                                    style={styles.mediaRow}
+                                    onPress={() => {
+                                        const url = video.videoUrl || (video.videoId ? `https://www.youtube.com/watch?v=${video.videoId}` : video.url);
+                                        if (url) Linking.openURL(url);
+                                    }}
+                                >
+                                    <View style={styles.videoThumbnailPlaceholder}>
+                                        <Ionicons name="play-circle-outline" size={32} color={colors.primary} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.mediaTitle}>{video.title || 'Support Video'}</Text>
+                                        <Text style={styles.mediaSub}>{video._ctx.guideTitle} • {video.author}</Text>
+                                    </View>
+                                    <Ionicons name="open-outline" size={20} color={colors.textMuted} />
+                                </TouchableOpacity>
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>No support videos available.</Text>
+                        )}
+                    </View>
+                )}
+
+                {activeTab === 'pdfs' && (
+                    <View style={styles.tabPanel}>
+                        {pdfs.length > 0 ? (
+                            pdfs.map((pdf, index) => (
+                                <TouchableOpacity 
+                                    key={pdf.id || index} 
+                                    style={styles.mediaRow}
+                                    onPress={() => {
+                                        const fullUrl = (pdf.url && (pdf.url.startsWith('http') || pdf.url.startsWith('//'))) 
+                                            ? pdf.url 
+                                            : `${API_URL}${pdf.url}?token=${token}`;
+                                        Linking.openURL(fullUrl);
+                                    }}
+                                >
+                                    <View style={styles.pdfIconPlaceholder}>
+                                        <Text style={styles.pdfIconText}>PDF</Text>
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={styles.mediaTitle}>{pdf.title || 'Document'}</Text>
+                                        <Text style={styles.mediaSub}>{pdf._ctx.guideTitle} • {pdf.author}</Text>
+                                    </View>
+                                    <Ionicons name="download-outline" size={20} color={colors.primary} />
+                                </TouchableOpacity>
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>No PDF resources available.</Text>
+                        )}
+                    </View>
                 )}
             </View>
 
@@ -331,6 +521,40 @@ const styles = StyleSheet.create({
     guideName: { fontSize: typography.body.fontSize, color: colors.textStrong, fontWeight: '600' },
     guideMeta: { fontSize: typography.sm.fontSize, color: colors.textMuted, marginTop: 2 },
     errorText: { fontSize: typography.body.fontSize, color: colors.error, textAlign: 'center' },
+    supportHeader: { marginBottom: spacing.lg },
+    tabsContainer: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
+    tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, gap: 6, borderBottomWidth: 2, borderBottomColor: 'transparent' },
+    activeTab: { borderBottomColor: colors.primary },
+    tabLabel: { fontSize: typography.sm.fontSize, color: colors.textMuted, fontWeight: '600' },
+    activeTabLabel: { color: colors.primary, fontWeight: '700' },
+    tabBadge: { backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 2 },
+    tabBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+    tabPanel: { marginTop: spacing.md },
+    guideBlock: { marginBottom: spacing.xl, backgroundColor: colors.surfaceRaised, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+    guideHeader: { marginBottom: spacing.lg },
+    guideTitle: { fontSize: typography.bodyBold.fontSize, fontWeight: '700', color: colors.textStrong, marginBottom: 4 },
+    guideMetaRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+    guideMetaText: { fontSize: typography.xs.fontSize, color: colors.textMuted },
+    badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+    badgeText: { fontSize: 10, fontWeight: '800' },
+    stepsList: { marginTop: spacing.sm },
+    stepItem: { flexDirection: 'row', gap: spacing.md },
+    stepIndicator: { alignItems: 'center', width: 24 },
+    stepCircle: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
+    stepNumber: { color: '#fff', fontSize: 12, fontWeight: '800' },
+    stepLine: { width: 2, flex: 1, backgroundColor: colors.border, marginVertical: 4 },
+    stepContent: { flex: 1, paddingBottom: spacing.xl },
+    stepTitle: { fontSize: typography.bodyBold.fontSize, fontWeight: '600', color: colors.textStrong, marginBottom: 4 },
+    stepDesc: { fontSize: typography.sm.fontSize, color: colors.textMuted, lineHeight: 20 },
+    stepGallery: { marginTop: spacing.md, flexDirection: 'row' },
+    stepImage: { width: 200, height: 120, borderRadius: radius.md, marginRight: spacing.sm, backgroundColor: '#000' },
+    mediaRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.md },
+    mediaTitle: { fontSize: typography.body.fontSize, fontWeight: '600', color: colors.textStrong },
+    mediaSub: { fontSize: typography.xs.fontSize, color: colors.textMuted, marginTop: 2 },
+    videoThumbnailPlaceholder: { width: 60, height: 40, backgroundColor: colors.primaryLight, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
+    pdfIconPlaceholder: { width: 40, height: 40, backgroundColor: colors.primaryLight, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    pdfIconText: { color: colors.primary, fontSize: 10, fontWeight: '900' },
+    emptyText: { textAlign: 'center', color: colors.textMuted, fontStyle: 'italic', paddingVertical: spacing.xl },
 });
 
 export default ProductDetailScreen;

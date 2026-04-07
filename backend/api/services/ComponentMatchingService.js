@@ -94,9 +94,12 @@ const familyPatterns = [
   /(r[3579])/,
   /((?:rtx|gtx)\d{2})/,
   /(a\d{1,2})/,
-  /(m\d)/,
+  /((?:m|a|z)\d{1,2})/, // Apple M1, M2, A15, A16, etc.
   /(\dgen\d)/,
   /((?:snapdragon|dimensity|exynos)\d{3,4})/,
+  /(tensor\s?g?\d{1,2})/, // Google Tensor G2, G3
+  /((?:sd|sdm)\d{3,4})/, // Snapdragon mobile platforms
+  /(\d{4,5}[hqk])/, // Intel/AMD high-perf notebook series (e.g. 12700H)
 ];
 
 const normalizeBrand = (value) => {
@@ -257,7 +260,10 @@ module.exports = {
   },
 
   getNormalizedProductComponents: function (product) {
-    return this.sanitizeComponents(product && product.components).map((component) => this.normalizeComponent(component));
+    if (!product || !product.components) {
+      return [];
+    }
+    return this.sanitizeComponents(product.components).map((component) => this.normalizeComponent(component));
   },
 
   buildComponentQueryText: function (components, product = null) {
@@ -291,6 +297,15 @@ module.exports = {
   },
 
   scoreProductAgainstComponents: function ({ components, candidateProduct, semanticSimilarity = 0, categoryId = null, sourceManufacturer = '' }) {
+    if (!candidateProduct) {
+      return {
+        rawScore: 0,
+        matchScore: 0,
+        matchedComponents: [],
+        matchDetails: [],
+        recommendationReason: 'No candidate product'
+      };
+    }
     const selectedComponents = this.sanitizeComponents(components).map((component) => this.normalizeComponent(component));
     const candidateComponents = this.getNormalizedProductComponents(candidateProduct);
 
@@ -341,7 +356,7 @@ module.exports = {
 
       if (sameType && sharedFamilies.length) {
         return {
-          score: 82,
+          score: 110,
           kind: 'type_family',
           reason: `Same ${selectedComponent.normalizedType || 'component'} family`,
         };
@@ -349,7 +364,7 @@ module.exports = {
 
       if (sharedFamilies.length) {
         return {
-          score: 68,
+          score: 85,
           kind: 'family',
           reason: `Same family: ${sharedFamilies.join(', ')}`,
         };

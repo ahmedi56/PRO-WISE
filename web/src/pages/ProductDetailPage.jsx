@@ -8,10 +8,11 @@ import RecommendationSection from '../components/RecommendationSection';
 import MainLayout from '../components/MainLayout';
 import { formatProductName } from '../utils/formatProduct';
 
-function classifyMedia(guides) {
+function classifyMedia(guides, supportVideos = [], supportPDFs = []) {
     const videos = [];
     const pdfs = [];
 
+    // Aggregate Legacy Guides
     (guides || []).forEach((guide) => {
         (guide.steps || []).forEach((step) => {
             (step.media || []).forEach((mediaItem) => {
@@ -21,12 +22,35 @@ function classifyMedia(guides) {
                     stepNumber: step.stepNumber,
                 };
                 if (mediaItem.type === 'video') {
-                    videos.push({ ...mediaItem, _ctx: context });
+                    videos.push({ ...mediaItem, author: 'Legacy Support', _ctx: context });
                 }
                 if (mediaItem.type === 'pdf') {
-                    pdfs.push({ ...mediaItem, _ctx: context });
+                    pdfs.push({ ...mediaItem, author: 'Legacy Support', _ctx: context });
                 }
             });
+        });
+    });
+
+    // Aggregate Native Support Videos
+    (supportVideos || []).forEach((video) => {
+        videos.push({
+            id: video.id,
+            videoId: video.videoId,
+            videoUrl: video.videoUrl,
+            title: video.title,
+            author: video.author || 'Internal Support',
+            _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Video' }
+        });
+    });
+
+    // Aggregate Native Support PDFs
+    (supportPDFs || []).forEach((pdf) => {
+        pdfs.push({
+            id: pdf.id,
+            title: pdf.title,
+            url: pdf.fileUrl,
+            author: pdf.author || 'Internal Support',
+            _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Document' }
         });
     });
 
@@ -50,13 +74,40 @@ function buildComponentSelection(component, index) {
     };
 }
 
-function getComponentLabel(component) {
+const getComponentLabel = (component) => {
     const name = component?.name || component?.modelNumber || component?.type || 'Component';
     const brand = component?.manufacturer;
     return brand && !name.toLowerCase().startsWith(brand.toLowerCase())
         ? `${brand} ${name}`.trim()
         : name;
-}
+};
+
+const getAccessContext = (user) => {
+    const role = user?.role || user?.Role;
+    const roleName = (role?.name || role || '').toLowerCase();
+    const permissions = (role?.permissions || []);
+    
+    let userCompanyId = user?.company;
+    if (typeof userCompanyId === 'object' && userCompanyId !== null) {
+        userCompanyId = userCompanyId.id;
+    }
+
+    return { roleName, permissions, userCompanyId };
+};
+
+const canManageProduct = (user, product) => {
+    const { roleName, permissions, userCompanyId } = getAccessContext(user);
+    const isAdmin = permissions.includes('products.manage');
+
+    if (!isAdmin) return false;
+    if (roleName === 'super_admin') return true;
+    
+    let prodCompanyId = product?.company;
+    if (typeof prodCompanyId === 'object' && prodCompanyId !== null) {
+        prodCompanyId = prodCompanyId.id;
+    }
+    return String(prodCompanyId) === String(userCompanyId);
+};
 
 const TABS = [
     { key: 'videos', label: 'Videos' },
@@ -72,7 +123,9 @@ const ProductDetailPage = () => {
     const [activeTab, setActiveTab] = useState('steps');
     const [selectedComponents, setSelectedComponents] = useState([]);
     const navigate = useNavigate();
-    const { token } = useSelector((state) => state.auth);
+    const { user, token } = useSelector((state) => state.auth);
+
+    const canManage = useMemo(() => canManageProduct(user, product), [user, product]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -102,7 +155,7 @@ const ProductDetailPage = () => {
         setSelectedComponents([]);
     }, [id]);
 
-    const { videos, pdfs } = useMemo(() => classifyMedia(product?.guides), [product]);
+    const { videos, pdfs } = useMemo(() => classifyMedia(product?.guides, product?.supportVideos, product?.supportPDFs), [product]);
     const tabCounts = useMemo(() => ({
         videos: videos.length,
         pdfs: pdfs.length,
@@ -217,7 +270,16 @@ const ProductDetailPage = () => {
                                 title={`${formatProductName(product.name, product.manufacturer)}${product.modelNumber ? ` (${product.modelNumber})` : ''}`}
                                 subtitle={product.manufacturer ? `${product.manufacturer} - ${product.category?.name || 'General Product'}` : (product.category?.name || 'General Product')}
                                 actions={(
-                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                        {canManage && (
+                                            <Button 
+                                                variant="secondary" 
+                                                size="sm" 
+                                                onClick={() => navigate(`/admin/products/${id}/edit`)}
+                                            >
+                                                Edit Product
+                                            </Button>
+                                        )}
                                         <Badge tone={product.status === 'published' ? 'success' : 'warning'}>
                                             {product.status}
                                         </Badge>
@@ -372,15 +434,24 @@ const ProductDetailPage = () => {
                                     {videos.length > 0 ? (
                                         <div className="video-list">
                                             {videos.map((video, index) => (
-                                                <div key={video.id || index} className="video-card card">
-                                                    <video controls className="video-player">
-                                                        <source src={video.url} type="video/mp4" />
-                                                        Your browser does not support the video tag.
-                                                    </video>
-                                                    <div className="video-info">
-                                                        <span className="video-title">{video.title || 'Video'}</span>
-                                                        <span className="video-context">
-                                                            {video._ctx.guideTitle} - Step {video._ctx.stepNumber}: {video._ctx.stepTitle}
+                                                <div 
+                                                    key={video.id || index} 
+                                                    className="video-card card hover-premium"
+                                                    onClick={() => navigate(`/products/${id}/videos/${video.id || video.videoId || video.url}`)}
+                                                    style={{ cursor: 'pointer', display: 'flex', gap: '1.5rem', padding: '1rem', alignItems: 'center', transition: 'all 0.3s ease' }}
+                                                >
+                                                    <div style={{ width: '120px', height: '68px', borderRadius: '8px', background: '#000', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                                                        {video.videoId ? (
+                                                            <img src={`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', opacity: 0.6 }} />
+                                                        ) : (
+                                                            <div style={{ color: 'var(--color-primary)', fontSize: '1.5rem' }}><ion-icon name="videocam-outline"></ion-icon></div>
+                                                        )}
+                                                        <div style={{ position: 'absolute', color: '#fff', fontSize: '2rem' }}><ion-icon name="play-circle-outline"></ion-icon></div>
+                                                    </div>
+                                                    <div className="video-info" style={{ padding: 0 }}>
+                                                        <span className="video-title" style={{ fontSize: '1.1rem', marginBottom: '0.25rem', display: 'block' }}>{video.title || 'Support Video'}</span>
+                                                        <span className="video-context" style={{ opacity: 0.7 }}>
+                                                            {video._ctx.guideTitle} • {video.author}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -407,7 +478,16 @@ const ProductDetailPage = () => {
                                                             </span>
                                                         </div>
                                                     </div>
-                                                    <Button variant="ghost" size="sm" onClick={() => window.open(pdf.url, '_blank')}>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="sm" 
+                                                        onClick={() => {
+                                                                const fullUrl = (pdf.url && (pdf.url.startsWith('http') || pdf.url.startsWith('//'))) 
+                                                                    ? pdf.url 
+                                                                    : `${API_URL}${pdf.url}?token=${token}`;
+                                                                window.open(fullUrl, '_blank');
+                                                        }}
+                                                    >
                                                         Open PDF
                                                     </Button>
                                                 </div>

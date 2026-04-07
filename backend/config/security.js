@@ -10,9 +10,10 @@ module.exports.security = {
 
   cors: {
     allRoutes: true,
-    allowOrigins: '*', // Adjust for production
-    allowCredentials: false,
-    allowRequestHeaders: 'content-type, authorization'
+    allowOrigins: '*',
+    allowCredentials: true,
+    allowAnyOriginWithCredentialsUnsafe: true,
+    allowRequestHeaders: 'content-type, authorization, x-requested-with'
   },
 
   csrf: false // Disable CSRF for API

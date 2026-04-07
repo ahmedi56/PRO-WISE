@@ -71,13 +71,20 @@ const validateAndSanitizeComponents = (components) => {
 
 const getAccessContext = async (req) => {
   if (!req.user || !req.user.id) {
-    return { roleName: '', companyId: null };
+    return { roleName: '', companyId: null, user: null };
   }
 
+  // Resolve user and role from DB for accurate context
   const user = await sails.models.user.findOne({ id: req.user.id }).populate('role');
+  const roleName = (user && user.role && user.role.name ? user.role.name : '').toLowerCase();
+  
+  // Fallback to DB-stored company if req.user.companyId (session) is missing
+  const companyId = (user && user.company) ? (user.company.id || user.company) : (req.user.companyId || null);
+
   return {
-    roleName: (user && user.role && user.role.name ? user.role.name : '').toLowerCase(),
-    companyId: user && user.company ? user.company : (req.user.companyId || null),
+    roleName,
+    companyId,
+    user
   };
 };
 
@@ -214,12 +221,14 @@ module.exports = {
         where.status = 'published';
       }
 
-      if (search) {
+      if (search && search.trim()) {
+        const searchPattern = search.trim();
         where.or = [
-          { name: { contains: search } },
-          { description: { contains: search } },
-          { manufacturer: { contains: search } },
-          { modelNumber: { contains: search } }
+          { name: { contains: searchPattern } },
+          { description: { contains: searchPattern } },
+          { manufacturer: { contains: searchPattern } },
+          { modelNumber: { contains: searchPattern } },
+          { searchDocument: { contains: searchPattern } }
         ];
       }
 
@@ -262,12 +271,24 @@ module.exports = {
       if (product && product.guides) {
         // Deep populate steps and their media for each guide
         for (let guide of product.guides) {
-          guide.steps = await Step.find({ guide: guide.id }).sort('stepNumber ASC');
+          guide.steps = await Step.find({ 
+            guide: guide.id,
+            isPublished: true 
+          }).sort([
+            { order: 'ASC' },
+            { stepNumber: 'ASC' }
+          ]);
           for (let step of guide.steps) {
             step.media = await Media.find({ step: step.id });
           }
         }
       }
+
+      // 1.5 Fetch Native Support Content (New System)
+      const supportVideos = await SupportVideo.find({ product: req.params.id })
+        .populate('createdBy');
+      const supportPDFs = await SupportPDF.find({ product: req.params.id })
+        .populate('createdBy');
 
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
@@ -325,7 +346,23 @@ module.exports = {
         }
       }
 
-      return res.json({ ...product, categoryPath });
+      return res.json({ 
+        ...product, 
+        categoryPath,
+        supportVideos: supportVideos.map(v => ({
+          id: v.id,
+          videoId: v.videoId,
+          videoUrl: v.videoUrl,
+          title: v.title,
+          author: v.createdBy ? v.createdBy.name : 'Unknown'
+        })),
+        supportPDFs: supportPDFs.map(p => ({
+          id: p.id,
+          title: p.title,
+          fileUrl: p.fileUrl,
+          author: p.createdBy ? p.createdBy.name : 'Unknown'
+        }))
+      });
 
     } catch (err) {
       sails.log.error('Get product error:', err);
@@ -353,8 +390,19 @@ module.exports = {
         });
       }
 
-      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
-        return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
+      const { roleName, companyId } = await getAccessContext(req);
+      const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
+
+      if (!isAdmin) {
+        return res.status(403).json({ message: 'Forbidden: Admin access required' });
+      }
+
+      // Strict Ownership Check for Company Admins
+      if (roleName !== 'super_admin' && companyId) {
+        const productCompanyId = String(existing.company?.id || existing.company);
+        if (productCompanyId !== String(companyId)) {
+          return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
+        }
       }
 
       // Validate category exists if provided
@@ -432,8 +480,13 @@ module.exports = {
         return res.status(404).json({ message: 'Product not found' });
       }
 
-      if ((req.user && req.user.companyId) && String(product.company?.id || product.company) !== String(req.user && req.user.companyId)) {
-        return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
+      const { roleName, companyId } = await getAccessContext(req);
+      
+      if (roleName !== 'super_admin' && companyId) {
+        const productCompanyId = String(product.company?.id || product.company);
+        if (productCompanyId !== String(companyId)) {
+          return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
+        }
       }
 
       await Product.destroyOne({ id: req.params.id });
@@ -528,7 +581,8 @@ module.exports = {
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
-      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
+      const { roleName, companyId } = await getAccessContext(req);
+      if (roleName !== 'super_admin' && companyId && String(existing.company?.id || existing.company) !== String(companyId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -548,7 +602,8 @@ module.exports = {
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
-      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
+      const { roleName, companyId } = await getAccessContext(req);
+      if (roleName !== 'super_admin' && companyId && String(existing.company?.id || existing.company) !== String(companyId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -568,7 +623,8 @@ module.exports = {
       const existing = await Product.findOne({ id: req.params.id });
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
-      if ((req.user && req.user.companyId) && String(existing.company?.id || existing.company) !== String(req.user && req.user.companyId)) {
+      const { roleName, companyId } = await getAccessContext(req);
+      if (roleName !== 'super_admin' && companyId && String(existing.company?.id || existing.company) !== String(companyId)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 

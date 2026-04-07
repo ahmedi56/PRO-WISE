@@ -109,7 +109,7 @@ module.exports = {
         const result = await sails.services.searchservice.getEmbedding(searchDocument, { mode: 'document', retries: 3 });
         embedding = result && result.embedding ? result.embedding : null;
       } catch (err) {
-        sails.log.warn(`ProductEmbeddingService.updateEmbedding: Couldn't generate embedding for "${product.name}". Service error: ${err.message}`);
+        sails.services.searchservice.logThrottled('warn', 'update_embedding_connection_error', `ProductEmbeddingService.updateEmbedding: Couldn't generate embedding for "${product.name}". Service error: ${err.message}`);
         // We update the searchDocument and leave embedding as is
       }
 

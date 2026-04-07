@@ -92,6 +92,32 @@ module.exports.routes = {
   // ─── Health ──────────────────────────────────────────────
   'GET /api/health': { fn: (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }) },
 
+  // ─── Repair Support Content System ──────────────────────
+  'GET /api/support/products/:productId': 'SupportController.getProductSupport',
+
+  // Support Guides
+  'POST /api/support/guides': 'RepairGuideController.create',
+  'GET /api/support/guides/:id': 'RepairGuideController.getOne',
+  'DELETE /api/support/guides/:id': 'RepairGuideController.delete',
+
+  // Support Steps
+  'POST /api/support/steps': 'RepairStepController.create',
+  'GET /api/support/steps/guide/:guideId': 'RepairStepController.getByGuide',
+  'PUT /api/support/steps/:id': 'RepairStepController.update',
+  'DELETE /api/support/steps/:id': 'RepairStepController.delete',
+
+  // Support Videos
+  'POST /api/support/videos': 'SupportVideoController.create',
+  'GET /api/support/videos/:productId': 'SupportVideoController.getByProduct',
+  'DELETE /api/support/videos/:id': 'SupportVideoController.delete',
+
+  // Support PDFs
+  'POST /api/support/pdfs/upload': 'SupportPDFController.upload',
+  'POST /api/support/pdfs': 'SupportPDFController.create',
+  'GET /api/support/pdfs/view/:filename': { skipAssets: false, controller: 'SupportPDFController', action: 'view' },
+  'GET /api/support/pdfs/:productId': 'SupportPDFController.getByProduct',
+  'DELETE /api/support/pdfs/:id': 'SupportPDFController.delete',
+
   // ─── Utilities ───────────────────────────────────────────
   'POST /api/products/backfill-embeddings': 'ProductController.triggerBackfill',
 

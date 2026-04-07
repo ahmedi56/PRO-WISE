@@ -70,44 +70,44 @@ const QRScannerScreen = ({ navigation }) => {
                 barcodeScannerSettings={{
                     barcodeTypes: ['qr'],
                 }}
-            >
-                {/* Overlay UI */}
-                <View style={styles.overlay}>
-                    <View style={styles.unfocusedContainer}></View>
-                    <View style={styles.middleRow}>
-                        <View style={styles.unfocusedContainer}></View>
-                        <View style={styles.scanArea}>
-                            <View style={[styles.corner, styles.topLeft]} />
-                            <View style={[styles.corner, styles.topRight]} />
-                            <View style={[styles.corner, styles.bottomLeft]} />
-                            <View style={[styles.corner, styles.bottomRight]} />
-                            {scanned && (
-                                <ActivityIndicator size="large" color={colors.primary} />
-                            )}
-                        </View>
-                        <View style={styles.unfocusedContainer}></View>
-                    </View>
-                    <View style={styles.unfocusedContainer}>
-                        <Text style={styles.instructionText}>
-                            Position the QR code inside the frame to scan
-                        </Text>
-                    </View>
-                </View>
+            />
 
-                {/* Controls */}
-                <View style={styles.controls}>
-                    <TouchableOpacity
-                        style={styles.controlButton}
-                        onPress={() => setTorch(!torch)}
-                    >
-                        <Ionicons
-                            name={torch ? 'flash' : 'flash-outline'}
-                            size={24}
-                            color="white"
-                        />
-                    </TouchableOpacity>
+            {/* Overlay UI */}
+            <View style={[styles.overlay, StyleSheet.absoluteFill]}>
+                <View style={styles.unfocusedContainer}></View>
+                <View style={styles.middleRow}>
+                    <View style={styles.unfocusedContainer}></View>
+                    <View style={styles.scanArea}>
+                        <View style={[styles.corner, styles.topLeft]} />
+                        <View style={[styles.corner, styles.topRight]} />
+                        <View style={[styles.corner, styles.bottomLeft]} />
+                        <View style={[styles.corner, styles.bottomRight]} />
+                        {scanned && (
+                            <ActivityIndicator size="large" color={colors.primary} />
+                        )}
+                    </View>
+                    <View style={styles.unfocusedContainer}></View>
                 </View>
-            </CameraView>
+                <View style={styles.unfocusedContainer}>
+                    <Text style={styles.instructionText}>
+                        Position the QR code inside the frame to scan
+                    </Text>
+                </View>
+            </View>
+
+            {/* Controls */}
+            <View style={styles.controls}>
+                <TouchableOpacity
+                    style={styles.controlButton}
+                    onPress={() => setTorch(!torch)}
+                >
+                    <Ionicons
+                        name={torch ? 'flash' : 'flash-outline'}
+                        size={24}
+                        color="white"
+                    />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };

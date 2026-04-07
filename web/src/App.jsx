@@ -24,6 +24,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import QRGeneratorPage from './pages/QRGeneratorPage';
 import CategoryPage from './pages/CategoryPage';
 import SearchPage from './pages/SearchPage';
+import AdminSupportPage from './pages/AdminSupportPage';
 
 const HomeRedirect = () => {
     const { user, token, loading } = useSelector((state) => state.auth);
@@ -54,6 +55,7 @@ const AdminIndexRedirect = () => {
 };
 
 import ProductDetailPage from './pages/ProductDetailPage';
+import VideoPlayerPage from './pages/VideoPlayerPage';
 
 function App() {
     const dispatch = useDispatch();
@@ -93,6 +95,14 @@ function App() {
                     element={
                         <ProtectedRoute>
                             <ProductDetailPage />
+                        </ProtectedRoute>
+                    }
+                />
+                <Route
+                    path="/products/:id/videos/:videoId"
+                    element={
+                        <ProtectedRoute>
+                            <VideoPlayerPage />
                         </ProtectedRoute>
                     }
                 />
@@ -144,6 +154,7 @@ function App() {
 
                     {/* New Admin Features Stubs (Routes placeholder) */}
                     <Route path="qr-generate" element={<PermissionProtectedRoute permission="qr.generate"><QRGeneratorPage /></PermissionProtectedRoute>} />
+                    <Route path="support" element={<PermissionProtectedRoute permission="products.manage"><AdminSupportPage /></PermissionProtectedRoute>} />
                     <Route path="analytics" element={<SuperAdminRoute><AnalyticsPage /></SuperAdminRoute>} />
                     <Route path="audit-logs" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />
                 </Route>

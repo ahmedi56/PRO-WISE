@@ -33,7 +33,8 @@ const ProductListPage = () => {
 
     const canManageProduct = (product) => {
         if (!isAdmin) return false;
-        if (roleName === 'super_admin') return false;
+        if (roleName === 'super_admin') return true; // Super admins can manage anything
+        
         let prodCompanyId = product.company;
         if (typeof prodCompanyId === 'object' && prodCompanyId !== null) {
             prodCompanyId = prodCompanyId.id;
@@ -152,11 +153,13 @@ const ProductListPage = () => {
                     title={title}
                     subtitle="Premium industrial-grade products with attached support guides."
                     actions={
-                        isAdmin && roleName !== 'super_admin' ? (
+                        isAdmin ? (
                             <>
-                                <Button variant="secondary" onClick={() => navigate('/admin')}>
-                                    Admin
-                                </Button>
+                                {roleName !== 'super_admin' && (
+                                    <Button variant="secondary" onClick={() => navigate('/admin')}>
+                                        Admin
+                                    </Button>
+                                )}
                                 <Button variant="primary" onClick={() => navigate('/admin/products/new')}>
                                     Add Product
                                 </Button>

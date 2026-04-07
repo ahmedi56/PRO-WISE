@@ -29,7 +29,10 @@ const CATEGORY_ICONS = {
 };
 
 const getCategoryIcon = (category) => {
-    if (category?.icon) return category.icon;
+    let icon = category?.icon;
+    if (icon === 'logo-samsung') icon = 'phone-portrait-outline'; // Fallback for invalid icon
+    if (icon) return icon;
+
     const normalized = category?.name?.toLowerCase().trim();
     return CATEGORY_ICONS[normalized] || 'cube-outline';
 };

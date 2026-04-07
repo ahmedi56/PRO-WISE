@@ -120,7 +120,7 @@ module.exports = {
       } catch (error) {
         diagnostics.degraded = true;
         diagnostics.embedding.error = error.message;
-        sails.log.warn(`Similarity helper: embedding unavailable (${source}): ${error.message}`);
+        sails.services.searchservice.logThrottled('warn', `similarity_helper_embedding_unavailable_${source}`, `Similarity helper: embedding unavailable (${source}): ${error.message}`);
         return { embedding: null, metadata: {} };
       }
     };
@@ -134,7 +134,7 @@ module.exports = {
       let sourceComponents = componentMatching ? componentMatching.sanitizeComponents(inputs.components) : [];
 
       if (productId) {
-        currentProduct = await Product.findOne({ id: productId }).populate('category').populate('company');
+        currentProduct = await sails.models.product.findOne({ id: productId }).populate('category').populate('company');
         if (!currentProduct) {
           return wrapResponse([]);
         }
@@ -148,12 +148,19 @@ module.exports = {
 
         if (!query && !inputs.components) {
           if (!currentProduct.embedding) {
-            sails.log.info(`Product ${currentProduct.name} has no embedding. Generating on the fly...`);
-            try {
-              await sails.services.productembeddingservice.updateEmbedding(currentProduct.id);
-              currentProduct = await Product.findOne({ id: productId }).populate('category').populate('company');
-            } catch (error) {
-              sails.log.warn(`On-the-fly embedding failed for ${currentProduct.name}: ${error.message}`);
+            // Circuit Breaker: Check if embedding service is healthy before trying to generate on the fly
+            const isEmbeddingServiceHealthy = await sails.services.searchservice.checkHealth();
+            
+            if (isEmbeddingServiceHealthy) {
+              sails.log.info(`Product ${currentProduct.name} has no embedding. Generating on the fly...`);
+              try {
+                await sails.services.productembeddingservice.updateEmbedding(currentProduct.id);
+                currentProduct = await Product.findOne({ id: productId }).populate('category').populate('company');
+              } catch (error) {
+                sails.log.warn(`On-the-fly embedding failed for ${currentProduct.name}: ${error.message}`);
+              }
+            } else {
+              sails.services.searchservice.logThrottled('debug', 'similarity_helper_skip_otf', `Skipping on-the-fly embedding for ${currentProduct.name}: Embedding service is unreachable.`);
             }
           }
 
@@ -197,7 +204,7 @@ module.exports = {
 
           const fallbackLimit = isComponentFallback ? Math.max(limit, 500) : limit;
 
-          const fallbackProducts = await Product.find(fallbackCriteria)
+          const fallbackProducts = await sails.models.product.find(fallbackCriteria)
             .limit(fallbackLimit)
             .sort('totalScans DESC')
             .sort('createdAt DESC')
@@ -208,17 +215,47 @@ module.exports = {
             ? 'Category fallback (embedding unavailable)'
             : 'Same category';
 
-          const enrichedFallback = fallbackProducts.map((product) => ({
-            ...JSON.parse(JSON.stringify(product)),
-            score: 0.25,
-            matchScore: 0.25,
-            rawScore: 25,
-            recommendationReason: fallbackReason,
-            matchedComponents: [],
-            matchDetails: diagnostics.embedding.requested && diagnostics.degraded
-              ? ['Embedding service unavailable; using category fallback']
-              : ['Category-based fallback'],
-          }));
+          const enrichedFallback = fallbackProducts.map((product) => {
+            let score = 0.20; // Base for same category
+            const reasons = ['Category-based match'];
+            
+            // Basic text-based boost for manufacturer/name overlap when AI is down
+            if (currentProduct) {
+              const sameBrand = product.manufacturer && currentProduct.manufacturer && 
+                                product.manufacturer.toLowerCase() === currentProduct.manufacturer.toLowerCase();
+              
+              if (sameBrand) {
+                score += 0.25;
+                reasons.push('Same brand');
+                
+                // EXTRA BONUS: Category + Brand match for the same company
+                score += 0.20; 
+                reasons[0] = 'High-relevance brand & category match';
+              }
+
+              if (product.name && currentProduct.name) {
+                const words1 = new Set(currentProduct.name.toLowerCase().split(/\s+/));
+                const words2 = product.name.toLowerCase().split(/\s+/);
+                const overlap = words2.filter(w => words1.has(w) && w.length > 3).length;
+                if (overlap > 0) {
+                  score += Math.min(0.35, overlap * 0.12);
+                  reasons.push('Naming overlap');
+                }
+              }
+            }
+
+            return {
+              ...JSON.parse(JSON.stringify(product)),
+              score: Math.min(0.95, score),
+              matchScore: Math.min(0.95, score),
+              rawScore: score * 100,
+              recommendationReason: reasons.join(' & '),
+              matchedComponents: [],
+              matchDetails: diagnostics.embedding.requested && diagnostics.degraded
+                ? ['AI service unavailable; using hybrid lookup', ...reasons]
+                : reasons,
+            };
+          });
 
           return wrapResponse(enrichedFallback);
         } else if (!query) {
@@ -227,91 +264,122 @@ module.exports = {
         }
       }
 
-      const criteria = { status: 'published' };
+      // ── Determine context ──
       const excludedId = excludeProductId || productId;
-      if (excludedId) {
-        criteria.id = { '!=': excludedId };
-      }
-
-      // If we are matching components, we search GLOBALLY across all categories.
-      // Otherwise, we keep the category filter to maintain contextual relevance.
       const isComponentDiscovery = !!(sourceComponents && sourceComponents.length);
-      const isGeneralPopularDiscovery = !query && !productId && !isComponentDiscovery;
-      
-      if (filterCategoryId && !isComponentDiscovery) {
-        criteria.category = filterCategoryId;
-      }
-      if (filterCompanyId) {
-        criteria.company = filterCompanyId;
+      const aiIsOnline = !diagnostics.degraded && !!(query || queryEmbedding);
+
+      // ── CATEGORY-FIRST STRATEGY ──
+      // When the AI service is offline, we ALWAYS restrict to the same category
+      // first. A phone should never show a PC as "related" just because both
+      // have RAM. Cross-category is only allowed when the AI service provides
+      // real semantic scores, OR for truly exact component model matches.
+      const sameCategoryCriteria = { status: 'published' };
+      if (excludedId) { sameCategoryCriteria.id = { '!=': excludedId }; }
+      if (filterCompanyId) { sameCategoryCriteria.company = filterCompanyId; }
+
+      // Always filter by category for the primary query
+      const effectiveCategoryId = filterCategoryId || boostCategoryId;
+      if (effectiveCategoryId) {
+        sameCategoryCriteria.category = effectiveCategoryId;
       }
 
-      // NEW: "Strict Popularity" Filter
-      // If we are showing "General Popular" items (no query/product/component),
-      // only show items that have been SCANED (totalScans > 0).
-      if (isGeneralPopularDiscovery) {
-        criteria.totalScans = { '>': 0 };
-      }
+      const primaryLimit = Math.max(limit * 4, 30); // Fetch a bigger pool to score from
 
-      // Increase the pool for global component discovery to ensure we find technical matches
-      // in a large database, especially since AI service might be offline.
-      const searchLimit = isComponentDiscovery ? Math.max(limit, 500) : limit;
-
-      const candidates = await Product.find(criteria)
-        .limit(searchLimit)
+      const sameCategoryCandidates = await sails.models.product.find(sameCategoryCriteria)
+        .sort('totalScans DESC')
+        .sort('createdAt DESC')
+        .limit(primaryLimit)
         .populate('category')
         .populate('company');
 
-      if (candidates.length === 0) {
-        return wrapResponse([]);
-      }
-
-      // NEW: High-Performance AI Ranking Integration
-      // If we have a query or embeddings are active, we use the Flask /rank endpoint
-      // to categorize candidates into Exact, Similar, and Related in a single batch.
+      // ── AI Ranking (if online) ──
       let rankedResults = { exact: [], similar: [], related: [] };
-      let useAiRanking = !!(query || queryEmbedding);
 
-      if (useAiRanking) {
-        const rankingInput = candidates.map(c => ({
+      if (aiIsOnline) {
+        const rankingInput = sameCategoryCandidates.map(c => ({
           id: c.id,
           embedding: c.embedding,
           text: c.searchDocument || c.name,
           modelNumber: c.modelNumber,
           manufacturer: c.manufacturer
         }));
-        
         rankedResults = await sails.services.searchservice.rankCandidates(query || 'document_matching', rankingInput);
       }
 
-      // Map ranking result for easy lookup
       const aiRankMap = new Map();
       [...rankedResults.exact, ...rankedResults.similar, ...rankedResults.related].forEach(r => {
         aiRankMap.set(r.id, r);
       });
 
-      const results = candidates.map((candidate) => {
+      // ── Score every candidate ──
+      const scoreSingleCandidate = (candidate) => {
         const aiRank = aiRankMap.get(candidate.id);
         const semanticSimilarity = aiRank ? aiRank.score : 0;
-        
-        let rawScore = semanticSimilarity * 100;
-        let recommendationReason = aiRank ? aiRank.reason : 'Similar Product';
 
-        // Integrate the AI's classification into the score
-        if (aiRank) {
-          if (rankedResults.exact.some(r => r.id === candidate.id)) {
-            rawScore = Math.max(rawScore, 180); // Ensure it stays in "Exact" section
+        let rawScore = semanticSimilarity * 100;
+        let recommendationReason = aiRank ? aiRank.reason : '';
+        const matchDetails = [];
+        let matchedComponents = [];
+
+        if (aiRank && aiRank.reason) { matchDetails.push(aiRank.reason); }
+        if (aiRank && rankedResults.exact.some(r => r.id === candidate.id)) {
+          rawScore = Math.max(rawScore, 180);
+        }
+
+        // ── Category & Brand deterministic scoring ──
+        const candidateCategoryId = candidate.category && candidate.category.id
+          ? candidate.category.id : candidate.category;
+        const sameCategory = !!(effectiveCategoryId && candidateCategoryId
+          && String(effectiveCategoryId) === String(candidateCategoryId));
+        const sameBrand = !!(currentProduct && currentProduct.manufacturer
+          && candidate.manufacturer
+          && currentProduct.manufacturer.toLowerCase() === candidate.manufacturer.toLowerCase());
+
+        if (sameCategory) {
+          rawScore += 15;
+          matchDetails.push('Same category');
+        }
+        if (sameBrand) {
+          rawScore += 20;
+          matchDetails.push(`Same brand: ${candidate.manufacturer}`);
+        }
+        // Compound bonus: same brand AND category = highly relevant
+        if (sameCategory && sameBrand) {
+          rawScore += 25;
+          recommendationReason = recommendationReason || `Same brand & category`;
+        }
+
+        // ── Name overlap scoring ──
+        if (currentProduct && currentProduct.name && candidate.name) {
+          const srcWords = new Set(
+            currentProduct.name.toLowerCase().split(/[\s\-\/]+/).filter(w => w.length > 2)
+          );
+          const candWords = candidate.name.toLowerCase().split(/[\s\-\/]+/).filter(w => w.length > 2);
+          const overlap = candWords.filter(w => srcWords.has(w)).length;
+          if (overlap > 0) {
+            rawScore += Math.min(30, overlap * 10);
+            matchDetails.push(`${overlap} shared name words`);
           }
         }
 
-        let matchScore = Math.min(1, rawScore / 100);
-        const matchDetails = [];
-        if (aiRank && aiRank.reason) {
-          matchDetails.push(aiRank.reason);
+        // ── Query text matching ──
+        if (query) {
+          const qLower = query.toLowerCase();
+          if (candidate.name && candidate.name.toLowerCase().includes(qLower)) {
+            rawScore += 20;
+          }
+          if (candidate.modelNumber && qLower.includes(candidate.modelNumber.toLowerCase())) {
+            rawScore += 25;
+            recommendationReason = `Matches model: ${candidate.modelNumber}`;
+          }
+          if (candidate.manufacturer && qLower.includes(candidate.manufacturer.toLowerCase())) {
+            rawScore += 10;
+          }
         }
-        
-        let matchedComponents = [];
 
-        if (sourceComponents.length) {
+        // ── Component matching ──
+        if (sourceComponents.length && componentMatching) {
           const componentResult = componentMatching.scoreProductAgainstComponents({
             components: sourceComponents,
             candidateProduct: candidate,
@@ -319,50 +387,28 @@ module.exports = {
             categoryId: boostCategoryId,
             sourceManufacturer,
           });
-
-          rawScore = componentResult.rawScore;
-          matchScore = componentResult.matchScore;
-          recommendationReason = componentResult.recommendationReason;
+          // Blend component score with category/brand score (don't replace)
+          rawScore += componentResult.rawScore;
           matchedComponents = componentResult.matchedComponents;
           matchDetails.push(...componentResult.matchDetails);
-        } else {
-          if (query) {
-            const qLower = query.toLowerCase();
-            if (candidate.name && candidate.name.toLowerCase().includes(qLower)) {
-              rawScore += 20;
-            }
-            if (candidate.modelNumber && qLower.includes(candidate.modelNumber.toLowerCase())) {
-              rawScore += 25;
-              recommendationReason = `Matches model: ${candidate.modelNumber}`;
-            }
-            if (candidate.manufacturer && qLower.includes(candidate.manufacturer.toLowerCase())) {
-              rawScore += 10;
-              recommendationReason = `Matches brand: ${candidate.manufacturer}`;
-            }
+          if (componentResult.recommendationReason) {
+            recommendationReason = recommendationReason || componentResult.recommendationReason;
           }
-
-          if (currentProduct && currentProduct.manufacturer && candidate.manufacturer
-            && currentProduct.manufacturer.toLowerCase() === candidate.manufacturer.toLowerCase()) {
-            rawScore += 12;
-            matchDetails.push(`Same manufacturer: ${candidate.manufacturer}`);
-          }
-
-          const candidateCategoryId = candidate.category && candidate.category.id ? candidate.category.id : candidate.category;
-          if (boostCategoryId && candidateCategoryId && String(boostCategoryId) === String(candidateCategoryId)) {
-            rawScore += 8;
-            matchDetails.push('Same category');
-          }
-
-          matchScore = Math.min(1, rawScore / 100);
         }
 
-        if (!matchDetails.length && semanticSimilarity >= 0.7) {
-          matchDetails.push('Strong semantic match');
+        if (!recommendationReason) {
+          if (sameCategory && sameBrand) {
+            recommendationReason = `Same brand & category`;
+          } else if (sameBrand) {
+            recommendationReason = `Same brand: ${candidate.manufacturer}`;
+          } else if (sameCategory) {
+            recommendationReason = 'Same category';
+          } else {
+            recommendationReason = 'Related product';
+          }
         }
 
-        if (!recommendationReason && semanticSimilarity > 0.5) {
-          recommendationReason = 'Strong semantic match';
-        }
+        const matchScore = Math.min(1, rawScore / 100);
 
         return {
           ...JSON.parse(JSON.stringify(candidate)),
@@ -373,34 +419,13 @@ module.exports = {
           matchedComponents,
           matchDetails,
         };
-      })
-        .filter((candidate) => {
-          // If we are strictly in "Component Match" mode (inputs.components provided),
-          // or if the source product has a substantial list of components, require at least one match.
-          // BUT, if we're just looking for related products, be more lenient.
-          const isStrictComponentMode = !!inputs.components;
-          
-          if (sourceComponents.length && isStrictComponentMode) {
-            const minimumMatches = sourceComponents.length >= 3 ? 2 : 1;
-            if (!Array.isArray(candidate.matchedComponents) || candidate.matchedComponents.length < minimumMatches) {
-              return false;
-            }
+      };
 
-            // Allow anything with a decent match (e.g. brand + type or exact model)
-            // Exact model matches are still prioritized by score (180+ points)
-            let minRequiredScore = Math.max(40, sourceComponents.length * 15);
-            if (diagnostics.degraded) {
-              minRequiredScore = Math.max(25, sourceComponents.length * 10);
-            }
-            return candidate.rawScore >= minRequiredScore;
-          }
-          
-          // For general related products or if no components matched, use a lower threshold for semantic/category matches
-          const minRequiredScore = diagnostics.degraded ? 8 : 12;
-          return candidate.rawScore >= minRequiredScore;
-        })
-        .sort((left, right) => right.rawScore - left.rawScore)
-        .slice(0, limit);
+      // Score same-category candidates
+      let results = sameCategoryCandidates
+        .map(scoreSingleCandidate)
+        .filter(c => c.rawScore >= 10)
+        .sort((a, b) => b.rawScore - a.rawScore);
 
       return wrapResponse(results);
     } catch (err) {

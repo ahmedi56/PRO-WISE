@@ -19,6 +19,18 @@ const RETRIABLE_ERROR_CODES = [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const ERROR_THROTTLE_MS = 300000; // 5 minutes
+const lastErrorLog = new Map();
+
+const shouldLog = (key) => {
+  const now = Date.now();
+  if (!lastErrorLog.has(key) || (now - lastErrorLog.get(key) > ERROR_THROTTLE_MS)) {
+    lastErrorLog.set(key, now);
+    return true;
+  }
+  return false;
+};
+
 module.exports = {
 
   /**
@@ -42,7 +54,14 @@ module.exports = {
 
       return response.data;
     } catch (err) {
-      sails.log.error(`SearchService.rankCandidates failed: ${err.message}`);
+      const isConnectionError = err.code === 'ECONNREFUSED' || (err.message && err.message.includes('ECONNREFUSED'));
+      if (isConnectionError) {
+        if (shouldLog('rank_econnrefused')) {
+          sails.log.warn(`SearchService indexing skipped: AI service unreachable at ${SEARCH_SERVICE_URL}. Quietly falling back to database discovery.`);
+        }
+      } else {
+        sails.log.error(`SearchService.rankCandidates failed: ${err.message}`);
+      }
       // Return empty categories as fallback to avoid crashing
       return { exact: [], similar: [], related: [] };
     }
@@ -98,14 +117,23 @@ module.exports = {
   },
 
   /**
-   * Check if the search service is healthy.
+   * Check if the search service is healthy with a short-lived cache.
    * @returns {Promise<boolean>}
    */
   checkHealth: async function() {
+    const now = Date.now();
+    // Cache health result for 60 seconds to avoid hammering an unreachable port
+    if (this._lastHealthCheck && (now - this._lastHealthCheck.timestamp < 60000)) {
+      return this._lastHealthCheck.isHealthy;
+    }
+
     try {
       const response = await axios.get(`${SEARCH_SERVICE_URL}/health`, { timeout: 2000 });
-      return response.status === 200 && response.data.status === 'ok';
+      const isHealthy = response.status === 200 && response.data.status === 'ok';
+      this._lastHealthCheck = { isHealthy, timestamp: now };
+      return isHealthy;
     } catch (err) {
+      this._lastHealthCheck = { isHealthy: false, timestamp: now };
       return false;
     }
   },
@@ -150,8 +178,11 @@ module.exports = {
   logEmbeddingError: function(err, attemptNumber, totalAttempts) {
     const prefix = `SearchService: Embedding request failed (attempt ${attemptNumber}/${totalAttempts})`;
 
-    if (err && err.code === 'ECONNREFUSED') {
-      sails.log.error(`${prefix}. Flask API is not reachable at ${SEARCH_SERVICE_URL}. Ensure the search service is running.`);
+    const isConnectionError = err && (err.code === 'ECONNREFUSED' || (err.message && err.message.includes('ECONNREFUSED')));
+    if (isConnectionError) {
+      if (shouldLog(`embed_econnrefused_${attemptNumber}`)) {
+        sails.log.error(`${prefix}. Flask API is not reachable at ${SEARCH_SERVICE_URL}. Ensure the search service is running.`);
+      }
       return;
     }
 
@@ -164,6 +195,19 @@ module.exports = {
     }
 
     sails.log.error(`${prefix}. ${err && err.message ? err.message : 'Unknown error'}`);
+  },
+
+  /**
+   * Log a message only if it hasn't been logged recently (throttled).
+   * @param {string} level - 'info', 'warn', 'error', 'debug'
+   * @param {string} key - Unique key for this log type
+   * @param {string} message - The message to log
+   */
+  logThrottled: function(level, key, message) {
+    if (shouldLog(key)) {
+      const logFn = sails.log[level] || sails.log.info;
+      logFn(message);
+    }
   }
 
 };

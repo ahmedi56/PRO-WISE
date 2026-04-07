@@ -12,7 +12,8 @@ module.exports = {
    */
   create: async function (req, res) {
     try {
-      const { guideId, stepNumber, title, description } = req.body;
+      const { guideId, stepNumber, title, description, solution_group, order, isDivider, isPublished } = req.body;
+      const finalOrder = order !== undefined ? order : stepNumber;
 
       if (!guideId || !stepNumber || !title) {
         return res.status(400).json({ message: 'Guide ID, step number, and title are required' });
@@ -32,7 +33,11 @@ module.exports = {
         guide: guideId,
         stepNumber,
         title,
-        description
+        description,
+        solution_group,
+        order: finalOrder,
+        isDivider: isDivider || false,
+        isPublished: isPublished !== undefined ? isPublished : true
       }).fetch();
 
       return res.status(201).json(step);
