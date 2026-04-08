@@ -23,13 +23,15 @@
         "sails-mongo": "^1.2.0"
     },
     "devDependencies": {
-        "@types/react": "^18.2.43",
-        "@types/react-dom": "^18.2.17",
+        "@types/node": "^25.5.2",
+        "@types/react": "^19.0.0",
+        "@types/react-dom": "^19.0.0",
         "@vitejs/plugin-react": "^4.2.1",
         "eslint": "^9.39.4",
         "eslint-plugin-react": "^7.22.0",
         "eslint-plugin-react-hooks": "^4.6.0",
         "eslint-plugin-react-refresh": "^0.4.5",
+        "typescript": "^6.0.2",
         "vite": "^7.3.1"
     }
 }
