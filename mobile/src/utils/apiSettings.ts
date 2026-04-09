@@ -5,7 +5,7 @@
  * @param {Response} response - The fetch Response object
  * @returns {Promise<any|null>} - The parsed JSON or null if empty/invalid
  */
-export const readJson = async (response) => {
+export const readJson = async (response: Response): Promise<any | null> => {
     try {
         const text = await response.text();
         if (!text) return null;

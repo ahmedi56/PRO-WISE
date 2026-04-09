@@ -3,10 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'rea
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import { colors, spacing, radius, typography, mixins } from '../theme';
+import { RootState, AppDispatch } from '../store';
+import { MainTabNavigationProp } from '../navigation/types';
 
-const ProfileScreen = ({ navigation }) => {
-    const dispatch = useDispatch();
-    const { user } = useSelector((state) => state.auth);
+interface ProfileScreenProps {
+    navigation: MainTabNavigationProp<'Profile'>;
+}
+
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
+    const dispatch = useDispatch<AppDispatch>();
+    const { user } = useSelector((state: RootState) => state.auth);
 
     const handleLogout = () => {
         Alert.alert(
@@ -21,11 +27,11 @@ const ProfileScreen = ({ navigation }) => {
 
     if (!user) return null;
 
-    const displayName = user.name || user.username || 'User';
+    const displayName = user.firstName || user.username || 'User';
     const initial = displayName[0]?.toUpperCase() || 'U';
-    const roleName = (typeof user.role?.name === 'string'
-        ? user.role.name
-        : (typeof user.role === 'string' ? user.role : 'User'));
+    
+    const role = user.role || (user as any).Role;
+    const roleName = (typeof role === 'object' ? role?.name : role) || 'User';
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -34,7 +40,7 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.avatarText}>{initial}</Text>
                 </View>
                 <Text style={styles.name}>{displayName}</Text>
-                {user.name && <Text style={styles.username}>@{user.username}</Text>}
+                {user.username && <Text style={styles.username}>@{user.username}</Text>}
 
                 <View style={styles.roleBadge}>
                     <Text style={styles.roleText}>{roleName}</Text>
@@ -47,17 +53,16 @@ const ProfileScreen = ({ navigation }) => {
                     <Text style={styles.infoValue}>{user.email}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Phone</Text>
-                    <Text style={styles.infoValue}>{user.phone || 'Not set'}</Text>
+                    <Text style={styles.infoLabel}>Status</Text>
+                    <Text style={styles.infoValue}>{user.status || 'Active'}</Text>
                 </View>
             </View>
 
             <View style={styles.actions}>
                 <TouchableOpacity
                     style={styles.button}
-                    onPress={() => navigation.navigate('EditProfile')}
+                    onPress={() => (navigation as any).navigate('EditProfile')}
                 >
-                    <Text style={styles.buttonIcon}></Text>
                     <Text style={styles.buttonText}>Edit Profile</Text>
                 </TouchableOpacity>
 
@@ -65,7 +70,6 @@ const ProfileScreen = ({ navigation }) => {
                     style={[styles.button, styles.logoutButton]}
                     onPress={handleLogout}
                 >
-                    <Text style={styles.buttonIcon}></Text>
                     <Text style={[styles.buttonText, styles.logoutText]}>Logout</Text>
                 </TouchableOpacity>
             </View>
@@ -89,7 +93,7 @@ const styles = StyleSheet.create({
     name: { fontSize: typography.h2.fontSize, fontWeight: typography.h2.fontWeight, color: colors.textStrong, marginBottom: spacing.xs, textAlign: 'center' },
     username: { fontSize: typography.body.fontSize, color: colors.textMuted, marginBottom: spacing.md },
     roleBadge: {
-        backgroundColor: colors.primaryLight,
+        backgroundColor: colors.primaryGlow,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.xs,
         borderRadius: radius.full,
@@ -122,6 +126,7 @@ const styles = StyleSheet.create({
     button: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: colors.surface,
         padding: spacing.base,
         borderRadius: radius.lg,
@@ -129,7 +134,6 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
         gap: spacing.md,
     },
-    buttonIcon: { fontSize: 18 },
     buttonText: { fontSize: typography.bodyBold.fontSize, fontWeight: typography.bodyBold.fontWeight, color: colors.textStrong },
     logoutButton: { borderColor: colors.errorLight, backgroundColor: colors.errorLight },
     logoutText: { color: colors.error },

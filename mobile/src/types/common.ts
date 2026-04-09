@@ -9,10 +9,9 @@ export interface Category {
   id: string;
   name: string;
   count?: number;
-  icon?: string;
-  summary?: string;
-  description?: string;
   slug?: string;
+  icon?: string;
+  description?: string;
   image?: { url: string };
   children?: Category[];
 }
@@ -21,6 +20,7 @@ export interface Step {
   id: string;
   title: string;
   description?: string;
+  content: string;
   order: number;
   stepNumber?: number;
   media?: Media[];
@@ -46,9 +46,6 @@ export interface Guide {
   description?: string;
   difficulty?: 'easy' | 'medium' | 'hard' | string;
   estimatedTime?: string;
-  estimated_time?: string;
-  isPublished?: boolean;
-  slug?: string;
   steps: Step[];
   media?: Media[];
 }

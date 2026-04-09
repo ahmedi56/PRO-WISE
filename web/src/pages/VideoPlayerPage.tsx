@@ -8,6 +8,8 @@ import MainLayout from '@/components/MainLayout';
 import { RootState } from '@/store';
 import { Product } from '@/types/product';
 
+const IonIcon = 'ion-icon' as any;
+
 const VideoPlayerPage: React.FC = () => {
     const { id, videoId } = useParams<{ id: string; videoId: string }>();
     const navigate = useNavigate();
@@ -71,8 +73,8 @@ const VideoPlayerPage: React.FC = () => {
     if (!currentVideo) {
         return (
             <MainLayout>
-                <div className="page" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-                    <ion-icon name="videocam-off-outline" style={{ fontSize: '4rem', color: 'var(--color-text-muted)' }}></ion-icon>
+                <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
+                    <IonIcon name="videocam-off-outline" style={{ fontSize: '4rem', color: 'var(--color-text-muted)' } as any}></IonIcon>
                     <h2 style={{ marginTop: '1.5rem' }}>Video not found</h2>
                     <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>The video you are looking for is missing or inaccessible.</p>
                     <Button onClick={() => navigate(`/products/${id}`)}>Back to Product</Button>
@@ -115,7 +117,7 @@ const VideoPlayerPage: React.FC = () => {
                 <div style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '2rem', flexWrap: 'wrap' }}>
                     <div style={{ flex: 1, minWidth: '300px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                            <Badge tone="primary" style={{ textTransform: 'uppercase', letterSpacing: '1px' }}>
+                            <Badge tone="primary">
                                 {ytId ? 'Online Source' : 'Local Archive'}
                             </Badge>
                             {_ctx && (
@@ -151,7 +153,7 @@ const VideoPlayerPage: React.FC = () => {
                                 style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', cursor: 'pointer' }}
                             >
                                 <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'rgba(var(--color-primary-rgb), 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                    <ion-icon name="play-circle-outline" style={{ color: 'var(--color-primary)', fontSize: '1.5rem' }}></ion-icon>
+                                    <IonIcon name="play-circle-outline" style={{ color: 'var(--color-primary)', fontSize: '1.5rem' } as any}></IonIcon>
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <h4 style={{ margin: 0, fontSize: '1rem' }}>{video.title}</h4>

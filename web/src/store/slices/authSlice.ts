@@ -138,7 +138,11 @@ const authSlice = createSlice({
                 state.token = action.payload.token;
                 const user = action.payload.user;
                 if (user && user.role) {
-                    user.role = { name: normalizeRoleName(user.role) };
+                    if (typeof user.role === 'object') {
+                        user.role = { ...user.role, name: normalizeRoleName(user.role) };
+                    } else {
+                        user.role = { name: normalizeRoleName(user.role) };
+                    }
                 }
                 state.user = user;
             })
@@ -168,7 +172,11 @@ const authSlice = createSlice({
                 state.loading = false;
                 const user = action.payload;
                 if (user && user.role) {
-                    user.role = { name: normalizeRoleName(user.role) };
+                    if (typeof user.role === 'object') {
+                        user.role = { ...user.role, name: normalizeRoleName(user.role) };
+                    } else {
+                        user.role = { name: normalizeRoleName(user.role) };
+                    }
                 }
                 state.user = user;
             })
@@ -188,7 +196,11 @@ const authSlice = createSlice({
                 if (state.user) {
                     const updatedUser = { ...state.user, ...action.payload.user };
                     if (updatedUser.role) {
-                        updatedUser.role = { name: normalizeRoleName(updatedUser.role) };
+                        if (typeof updatedUser.role === 'object') {
+                            updatedUser.role = { ...updatedUser.role, name: normalizeRoleName(updatedUser.role) };
+                        } else {
+                            updatedUser.role = { name: normalizeRoleName(updatedUser.role) };
+                        }
                     }
                     state.user = updatedUser;
                 }

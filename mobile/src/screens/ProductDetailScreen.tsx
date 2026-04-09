@@ -1,5 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Image } from 'react-native';
+import { 
+    View, 
+    Text, 
+    ScrollView, 
+    StyleSheet, 
+    ActivityIndicator, 
+    TouchableOpacity, 
+    Linking, 
+    Image 
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { logout } from '../store/slices/authSlice';
@@ -9,8 +18,25 @@ import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import RecommendationList from '../components/RecommendationList';
 import { formatProductName } from '../utils/formatProduct';
+import { RootState, AppDispatch } from '../store';
+import { RootStackParamList } from '../navigation/types';
+import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Product, Component } from '../types/product';
+import { Guide, Step, Media } from '../types/common';
 
-const buildComponentSelection = (component, index) => ({
+interface ClassifiedMedia extends Media {
+    author: string;
+    _ctx: {
+        guideTitle: string;
+        stepTitle: string;
+        stepNumber?: number;
+    };
+    videoId?: string;
+    videoUrl?: string; // Add this if needed
+}
+
+const buildComponentSelection = (component: Component, index: number) => ({
     name: component?.name || '',
     type: component?.type || '',
     manufacturer: component?.manufacturer || '',
@@ -25,7 +51,7 @@ const buildComponentSelection = (component, index) => ({
     ].join('|'),
 });
 
-const getComponentLabel = (component) => {
+const getComponentLabel = (component: any) => {
     const name = component?.name || component?.modelNumber || component?.type || 'Component';
     const brand = component?.manufacturer;
     return brand && !name.toLowerCase().startsWith(brand.toLowerCase())
@@ -33,20 +59,10 @@ const getComponentLabel = (component) => {
         : name;
 };
 
-const collectGuideStats = (guides = []) => {
-    const steps = guides.reduce((count, guide) => count + (guide.steps?.length || 0), 0);
-    const media = guides.reduce(
-        (count, guide) => count + (guide.steps || []).reduce((stepCount, step) => stepCount + (step.media?.length || 0), 0),
-        0
-    );
-    return { steps, media };
-};
+const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = []) => {
+    const videos: ClassifiedMedia[] = [];
+    const pdfs: ClassifiedMedia[] = [];
 
-const classifyMedia = (guides = [], supportVideos = [], supportPDFs = []) => {
-    const videos = [];
-    const pdfs = [];
-
-    // Aggregate Legacy Guides
     guides.forEach((guide) => {
         (guide.steps || []).forEach((step) => {
             (step.media || []).forEach((mediaItem) => {
@@ -65,10 +81,11 @@ const classifyMedia = (guides = [], supportVideos = [], supportPDFs = []) => {
         });
     });
 
-    // Aggregate Native Support Videos
     supportVideos.forEach((video) => {
         videos.push({
             id: video.id,
+            type: 'video',
+            url: video.videoUrl || '',
             videoId: video.videoId,
             videoUrl: video.videoUrl,
             title: video.title,
@@ -77,12 +94,12 @@ const classifyMedia = (guides = [], supportVideos = [], supportPDFs = []) => {
         });
     });
 
-    // Aggregate Native Support PDFs
     supportPDFs.forEach((pdf) => {
         pdfs.push({
             id: pdf.id,
+            type: 'pdf',
             title: pdf.title,
-            url: pdf.fileUrl,
+            url: pdf.fileUrl || '',
             author: pdf.author || 'Internal Support',
             _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Document' }
         });
@@ -92,20 +109,29 @@ const classifyMedia = (guides = [], supportVideos = [], supportPDFs = []) => {
 };
 
 const SUPPORT_TABS = [
-    { key: 'steps', label: 'Steps', icon: 'list-outline' },
-    { key: 'videos', label: 'Videos', icon: 'videocam-outline' },
-    { key: 'pdfs', label: 'PDFs', icon: 'document-text-outline' },
+    { key: 'steps', label: 'Steps', icon: 'list-outline' } as const,
+    { key: 'videos', label: 'Videos', icon: 'videocam-outline' } as const,
+    { key: 'pdfs', label: 'PDFs', icon: 'document-text-outline' } as const,
 ];
 
-const ProductDetailScreen = ({ route, navigation }) => {
+type ProductDetailRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
+type ProductDetailNavigationProp = StackNavigationProp<RootStackParamList, 'ProductDetail'>;
+
+interface ProductDetailScreenProps {
+    route: ProductDetailRouteProp;
+    navigation: ProductDetailNavigationProp;
+}
+
+const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, navigation }) => {
     const { id, product } = route.params || {};
-    const dispatch = useDispatch();
-    const { token } = useSelector((state) => state.auth);
-    const [data, setData] = useState(product || null);
+    const dispatch = useDispatch<AppDispatch>();
+    const { token } = useSelector((state: RootState) => state.auth);
+    
+    const [data, setData] = useState<Product | null>(product || null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [selectedComponents, setSelectedComponents] = useState([]);
-    const [activeTab, setActiveTab] = useState('steps');
+    const [selectedComponents, setSelectedComponents] = useState<any[]>([]);
+    const [activeTab, setActiveTab] = useState<'steps' | 'videos' | 'pdfs'>('steps');
 
     const handleUnauthorized = () => dispatch(logout());
 
@@ -132,7 +158,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                 }
 
                 setData(json);
-            } catch (err) {
+            } catch (err: any) {
                 setError(err.message || 'Failed to load product');
             } finally {
                 setLoading(false);
@@ -144,7 +170,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
         }
     }, [id]);
 
-    const toggleComponentSelection = (component, index) => {
+    const toggleComponentSelection = (component: Component, index: number) => {
         const nextSelection = buildComponentSelection(component, index);
         setSelectedComponents((previous) => (
             previous.some((entry) => entry.selectionKey === nextSelection.selectionKey)
@@ -153,8 +179,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
         ));
     };
 
-    const guideStats = useMemo(() => collectGuideStats(data?.guides || []), [data?.guides]);
-    const { videos, pdfs } = useMemo(() => classifyMedia(data?.guides, data?.supportVideos, data?.supportPDFs), [data]);
+    const { videos, pdfs } = useMemo(() => 
+        classifyMedia(data?.guides, (data as any)?.supportVideos, (data as any)?.supportPDFs), 
+    [data]);
 
     const tabCounts = useMemo(() => ({
         steps: (data?.guides || []).reduce((count, guide) => count + (guide.steps?.length || 0), 0),
@@ -170,18 +197,10 @@ const ProductDetailScreen = ({ route, navigation }) => {
         );
     }
 
-    if (error) {
+    if (error || !data) {
         return (
             <View style={styles.center}>
-                <Text style={styles.errorText}>{error}</Text>
-            </View>
-        );
-    }
-
-    if (!data) {
-        return (
-            <View style={styles.center}>
-                <Text style={styles.errorText}>Product not found</Text>
+                <Text style={styles.errorText}>{error || 'Product not found'}</Text>
             </View>
         );
     }
@@ -212,11 +231,11 @@ const ProductDetailScreen = ({ route, navigation }) => {
             <View style={styles.row}>
                 <View style={[styles.card, styles.metaCard]}>
                     <Text style={styles.label}>Category</Text>
-                    <Text style={styles.value}>{data.category?.name || 'N/A'}</Text>
+                    <Text style={styles.value}>{typeof data.category === 'object' ? data.category?.name : 'N/A'}</Text>
                 </View>
                 <View style={[styles.card, styles.metaCard]}>
                     <Text style={styles.label}>Company</Text>
-                    <Text style={styles.value}>{data.company?.name || 'N/A'}</Text>
+                    <Text style={styles.value}>{data.company && typeof data.company === 'object' ? data.company.name : 'N/A'}</Text>
                 </View>
             </View>
 
@@ -297,9 +316,9 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                 <Text style={[styles.tabLabel, activeTab === tab.key && styles.activeTabLabel]}>
                                     {tab.label}
                                 </Text>
-                                {tabCounts[tab.key] > 0 && (
+                                {(tabCounts as any)[tab.key] > 0 && (
                                     <View style={styles.tabBadge}>
-                                        <Text style={styles.tabBadgeText}>{tabCounts[tab.key]}</Text>
+                                        <Text style={styles.tabBadgeText}>{(tabCounts as any)[tab.key]}</Text>
                                     </View>
                                 )}
                             </TouchableOpacity>
@@ -335,7 +354,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
                                                             <View style={styles.stepCircle}>
                                                                 <Text style={styles.stepNumber}>{index + 1}</Text>
                                                             </View>
-                                                            {index < guide.steps.length - 1 && <View style={styles.stepLine} />}
+                                                            {index < (guide.steps?.length || 0) - 1 && <View style={styles.stepLine} />}
                                                         </View>
                                                         <View style={styles.stepContent}>
                                                             <Text style={styles.stepTitle}>{step.title}</Text>
@@ -429,7 +448,7 @@ const ProductDetailScreen = ({ route, navigation }) => {
 
             <RecommendationList
                 productId={data.id}
-                categoryId={data.category?.id || data.category}
+                categoryId={typeof data.category === 'object' ? data.category?.id : data.category as string}
                 selectedComponents={selectedComponents}
                 title={selectedComponents.length > 0 ? 'Products Matching Selected Components' : 'Recommended Similar Models'}
                 onClearSelection={() => setSelectedComponents([])}
@@ -510,16 +529,6 @@ const styles = StyleSheet.create({
     selectionChipText: { color: colors.primary, fontSize: typography.xs.fontSize, fontWeight: '700' },
     clearButton: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 6 },
     clearButtonText: { color: colors.primary, fontWeight: '700' },
-    guideItem: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        paddingVertical: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-        gap: spacing.sm,
-    },
-    guideName: { fontSize: typography.body.fontSize, color: colors.textStrong, fontWeight: '600' },
-    guideMeta: { fontSize: typography.sm.fontSize, color: colors.textMuted, marginTop: 2 },
     errorText: { fontSize: typography.body.fontSize, color: colors.error, textAlign: 'center' },
     supportHeader: { marginBottom: spacing.lg },
     tabsContainer: { flexDirection: 'row', gap: spacing.xs, marginTop: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },

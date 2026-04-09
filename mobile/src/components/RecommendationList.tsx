@@ -1,23 +1,33 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { 
+    View, 
+    Text, 
+    FlatList, 
+    TouchableOpacity, 
+    StyleSheet, 
+    ActivityIndicator 
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import API_URL from '../constants/config';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import { apiFetch } from '../utils/api';
 import { formatProductName } from '../utils/formatProduct';
+import { Product, Component } from '../types/product';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/types';
 
-const COMPONENT_FIELDS = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'];
+const COMPONENT_FIELDS: (keyof Component)[] = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'];
 
-const toComponentPayload = (components = []) => components.map((component) => {
-    const payload = {};
+const toComponentPayload = (components: any[] = []) => components.map((component) => {
+    const payload: any = {};
     COMPONENT_FIELDS.forEach((field) => {
         payload[field] = String(component?.[field] || '').trim();
     });
     return payload;
 });
 
-const getComponentLabel = (component) => {
+const getComponentLabel = (component: any) => {
     const name = component?.name || component?.modelNumber || component?.type || 'Component';
     const brand = component?.manufacturer;
     return brand && !name.toLowerCase().startsWith(brand.toLowerCase())
@@ -25,7 +35,7 @@ const getComponentLabel = (component) => {
         : name;
 };
 
-const parseRecommendationPayload = (payload) => {
+const parseRecommendationPayload = (payload: any) => {
     if (Array.isArray(payload)) {
         return { items: payload, meta: null };
     }
@@ -37,7 +47,7 @@ const parseRecommendationPayload = (payload) => {
     return { items: [], meta: payload?.meta || null };
 };
 
-const getRecommendationWarning = (meta) => {
+const getRecommendationWarning = (meta: any) => {
     const embeddingMeta = meta?.embedding;
     if (embeddingMeta?.requested && !embeddingMeta?.available) {
         return 'Semantic matching is temporarily limited. Showing fallback matches.';
@@ -45,17 +55,27 @@ const getRecommendationWarning = (meta) => {
     return '';
 };
 
-const RecommendationList = ({
+interface RecommendationListProps {
+    productId: string;
+    categoryId?: string;
+    selectedComponents?: any[];
+    title?: string;
+    onClearSelection?: () => void;
+}
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
+
+const RecommendationList: React.FC<RecommendationListProps> = ({
     productId,
     categoryId,
     selectedComponents = [],
     title = 'Recommended for You',
     onClearSelection,
 }) => {
-    const [recommendations, setRecommendations] = useState([]);
+    const [recommendations, setRecommendations] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
     const [serviceWarning, setServiceWarning] = useState('');
-    const navigation = useNavigation();
+    const navigation = useNavigation<NavigationProp>();
 
     const componentMode = selectedComponents.length > 0;
     const selectedLabels = useMemo(
@@ -98,7 +118,7 @@ const RecommendationList = ({
                 const { items, meta } = parseRecommendationPayload(json);
                 setRecommendations(Array.isArray(items) ? items : []);
                 setServiceWarning(getRecommendationWarning(meta));
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Failed to fetch mobile recommendations:', error.message);
                 setRecommendations([]);
                 setServiceWarning('');
@@ -112,18 +132,15 @@ const RecommendationList = ({
         }
     }, [categoryId, componentMode, productId, selectedComponents]);
 
-    if (!loading && recommendations.length === 0 && !componentMode) {
-        return null;
-    }
-
     const splitMatches = useMemo(() => {
         if (!componentMode || recommendations.length === 0) return { exact: [], brand: [] };
         
-        const exact = [];
-        const brand = [];
+        const exact: Product[] = [];
+        const brand: Product[] = [];
         
         recommendations.forEach(p => {
-            const hasExact = Array.isArray(p.matchedComponents) && p.matchedComponents.some(m => m.score >= 180);
+            const hasExact = Array.isArray((p as any).matchedComponents) && 
+                (p as any).matchedComponents.some((m: any) => (m.score || 0) >= 180);
             if (hasExact) exact.push(p);
             else brand.push(p);
         });
@@ -131,19 +148,25 @@ const RecommendationList = ({
         return { exact, brand };
     }, [componentMode, recommendations]);
 
-    const renderItem = ({ item }) => (
+    if (!loading && recommendations.length === 0 && !componentMode) {
+        return null;
+    }
+
+    const renderItem = ({ item }: { item: Product }) => (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => navigation.navigate('ProductDetail', { id: item.id })}
+            onPress={() => navigation.navigate('ProductDetail', { id: item.id, product: item })}
             activeOpacity={0.85}
         >
             <View style={styles.reasonRow}>
                 <View style={styles.reasonBadge}>
                     <Ionicons name="sparkles" size={12} color={colors.primary} />
-                    <Text style={styles.reasonText}>{item.recommendationReason || 'Similar'}</Text>
+                    <Text style={styles.reasonText}>{(item as any).recommendationReason || 'Similar'}</Text>
                 </View>
-                {item.matchScore || item.score ? (
-                    <Text style={styles.scoreText}>{Math.round((item.matchScore || item.score) * 100)}%</Text>
+                {(item as any).matchScore || (item as any).score ? (
+                    <Text style={styles.scoreText}>
+                        {Math.round(((item as any).matchScore || (item as any).score) * 100)}%
+                    </Text>
                 ) : null}
             </View>
             <Text style={styles.productName} numberOfLines={2}>
@@ -158,7 +181,7 @@ const RecommendationList = ({
         </TouchableOpacity>
     );
 
-    const renderSection = (items, sectionTitle, isMuted = false) => (
+    const renderSection = (items: Product[], sectionTitle: string, isMuted = false) => (
         <View style={{ marginBottom: spacing.lg }}>
             <View style={[styles.sectionHeader, isMuted && { borderLeftColor: colors.textMuted }]}>
                 <Text style={[styles.sectionHeaderText, isMuted && { color: colors.textMuted }]}>{sectionTitle}</Text>
@@ -178,7 +201,7 @@ const RecommendationList = ({
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.title}>{title}</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Main', { screen: 'Shop' })}>
+                <TouchableOpacity onPress={() => navigation.navigate('Main')}>
                     <Text style={styles.seeAll}>See All</Text>
                 </TouchableOpacity>
             </View>
@@ -334,14 +357,14 @@ const styles = StyleSheet.create({
         marginBottom: spacing.sm,
         borderRadius: radius.md,
         borderWidth: 1,
-        borderColor: '#F59E0B',
-        backgroundColor: '#FEF3C7',
+        borderColor: colors.warning,
+        backgroundColor: colors.warningLight,
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
     },
     warningText: {
         fontSize: typography.sm.fontSize,
-        color: '#92400E',
+        color: colors.warning,
         lineHeight: 18,
     },
 });

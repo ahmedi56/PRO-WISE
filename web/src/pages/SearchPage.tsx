@@ -8,6 +8,8 @@ import { CATEGORY_ICON_MAP } from '@/constants/icons';
 import { RootState } from '@/store';
 import MainLayout from '@/components/MainLayout';
 
+const IonIcon = 'ion-icon' as any;
+
 const parseRecommendationPayload = (payload: any) => {
     if (Array.isArray(payload)) {
         return { items: payload, meta: null };
@@ -99,17 +101,17 @@ const SearchPage: React.FC = () => {
                                 style={{ cursor: 'pointer', position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}
                             >
                                 <div className="category-card-icon">
-                                    <ion-icon 
-                                        name={(CATEGORY_ICON_MAP as any)[product.category?.name?.toLowerCase()] || 'cube-outline'} 
+                                    <IonIcon 
+                                        name={(CATEGORY_ICON_MAP as any)[(typeof product.category === 'object' ? product.category?.name : '').toLowerCase()] || 'cube-outline'} 
                                         size="large" 
-                                        style={{ color: 'var(--color-primary)' }}
-                                    ></ion-icon>
+                                        style={{ color: 'var(--color-primary)' } as any}
+                                    ></IonIcon>
                                 </div>
                                 <div className="category-card-content" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                     <h3 className="category-card-title">{product.name}</h3>
                                     {product.recommendationReason && (
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '0.5rem' }}>
-                                            <ion-icon name="sparkles-outline" style={{ color: 'var(--color-primary)', fontSize: '0.9rem' }}></ion-icon>
+                                            <IonIcon name="sparkles-outline" style={{ color: 'var(--color-primary)', fontSize: '0.9rem' } as any}></IonIcon>
                                             <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-primary)', textTransform: 'uppercase' }}>
                                                 {product.recommendationReason}
                                             </span>
@@ -119,7 +121,7 @@ const SearchPage: React.FC = () => {
                                         {product.description}
                                     </p>
                                     <div style={{ marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <Badge tone="success" size="sm">
+                                    <Badge tone="success">
                                             {Math.round((product.score || 0) * 100)}% Match
                                     </Badge>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--color-primary)', fontWeight: '600' }}>View Details</span>

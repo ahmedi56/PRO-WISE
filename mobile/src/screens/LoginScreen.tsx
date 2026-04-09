@@ -1,25 +1,41 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { 
+    View, 
+    Text, 
+    TextInput, 
+    StyleSheet, 
+    Alert, 
+    ActivityIndicator, 
+    TouchableOpacity, 
+    KeyboardAvoidingView, 
+    Platform, 
+    Image 
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../store/slices/authSlice';
 import { colors, spacing, radius, typography, shadows } from '../theme';
-
 import API_URL from '../constants/config';
+import { RootState, AppDispatch } from '../store';
+import { RootStackNavigationProp } from '../navigation/types';
 
-const LoginScreen = ({ navigation }) => {
+interface LoginScreenProps {
+    navigation: RootStackNavigationProp<'Login'>;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const dispatch = useDispatch();
-    const { loading, error } = useSelector((state) => state.auth);
-    const [isOnline, setIsOnline] = useState(null);
+    const dispatch = useDispatch<AppDispatch>();
+    const { loading, error } = useSelector((state: RootState) => state.auth);
+    const [isOnline, setIsOnline] = useState<boolean | null>(null);
 
     useEffect(() => {
         const checkConnection = async () => {
             try {
                 const res = await fetch(`${API_URL}/health`);
                 setIsOnline(res.ok);
-            } catch (err) {
+            } catch (err: any) {
                 console.warn('Backend Unreachable:', err.message);
                 setIsOnline(false);
             }
@@ -37,6 +53,10 @@ const LoginScreen = ({ navigation }) => {
     }, [error, dispatch]);
 
     const handleLogin = () => {
+        if (!email || !password) {
+            Alert.alert('Input Error', 'Please enter both email and password');
+            return;
+        }
         dispatch(loginUser({ email: email.trim(), password }));
     };
 
@@ -54,8 +74,14 @@ const LoginScreen = ({ navigation }) => {
                 <Text style={styles.title}>Welcome Back</Text>
                 <Text style={styles.subtitle}>Sign in to your account</Text>
 
-                <View style={[styles.statusBadge, isOnline === true ? styles.online : (isOnline === false ? styles.offline : styles.checking)]}>
-                    <Text style={styles.statusText}>
+                <View style={[
+                    styles.statusBadge, 
+                    isOnline === true ? styles.online : (isOnline === false ? styles.offline : styles.checking)
+                ]}>
+                    <Text style={[
+                        styles.statusText,
+                        isOnline === true ? styles.textOnline : (isOnline === false ? styles.textOffline : styles.textChecking)
+                    ]}>
                         {isOnline === true ? '● Online' : (isOnline === false ? '● Offline (Server Unreachable)' : '● Checking Connection...')}
                     </Text>
                 </View>
@@ -145,9 +171,12 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontWeight: 'bold',
     },
-    online: { color: colors.success },
-    offline: { color: colors.error },
-    checking: { color: colors.warning },
+    textOnline: { color: colors.success },
+    textOffline: { color: colors.error },
+    textChecking: { color: colors.warning },
+    online: { backgroundColor: 'transparent' },
+    offline: { backgroundColor: 'transparent' },
+    checking: { backgroundColor: 'transparent' },
     form: {},
     inputGroup: {
         marginBottom: spacing.lg,

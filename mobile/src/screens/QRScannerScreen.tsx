@@ -1,14 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ActivityIndicator, Dimensions, Alert } from 'react-native';
+import { 
+    StyleSheet, 
+    Text, 
+    View, 
+    TouchableOpacity, 
+    ActivityIndicator, 
+    Dimensions, 
+    Alert 
+} from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography } from '../theme';
 import { parseQRCodeUrl } from '../utils/qrValidation';
+import { RootStackNavigationProp } from '../navigation/types';
 
 const { width } = Dimensions.get('window');
 const SCAN_AREA_SIZE = width * 0.7;
 
-const QRScannerScreen = ({ navigation }) => {
+interface QRScannerScreenProps {
+    navigation: RootStackNavigationProp<'QRScanner'>;
+}
+
+const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ navigation }) => {
     const [permission, requestPermission] = useCameraPermissions();
     const [scanned, setScanned] = useState(false);
     const [torch, setTorch] = useState(false);
@@ -17,15 +30,15 @@ const QRScannerScreen = ({ navigation }) => {
         if (!permission) {
             requestPermission();
         }
-    }, [permission]);
+    }, [permission, requestPermission]);
 
-    const handleBarcodeScanned = ({ data }) => {
+    const handleBarcodeScanned = ({ data }: { data: string }) => {
         if (scanned) return;
         setScanned(true);
 
         const result = parseQRCodeUrl(data);
 
-        if (result.valid) {
+        if (result.valid && result.productId) {
             navigation.navigate('ProductDetail', { id: result.productId });
             // Reset scan state after a delay if user returns to this screen
             setTimeout(() => setScanned(false), 2000);

@@ -21,6 +21,7 @@ export interface Product {
   name: string;
   description?: string;
   isPublished?: boolean;
+  price?: number;
   modelNumber: string;
   manufacturer: string;
   category: Category | string;

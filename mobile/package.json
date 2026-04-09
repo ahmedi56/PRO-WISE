@@ -1,7 +1,7 @@
 {
   "name": "@product-assistant/mobile",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "index.ts",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -12,9 +12,6 @@
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.2",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@react-native/assets-registry": "^0.84.1",
-    "@react-native/js-polyfills": "^0.84.1",
-    "@react-native/normalize-colors": "^0.84.1",
     "@react-navigation/bottom-tabs": "^6.0.0",
     "@react-navigation/native": "^6.1.18",
     "@react-navigation/stack": "^6.4.1",
@@ -41,9 +38,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@types/react": "^19.0.0",
+    "@types/react": "~19.1.10",
     "@types/react-native": "^0.73.0",
-    "typescript": "^6.0.2"
+    "typescript": "~5.9.2"
   },
   "private": true
 }

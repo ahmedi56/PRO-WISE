@@ -19,6 +19,8 @@ import {
 import { AppDispatch, RootState } from '@/store';
 import '@/styles/admin-support.css';
 
+const IonIcon = 'ion-icon' as any;
+
 const AdminSupportPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { products, loading: productsLoading } = useSelector((state: RootState) => state.products);
@@ -230,7 +232,7 @@ const AdminSupportPage: React.FC = () => {
                                 <div className="step-title-text">{step.title || 'Untitled Step'}</div>
                                 <div className="step-actions">
                                     <button className="btn-delete-icon" title="Delete Step" onClick={() => dispatch(deleteStep(step.id))}>
-                                        🗑️
+                                        <IonIcon name="trash-outline"></IonIcon>
                                     </button>
                                 </div>
                             </div>
@@ -258,7 +260,9 @@ const AdminSupportPage: React.FC = () => {
                             <div className="step-title-text">
                                 {video.title} <span className="text-muted" style={{ fontSize: '0.8rem' }}>({video.videoId})</span>
                             </div>
-                            <button className="btn-delete-icon" onClick={() => dispatch(deleteVideo(video.id))}>🗑️</button>
+                            <button className="btn-delete-icon" onClick={() => dispatch(deleteVideo(video.id))}>
+                                <IonIcon name="trash-outline"></IonIcon>
+                            </button>
                         </div>
                     ))
                 )}
@@ -288,7 +292,9 @@ const AdminSupportPage: React.FC = () => {
                                         : `${API_URL}${pdf.fileUrl}`;
                                     window.open(fullUrl, '_blank');
                                 }}>View</button>
-                                <button className="btn-delete-icon" onClick={() => dispatch(deletePDF(pdf.id))}>🗑️</button>
+                                <button className="btn-delete-icon" onClick={() => dispatch(deletePDF(pdf.id))}>
+                                    <IonIcon name="trash-outline"></IonIcon>
+                                </button>
                             </div>
                         </div>
                     ))

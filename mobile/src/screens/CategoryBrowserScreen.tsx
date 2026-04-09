@@ -1,5 +1,14 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Image } from 'react-native';
+import { 
+    View, 
+    Text, 
+    FlatList, 
+    TouchableOpacity, 
+    ActivityIndicator, 
+    StyleSheet, 
+    Alert, 
+    Image 
+} from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { logout } from '../store/slices/authSlice';
@@ -8,15 +17,21 @@ import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import { formatProductName } from '../utils/formatProduct';
+import { RootState, AppDispatch } from '../store';
+import { ShopStackParamList } from '../navigation/types';
+import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Product } from '../types/product';
+import { Category } from '../types/common';
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     'electronics': 'hardware-chip-outline',
     'medical device': 'medkit-outline',
     'camera': 'camera-outline',
     'repair skills': 'build-outline',
     'gaming console': 'game-controller-outline',
     'in the home': 'home-outline',
-    'appliances': 'microwave-outline',
+    'appliances': 'restaurant-outline',
     'mac': 'desktop-outline',
     'computer hardware': 'print-outline',
     'computer': 'laptop-outline',
@@ -28,33 +43,50 @@ const CATEGORY_ICONS = {
     'car and truck': 'bus-outline'
 };
 
-const getCategoryIcon = (category) => {
+const getCategoryIcon = (category: any): keyof typeof Ionicons.glyphMap => {
     let icon = category?.icon;
-    if (icon === 'logo-samsung') icon = 'phone-portrait-outline'; // Fallback for invalid icon
-    if (icon) return icon;
+    if (icon === 'logo-samsung') icon = 'phone-portrait-outline'; 
+    if (icon && CATEGORY_ICONS[icon as string]) return icon as keyof typeof Ionicons.glyphMap;
 
-    const normalized = category?.name?.toLowerCase().trim();
+    const normalized = category?.name?.toLowerCase().trim() || '';
     return CATEGORY_ICONS[normalized] || 'cube-outline';
 };
 
-const getRoleName = (role) => {
+const getRoleName = (role: any): string => {
     if (!role) return '';
     if (typeof role === 'string') return role.toLowerCase();
     if (typeof role.name === 'string') return role.name.toLowerCase();
     return '';
 };
 
+type ScreenNavigationProp = StackNavigationProp<ShopStackParamList, 'Categories' | 'SubCategory'>;
+type ScreenRouteProp = RouteProp<ShopStackParamList, 'Categories' | 'SubCategory'>;
 
+interface CategoryBrowserScreenProps {
+    navigation: ScreenNavigationProp;
+    route: ScreenRouteProp;
+}
 
-const CategoryBrowserScreen = ({ navigation, route }) => {
-    const { categoryId, categoryName } = route.params || {};
-    const [data, setData] = useState({ subcategories: [], products: [] });
+interface ComponentData {
+    subcategories: Category[];
+    products: Product[];
+    currentCategory?: Category;
+}
+
+const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigation, route }) => {
+    const params = route.params as any;
+    const categoryId = params?.categoryId;
+    const categoryName = params?.categoryName;
+
+    const [data, setData] = useState<ComponentData>({ subcategories: [], products: [] });
     const [loading, setLoading] = useState(true);
-    const { user, token } = useSelector((state) => state.auth);
-    const dispatch = useDispatch();
-    const userRole = user?.role || user?.Role;
-    const roleName = getRoleName(userRole);
-    const isAdmin = roleName === 'company_admin' || roleName === 'administrator';
+    
+    const { user, token } = useSelector((state: RootState) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
+    
+    const role = user?.role || (user as any)?.Role;
+    const roleName = getRoleName(role);
+    const isAdmin = ['company_admin', 'administrator', 'super_admin'].includes(roleName);
 
     const handleUnauthorized = () => dispatch(logout());
 
@@ -98,7 +130,7 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
                 products: productList,
                 currentCategory: category
             });
-        } catch (err) {
+        } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to load data');
         } finally {
             setLoading(false);
@@ -119,7 +151,10 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
         if (isAdmin) {
             navigation.setOptions({
                 headerRight: () => (
-                    <TouchableOpacity onPress={() => navigation.navigate('ProductForm')} style={{ marginRight: 15 }}>
+                    <TouchableOpacity 
+                        onPress={() => (navigation as any).navigate('ProductForm')} 
+                        style={{ marginRight: 15 }}
+                    >
                         <Ionicons name="add" size={28} color={colors.primary} />
                     </TouchableOpacity>
                 ),
@@ -129,17 +164,17 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
         }
     }, [isAdmin, navigation]);
 
-    const handleCategoryPress = (cat) => {
+    const handleCategoryPress = (cat: Category) => {
         if (!cat?.id) return;
         navigation.push('SubCategory', { categoryId: cat.id, categoryName: cat.name });
     };
 
-    const handleEdit = (product) => {
+    const handleEdit = (product: Product) => {
         if (!product?.id) return;
-        navigation.navigate('ProductForm', { id: product.id });
+        (navigation as any).navigate('ProductForm', { id: product.id });
     };
 
-    const deleteProduct = async (id) => {
+    const deleteProduct = async (id: string) => {
         try {
             if (!token) {
                 throw new Error('Session expired. Please sign in again.');
@@ -159,24 +194,23 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
                 const errData = await readJson(res);
                 Alert.alert('Error', errData?.message || 'Failed to delete product');
             }
-        } catch (err) {
+        } catch (err: any) {
             Alert.alert('Error', err.message || 'Network error');
         }
     };
 
-    const handleDelete = (product) => {
+    const handleDelete = (product: Product) => {
         Alert.alert('Delete', 'Are you sure?', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Delete', style: 'destructive', onPress: () => deleteProduct(product.id) },
         ]);
     };
 
-    const renderCategoryItem = ({ item }) => {
+    const renderCategoryItem = ({ item }: { item: Category }) => {
         const isSelected = categoryId === item.id;
         const iconName = getCategoryIcon(item);
         const imageUrl = item.image?.url;
 
-        // Horizontal Card for Root Categories (no categoryId means we are at root)
         if (!categoryId) {
             return (
                 <TouchableOpacity
@@ -200,7 +234,6 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
             );
         }
 
-        // Vertical Card for Subcategories (Detail View)
         return (
             <TouchableOpacity
                 style={styles.subCategoryCard}
@@ -215,11 +248,11 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
         );
     };
 
-    const renderProductItem = ({ item }) => (
+    const renderProductItem = ({ item }: { item: Product }) => (
         <TouchableOpacity
             style={styles.productCard}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate('ProductDetail', { id: item.id, product: item })}
+            onPress={() => (navigation as any).navigate('ProductDetail', { id: item.id, product: item })}
         >
             <View style={styles.productHeader}>
                 <Text style={styles.productName}>{formatProductName(item.name, item.manufacturer)}</Text>
@@ -241,7 +274,9 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
             </View>
             {item.description ? <Text style={styles.productDesc} numberOfLines={2}>{item.description}</Text> : null}
             <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>{item.category?.name || 'Product'}</Text>
+                <Text style={styles.badgeText}>
+                    {typeof item.category === 'object' ? item.category.name : 'Product'}
+                </Text>
             </View>
         </TouchableOpacity>
     );
@@ -300,7 +335,12 @@ const CategoryBrowserScreen = ({ navigation, route }) => {
                 ) : null}
                 ListEmptyComponent={!hasSubcategories && !hasProducts ? (
                     <View style={styles.empty}>
-                        <Ionicons name="search-outline" size={48} color={colors.textMuted} style={{ marginBottom: spacing.md, opacity: 0.5 }} />
+                        <Ionicons 
+                            name="search-outline" 
+                            size={48} 
+                            color={colors.textMuted} 
+                            style={{ marginBottom: spacing.md, opacity: 0.5 }} 
+                        />
                         <Text style={styles.emptyTitle}>No items found</Text>
                         <Text style={styles.emptyText}>This search did not return any results.</Text>
                     </View>
@@ -324,8 +364,6 @@ const styles = StyleSheet.create({
         marginBottom: spacing.md,
         paddingHorizontal: 2
     },
-
-    // Header Panel for Categories
     headerPanel: {
         flexDirection: 'row',
         padding: spacing.lg,
@@ -360,8 +398,6 @@ const styles = StyleSheet.create({
         alignSelf: 'flex-start'
     },
     primaryActionText: { color: 'white', fontSize: typography.xs.fontSize, fontWeight: '700' },
-
-    // Root Category Card (Horizontal)
     rootCategoryCard: {
         flex: 0.48,
         flexDirection: 'row',
@@ -391,8 +427,6 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     rootCategoryName: { flex: 1, color: colors.textStrong, fontSize: typography.xs.fontSize, fontWeight: '600' },
-
-    // Subcategory Card (Vertical)
     subCategoryCard: {
         flex: 0.48,
         backgroundColor: colors.surface,
@@ -421,8 +455,6 @@ const styles = StyleSheet.create({
         fontSize: typography.xs.fontSize,
         fontWeight: '600'
     },
-
-    // Product Card
     productCard: {
         backgroundColor: colors.surface,
         padding: spacing.base,
@@ -449,7 +481,6 @@ const styles = StyleSheet.create({
         borderColor: colors.border
     },
     badgeText: { color: colors.textMuted, fontSize: typography.xs.fontSize, fontWeight: '600' },
-
     empty: { alignItems: 'center', paddingVertical: spacing.huge },
     emptyTitle: { fontSize: typography.h4.fontSize, fontWeight: '600', color: colors.text, marginBottom: spacing.xs },
     emptyText: { fontSize: typography.sm.fontSize, color: colors.textMuted },

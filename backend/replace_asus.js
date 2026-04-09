@@ -37,9 +37,9 @@ async function run() {
     const Category = sails.models.category;
     const compCategory = await Category.findOne({ name: 'Computer' });
 
-    // Destroy existing F17 models to replace them
-    const destroyed = await Product.destroy({ name: { contains: 'TUF Gaming F17' }, company: companyId }).fetch();
-    console.log(`Deleted ${destroyed.length} F17 products.`);
+    // Destroy existing F17 models to replace them (REMOVED: Keeping F17)
+    // const destroyed = await Product.destroy({ name: { contains: 'TUF Gaming F17' }, company: companyId }).fetch();
+    // console.log(`Deleted ${destroyed.length} F17 products.`);
 
     // Create ASUS TUF Gaming F15
     const f15 = await Product.create({

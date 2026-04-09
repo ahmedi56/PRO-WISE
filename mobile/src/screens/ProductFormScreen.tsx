@@ -1,25 +1,42 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet, Alert, ActivityIndicator, Modal, FlatList } from 'react-native';
+import { 
+    View, 
+    Text, 
+    TextInput, 
+    TouchableOpacity, 
+    ScrollView, 
+    StyleSheet, 
+    Alert, 
+    ActivityIndicator, 
+    Modal, 
+    FlatList 
+} from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../store/slices/authSlice';
 import API_URL from '../constants/config';
 import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography } from '../theme';
+import { RootState, AppDispatch } from '../store';
+import { RootStackParamList } from '../navigation/types';
+import { RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Component } from '../types/product';
+import { Category, Company } from '../types/common';
 
-const COMPONENT_FIELDS = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'];
+const COMPONENT_FIELDS: (keyof Component)[] = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'];
 
-const normalizeComponentRow = (component = {}) => {
-    const normalized = {};
+const normalizeComponentRow = (component: Partial<Component> = {}): Component => {
+    const normalized: any = {};
     COMPONENT_FIELDS.forEach((field) => {
         normalized[field] = String(component?.[field] || '').trim();
     });
-    return normalized;
+    return normalized as Component;
 };
 
-const validateComponentRows = (components = []) => {
-    const sanitizedComponents = [];
-    const invalidIndexes = [];
+const validateComponentRows = (components: Component[] = []) => {
+    const sanitizedComponents: Component[] = [];
+    const invalidIndexes: number[] = [];
 
     components.forEach((component, index) => {
         const normalized = normalizeComponentRow(component);
@@ -41,30 +58,55 @@ const validateComponentRows = (components = []) => {
     return { sanitizedComponents, invalidIndexes };
 };
 
-const getRoleName = (role) => {
+const getRoleName = (role: any): string => {
     if (!role) return '';
     if (typeof role === 'string') return role.toLowerCase();
     if (typeof role.name === 'string') return role.name.toLowerCase();
     return '';
 };
 
-const ProductFormScreen = ({ navigation, route }) => {
+type ProductFormRouteProp = RouteProp<RootStackParamList, 'ProductForm'>;
+type ProductFormNavigationProp = StackNavigationProp<RootStackParamList, 'ProductForm'>;
+
+interface ProductFormScreenProps {
+    navigation: ProductFormNavigationProp;
+    route: ProductFormRouteProp;
+}
+
+interface ProductFormData {
+    name: string;
+    description: string;
+    content: string;
+    manufacturer: string;
+    modelNumber: string;
+    category: string | null;
+    company: string | null;
+    components: Component[];
+}
+
+const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route }) => {
     const { id } = route.params || {};
     const isEdit = Boolean(id);
-    const { user, token } = useSelector((state) => state.auth);
-    const dispatch = useDispatch();
-    const roleName = getRoleName(user?.role || user?.Role);
-    const hasPermission = roleName === 'company_admin' || roleName === 'administrator';
+    const { user, token } = useSelector((state: RootState) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
+    
+    const role = user?.role || (user as any)?.Role;
+    const roleName = getRoleName(role);
+    const hasPermission = ['company_admin', 'administrator', 'super_admin'].includes(roleName);
 
-    // ── State declarations ──────────────────────────────────
-    const [formData, setFormData] = useState({
-        name: '', description: '', content: '', manufacturer: '', modelNumber: '',
+    const [formData, setFormData] = useState<ProductFormData>({
+        name: '', 
+        description: '', 
+        content: '', 
+        manufacturer: '', 
+        modelNumber: '',
         category: null,
         company: null,
         components: [],
     });
-    const [categories, setCategories] = useState([]);
-    const [companies, setCompanies] = useState([]);
+    
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
     const [selectedCategoryName, setSelectedCategoryName] = useState('');
     const [selectedCompanyName, setSelectedCompanyName] = useState('');
     const [showCatModal, setShowCatModal] = useState(false);
@@ -112,7 +154,7 @@ const ProductFormScreen = ({ navigation, route }) => {
                 setSelectedCategoryName(product?.category?.name || '');
                 setSelectedCompanyName(product?.company?.name || '');
             }
-        } catch (err) {
+        } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to load data');
             navigation.goBack();
         } finally {
@@ -149,6 +191,7 @@ const ProductFormScreen = ({ navigation, route }) => {
             );
             return;
         }
+        
         if (!token) {
             Alert.alert('Session expired', 'Please log in again.');
             return;
@@ -177,7 +220,7 @@ const ProductFormScreen = ({ navigation, route }) => {
 
             Alert.alert('Success', `Product ${isEdit ? 'updated' : 'created'} successfully`);
             navigation.goBack();
-        } catch (err) {
+        } catch (err: any) {
             Alert.alert('Error', err.message || 'Failed to save product');
         } finally {
             setLoading(false);
@@ -191,14 +234,14 @@ const ProductFormScreen = ({ navigation, route }) => {
         }));
     };
 
-    const handleRemoveComponent = (index) => {
+    const handleRemoveComponent = (index: number) => {
         setFormData(prev => ({ 
             ...prev, 
             components: (prev.components || []).filter((_, i) => i !== index) 
         }));
     };
 
-    const handleComponentChange = (index, field, value) => {
+    const handleComponentChange = (index: number, field: keyof Component, value: string) => {
         setFormData(prev => {
             const newComponents = [...(prev.components || [])];
             newComponents[index] = { ...newComponents[index], [field]: value };
@@ -206,7 +249,7 @@ const ProductFormScreen = ({ navigation, route }) => {
         });
     };
 
-    const renderPickerItem = (item, onPress) => (
+    const renderPickerItem = (item: any, onPress: () => void) => (
         <TouchableOpacity style={styles.pickerItem} onPress={onPress}>
             <Text style={styles.pickerItemText}>{item.name || 'Unnamed'}</Text>
         </TouchableOpacity>
@@ -284,11 +327,13 @@ const ProductFormScreen = ({ navigation, route }) => {
                 </View>
             </View>
 
-            {/* --- COMPONENTS SECTION --- */}
-            <View style={[styles.formGroup, { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: 15 }]}>
+            <View style={[styles.formGroup, { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 15 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                     <Text style={[styles.label, { marginBottom: 0 }]}>Components (AI Context)</Text>
-                    <TouchableOpacity onPress={handleAddComponent} style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceHover, borderRadius: 5 }}>
+                    <TouchableOpacity 
+                        onPress={handleAddComponent} 
+                        style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceHover, borderRadius: 5 }}
+                    >
                         <Text style={{ color: colors.primary, fontWeight: 'bold' }}>+ Add</Text>
                     </TouchableOpacity>
                 </View>
@@ -299,7 +344,7 @@ const ProductFormScreen = ({ navigation, route }) => {
                     </Text>
                 ) : (
                     formData.components.map((comp, index) => (
-                        <View key={index} style={{ backgroundColor: colors.surface, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 10 }}>
+                        <View key={index} style={{ backgroundColor: colors.surface, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
                                 <Text style={{ fontWeight: 'bold', color: colors.text }}>Component #{index + 1}</Text>
                                 <TouchableOpacity onPress={() => handleRemoveComponent(index)}>
@@ -351,7 +396,6 @@ const ProductFormScreen = ({ navigation, route }) => {
                     ))
                 )}
             </View>
-            {/* -------------------- */}
 
             <View style={styles.formGroup}>
                 <Text style={styles.label}>Category</Text>

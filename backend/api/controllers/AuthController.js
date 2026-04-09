@@ -206,7 +206,7 @@ module.exports = {
 
       // --- TEMP HOTFIX: Force Super Admin Permissions Sync Without Restart ---
       if (user.role && user.role.name === 'super_admin') {
-        const requiredPerms = ['users.manage', 'categories.manage', 'audit.view', 'analytics.view'];
+        const requiredPerms = ['users.manage', 'companies.manage', 'categories.manage', 'products.manage', 'guides.manage', 'audit.view', 'analytics.view', 'qr.generate'];
         const hasAll = requiredPerms.every(p => (user.role.permissions || []).includes(p));
         if (!hasAll) {
           sails.log.info('Hotfixing missing Super Admin permissions in DB during login...');
@@ -332,7 +332,7 @@ module.exports = {
 
       // --- TEMP HOTFIX: Force Super Admin Permissions Sync Without Restart ---
       if (user.role && user.role.name === 'super_admin') {
-        const requiredPerms = ['users.manage', 'categories.manage', 'audit.view', 'analytics.view'];
+        const requiredPerms = ['users.manage', 'companies.manage', 'categories.manage', 'products.manage', 'guides.manage', 'audit.view', 'analytics.view', 'qr.generate'];
         const hasAll = requiredPerms.every(p => (user.role.permissions || []).includes(p));
         if (!hasAll) {
           sails.log.info('Hotfixing missing Super Admin permissions in DB...');

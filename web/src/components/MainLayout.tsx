@@ -7,8 +7,10 @@ import { CATEGORY_ICON_MAP } from '@/constants/icons';
 import { Category } from '@/types/product';
 import { RootState } from '@/store';
 
+const IonIcon = 'ion-icon' as any;
+
 interface CategoryItemProps {
-    category: Category & { children?: (Category & { children?: any[] })[] };
+    category: any;
     depth?: number;
     currentCategoryId: string | null;
     onCategoryClick: (category: any) => void;
@@ -62,13 +64,13 @@ const CategoryItem: React.FC<CategoryItemProps> = ({ category, depth = 0, curren
                                 transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
                             }}
                         >
-                            <ion-icon name="chevron-forward-outline"></ion-icon>
+                            <IonIcon name="chevron-forward-outline"></IonIcon>
                         </span>
                     )}
-                    <ion-icon 
-                        name={(CATEGORY_ICON_MAP as any)[category.name?.toLowerCase()] || category.icon || 'folder-outline'} 
+                    <IonIcon 
+                        name={(CATEGORY_ICON_MAP as any)[(category.name || '').toLowerCase()] || (category.icon as any) || 'folder-outline'} 
                         style={{ fontSize: '1.1rem', opacity: selected ? 1 : 0.7 }}
-                    ></ion-icon>
+                    ></IonIcon>
                     <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {category.name}
                     </span>
@@ -129,7 +131,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                         className="btn-ghost btn-sm"
                         style={{ marginLeft: 'auto', padding: '2px' }}
                     >
-                        <ion-icon name="chevron-back-outline"></ion-icon>
+                        <IonIcon name="chevron-back-outline"></IonIcon>
                     </button>
                 </div>
                 
@@ -138,7 +140,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                     onClick={() => { setSearchParams({}); navigate('/products'); }}
                     style={{ marginBottom: '1rem' }}
                 >
-                    <ion-icon name="apps-outline" style={{ marginRight: '8px' }}></ion-icon>
+                    <IonIcon name="apps-outline" style={{ marginRight: '8px' }}></IonIcon>
                     All Products
                 </button>
 
@@ -162,7 +164,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                             className="btn-secondary btn-sm"
                             style={{ marginBottom: '1rem' }}
                         >
-                            <ion-icon name="menu-outline" style={{ marginRight: '8px' }}></ion-icon>
+                            <IonIcon name="menu-outline" style={{ marginRight: '8px' }}></IonIcon>
                             Categories
                         </button>
                     )}

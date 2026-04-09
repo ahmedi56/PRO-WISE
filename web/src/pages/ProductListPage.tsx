@@ -8,7 +8,9 @@ import RecommendationSection from '@/components/RecommendationSection';
 import MainLayout from '@/components/MainLayout';
 import { CATEGORY_ICON_MAP } from '@/constants/icons';
 import { formatProductName } from '@/utils/formatProduct';
-import { RootState } from '@/store';
+import { RootState, AppDispatch } from '@/store';
+
+const IonIcon = 'ion-icon' as any;
 import { Product, Category } from '@/types/product';
 
 const ProductListPage: React.FC = () => {
@@ -119,7 +121,7 @@ const ProductListPage: React.FC = () => {
     const handleStatusUpdate = async (id: string, newStatus: string) => {
         try {
             await axios.put(`${API_URL}/products/${id}/${newStatus}`, {});
-            setProducts((prev) => prev.map(p => p.id === id ? { ...p, status: newStatus === 'unpublish' ? 'draft' : newStatus } as Product : p));
+            setProducts((prev) => prev.map(p => p.id === id ? { ...p, status: (newStatus === 'unpublish' ? 'draft' : newStatus) as any } : p));
         } catch (error) {
             window.alert('Failed to update product status.');
         }
@@ -216,7 +218,7 @@ const ProductListPage: React.FC = () => {
                             >
                                 <div className="category-card-icon">
                                     <ion-icon 
-                                        name={(CATEGORY_ICON_MAP as any)[childCat.name?.toLowerCase()] || childCat.icon || 'folder-outline'} 
+                                        name={(CATEGORY_ICON_MAP as any)[(childCat.name || '').toLowerCase()] || (childCat.icon as any) || 'folder-outline'} 
                                         size="large" 
                                         style={{ color: 'var(--color-primary)' }}
                                     ></ion-icon>
@@ -235,11 +237,11 @@ const ProductListPage: React.FC = () => {
                                 style={{ cursor: 'pointer' }}
                             >
                                 <div className="category-card-icon">
-                                    <ion-icon 
-                                        name={(CATEGORY_ICON_MAP as any)[product.category?.name?.toLowerCase()] || product.category?.icon || 'cube-outline'} 
+                                    <IonIcon 
+                                        name={(CATEGORY_ICON_MAP as any)[(typeof product.category === 'object' ? product.category?.name : '').toLowerCase()] || (typeof product.category === 'object' ? product.category?.icon : '') || 'cube-outline'} 
                                         size="large" 
-                                        style={{ color: 'var(--color-primary)' }}
-                                    ></ion-icon>
+                                        style={{ color: 'var(--color-primary)' } as any}
+                                    ></IonIcon>
                                 </div>
                                 <div className="category-card-content">
                                     <h3 className="category-card-title">
@@ -249,7 +251,7 @@ const ProductListPage: React.FC = () => {
                                     </h3>
                                     <p className="category-card-desc">{product.description || 'No description.'}</p>
                                     {canManageProduct(product) && (
-                                        <Badge tone={product.status === 'published' ? 'success' : product.status === 'archived' ? 'neutral' : 'warning'} style={{ marginTop: '0.5rem' }}>
+                                        <Badge tone={product.status === 'published' ? 'success' : product.status === 'archived' ? 'neutral' : 'warning'}>
                                             {product.status || 'draft'}
                                         </Badge>
                                     )}

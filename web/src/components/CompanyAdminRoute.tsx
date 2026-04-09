@@ -19,9 +19,9 @@ const CompanyAdminRoute: React.FC<CompanyAdminRouteProps> = ({ children }) => {
         return <Navigate to="/pending-approval" replace />;
     }
 
-    const role = user?.role || (user as any)?.Role;
-    const roleName = (typeof role === 'object' ? role?.name : role || '').toLowerCase();
-    const isAdmin = ['administrator', 'company_admin', 'super_admin'].includes(roleName);
+    const role = user.role;
+    const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
+    const isAdmin = ['company_admin', 'super_admin', 'administrator'].includes(roleName);
 
     if (!isAdmin) {
         return <Navigate to="/products" replace />;

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { 
@@ -9,24 +9,30 @@ import Animated, {
     withRepeat, 
     withSequence, 
     withTiming,
-    interpolateColor
 } from 'react-native-reanimated';
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ShopStackNavigator from './ShopStackNavigator';
 import { colors, shadows } from '../theme';
+import { MainTabParamList } from './types';
 
-const Tab = createBottomTabNavigator();
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const ICONS = {
+const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     Home: 'home-outline',
     Shop: 'grid-outline',
     Scan: 'qr-code-outline',
     Profile: 'person-outline',
 };
 
-// --- Animated Icon Component for Standard Tabs ---
-const AnimatedTabIcon = ({ name, focused, color, size }) => {
+interface AnimatedTabIconProps {
+    name: keyof typeof Ionicons.glyphMap;
+    focused: boolean;
+    color: string;
+    size: number;
+}
+
+const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({ name, focused, color, size }) => {
     const scale = useSharedValue(1);
 
     useEffect(() => {
@@ -47,13 +53,16 @@ const AnimatedTabIcon = ({ name, focused, color, size }) => {
     );
 };
 
-// --- Animated Scan Button for the QR Scanner Tab ---
-const AnimatedScanButton = ({ focused, size }) => {
+interface AnimatedScanButtonProps {
+    focused: boolean;
+    size: number;
+}
+
+const AnimatedScanButton: React.FC<AnimatedScanButtonProps> = ({ focused, size }) => {
     const scale = useSharedValue(1);
     const pulse = useSharedValue(1);
 
     useEffect(() => {
-        // Pulse animation to draw eye to the main feature
         pulse.value = withRepeat(
             withSequence(
                 withTiming(1.1, { duration: 1000 }),
@@ -65,7 +74,6 @@ const AnimatedScanButton = ({ focused, size }) => {
     }, []);
 
     useEffect(() => {
-        // Immediate reaction to focus
         scale.value = withSpring(focused ? 1.15 : 1, {
             damping: 15,
             stiffness: 150,
@@ -90,7 +98,7 @@ const AnimatedScanButton = ({ focused, size }) => {
     );
 };
 
-const MainTabNavigator = () => {
+const MainTabNavigator: React.FC = () => {
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -140,17 +148,17 @@ const MainTabNavigator = () => {
                 headerTintColor: colors.textStrong,
             })}
         >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Shop" component={ShopStackNavigator} options={{ headerShown: false }} />
+            <Tab.Screen name="Home" component={HomeScreen as any} />
+            <Tab.Screen name="Shop" component={ShopStackNavigator as any} options={{ headerShown: false }} />
             <Tab.Screen 
                 name="Scan" 
                 component={require('../screens/QRScannerScreen').default} 
                 options={{ 
                     title: 'Scan',
-                    tabBarLabel: () => null // Hide label for the central Scan button
+                    tabBarLabel: () => null 
                 }} 
             />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
+            <Tab.Screen name="Profile" component={ProfileScreen as any} />
         </Tab.Navigator>
     );
 };

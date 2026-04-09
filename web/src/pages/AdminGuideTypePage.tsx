@@ -78,7 +78,7 @@ const AdminGuideTypePage: React.FC = () => {
                     <h3 style={{ marginBottom: 'var(--space-4)' }}>
                         {editingId ? 'Edit Guide Type' : 'New Guide Type'}
                     </h3>
-                    {error && <Alert tone="error" style={{ marginBottom: 'var(--space-4)' }}>{error}</Alert>}
+                    {error && <Alert tone="error" className="mb-4">{error}</Alert>}
 
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                         <InputField

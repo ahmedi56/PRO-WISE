@@ -1,17 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { 
+    View, 
+    Text, 
+    TextInput, 
+    TouchableOpacity, 
+    StyleSheet, 
+    Alert, 
+    ActivityIndicator, 
+    KeyboardAvoidingView, 
+    Platform, 
+    ScrollView, 
+    Image 
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, clearError, resetSuccess } from '../store/slices/authSlice';
 import { colors, spacing, radius, typography, shadows } from '../theme';
+import { RootState, AppDispatch } from '../store';
+import { RootStackNavigationProp } from '../navigation/types';
 
-const RegisterScreen = ({ navigation }) => {
+interface RegisterScreenProps {
+    navigation: RootStackNavigationProp<'Register'>;
+}
+
+const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const dispatch = useDispatch();
-    const { loading, error, success } = useSelector((state) => state.auth);
+    const dispatch = useDispatch<AppDispatch>();
+    const { loading, error, success } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
         if (success) {
@@ -31,7 +49,13 @@ const RegisterScreen = ({ navigation }) => {
             Alert.alert('Error', 'Please fill in all fields');
             return;
         }
-        dispatch(registerUser({ name: name.trim(), username: username.trim(), email: email.trim(), password, roleName: 'client' }));
+        dispatch(registerUser({ 
+            name: name.trim(), 
+            username: username.trim(), 
+            email: email.trim(), 
+            password, 
+            roleName: 'client' 
+        }));
     };
 
     return (
@@ -55,26 +79,50 @@ const RegisterScreen = ({ navigation }) => {
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Full Name</Text>
-                    <TextInput style={styles.input} placeholder="John Doe" placeholderTextColor={colors.textMuted}
-                        value={name} onChangeText={setName} />
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="John Doe" 
+                        placeholderTextColor={colors.textMuted}
+                        value={name} 
+                        onChangeText={setName} 
+                    />
                 </View>
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Username</Text>
-                    <TextInput style={styles.input} placeholder="johndoe" placeholderTextColor={colors.textMuted}
-                        value={username} onChangeText={setUsername} autoCapitalize="none" />
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="johndoe" 
+                        placeholderTextColor={colors.textMuted}
+                        value={username} 
+                        onChangeText={setUsername} 
+                        autoCapitalize="none" 
+                    />
                 </View>
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Email</Text>
-                    <TextInput style={styles.input} placeholder="email@example.com" placeholderTextColor={colors.textMuted}
-                        value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="email@example.com" 
+                        placeholderTextColor={colors.textMuted}
+                        value={email} 
+                        onChangeText={setEmail} 
+                        keyboardType="email-address" 
+                        autoCapitalize="none" 
+                    />
                 </View>
 
                 <View style={styles.inputGroup}>
                     <Text style={styles.label}>Password</Text>
-                    <TextInput style={styles.input} placeholder="••••••••" placeholderTextColor={colors.textMuted}
-                        value={password} onChangeText={setPassword} secureTextEntry />
+                    <TextInput 
+                        style={styles.input} 
+                        placeholder="••••••••" 
+                        placeholderTextColor={colors.textMuted}
+                        value={password} 
+                        onChangeText={setPassword} 
+                        secureTextEntry 
+                    />
                 </View>
 
                 {loading ? (
@@ -105,11 +153,46 @@ const styles = StyleSheet.create({
         height: 100,
         marginBottom: spacing.md,
     },
+    title: {
+        fontSize: typography.h1.fontSize,
+        fontWeight: typography.h1.fontWeight,
+        color: colors.textStrong,
+        marginBottom: spacing.sm,
+    },
+    subtitle: {
+        fontSize: typography.body.fontSize,
+        color: colors.textMuted,
+        marginBottom: spacing.md,
+    },
     inputGroup: { marginBottom: spacing.lg },
-    label: { color: colors.text, marginBottom: spacing.sm, fontSize: typography.sm.fontSize, fontWeight: '600' },
-    input: { backgroundColor: colors.surfaceRaised, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.base, color: colors.textStrong, fontSize: typography.body.fontSize },
-    button: { backgroundColor: colors.primary, padding: spacing.base, borderRadius: radius.md, alignItems: 'center', marginTop: spacing.sm, ...shadows.glow },
-    buttonText: { color: '#fff', fontSize: typography.bodyBold.fontSize, fontWeight: typography.bodyBold.fontWeight },
+    label: { 
+        color: colors.text, 
+        marginBottom: spacing.sm, 
+        fontSize: typography.sm.fontSize, 
+        fontWeight: '600' 
+    },
+    input: { 
+        backgroundColor: colors.surfaceRaised, 
+        borderWidth: 1, 
+        borderColor: colors.border, 
+        borderRadius: radius.md, 
+        padding: spacing.base, 
+        color: colors.textStrong, 
+        fontSize: typography.body.fontSize 
+    },
+    button: { 
+        backgroundColor: colors.primary, 
+        padding: spacing.base, 
+        borderRadius: radius.md, 
+        alignItems: 'center', 
+        marginTop: spacing.sm, 
+        ...shadows.glow 
+    },
+    buttonText: { 
+        color: '#fff', 
+        fontSize: typography.bodyBold.fontSize, 
+        fontWeight: typography.bodyBold.fontWeight 
+    },
     linkContainer: { marginTop: spacing.lg, alignItems: 'center' },
     linkText: { color: colors.primary, fontSize: typography.body.fontSize },
 });

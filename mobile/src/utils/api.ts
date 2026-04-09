@@ -1,32 +1,35 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import API_URL from '../constants/config';
-// import { logout } from '../store/slices/authSlice'; // Removed to fix circular dependency
 
 let isRefreshing = false;
-let refreshSubscribers = [];
+let refreshSubscribers: ((token: string) => void)[] = [];
 
-const subscribeTokenRefresh = (cb) => {
+const subscribeTokenRefresh = (cb: (token: string) => void) => {
     refreshSubscribers.push(cb);
 };
 
-const onRefreshed = (token) => {
+const onRefreshed = (token: string) => {
     refreshSubscribers.map((cb) => cb(token));
     refreshSubscribers = [];
 };
 
-export const apiFetch = async (url, options = {}, onUnauthorized = null) => {
+export const apiFetch = async (
+    url: string, 
+    options: RequestInit = {}, 
+    onUnauthorized: (() => void) | null = null
+): Promise<Response> => {
     const token = await AsyncStorage.getItem('userToken');
     
-    let headers = {
+    let headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...options.headers,
+        ...(options.headers as Record<string, string>),
     };
 
     if (token && !headers.Authorization) {
         headers.Authorization = `Bearer ${token}`;
     }
 
-    const config = {
+    const config: RequestInit = {
         ...options,
         headers,
     };

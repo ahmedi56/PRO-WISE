@@ -1,4 +1,4 @@
-export const formatProductName = (name, manufacturer) => {
+export const formatProductName = (name: string | undefined, manufacturer: string | undefined): string => {
     if (!name) return '';
     if (!manufacturer) return name;
     

@@ -1,9 +1,8 @@
 /**
- * PRO-WISE Mobile Theme — Clean Industrial Design Tokens
- * Aligned with Web Frontend (Light Mode)
+ * PRO-WISE Mobile Theme — Type-Safe Industrial Design Tokens
  */
 
-const colors = {
+export const colors = {
     primary: '#0F766E', // Teal 700
     primaryHover: '#0D6B63',
     primaryLight: 'rgba(15, 118, 110, 0.12)',
@@ -38,7 +37,7 @@ const colors = {
     infoLight: 'rgba(59, 130, 246, 0.12)',
 };
 
-const spacing = {
+export const spacing = {
     xs: 4,
     sm: 8,
     md: 12,
@@ -50,7 +49,7 @@ const spacing = {
     huge: 48,
 };
 
-const radius = {
+export const radius = {
     sm: 6,
     md: 8,
     lg: 12,
@@ -58,24 +57,24 @@ const radius = {
     full: 9999,
 };
 
-const typography = {
+export const typography = {
     heading: {
-        fontWeight: '700',
+        fontWeight: '700' as const,
         color: colors.textStrong,
     },
-    h1: { fontSize: 32, fontWeight: '700', color: colors.textStrong },
-    h2: { fontSize: 24, fontWeight: '700', color: colors.textStrong },
-    h3: { fontSize: 20, fontWeight: '600', color: colors.textStrong },
-    h4: { fontSize: 18, fontWeight: '600', color: colors.textStrong },
-    body: { fontSize: 16, fontWeight: '400', color: colors.text },
-    bodyBold: { fontSize: 16, fontWeight: '600', color: colors.textStrong },
-    sm: { fontSize: 14, fontWeight: '400', color: colors.text },
-    smBold: { fontSize: 14, fontWeight: '600', color: colors.textStrong },
-    xs: { fontSize: 12, fontWeight: '500', color: colors.textMuted },
-    caption: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5, textTransform: 'uppercase', color: colors.textMuted },
+    h1: { fontSize: 32, fontWeight: '700' as const, color: colors.textStrong },
+    h2: { fontSize: 24, fontWeight: '700' as const, color: colors.textStrong },
+    h3: { fontSize: 20, fontWeight: '600' as const, color: colors.textStrong },
+    h4: { fontSize: 18, fontWeight: '600' as const, color: colors.textStrong },
+    body: { fontSize: 16, fontWeight: '400' as const, color: colors.text },
+    bodyBold: { fontSize: 16, fontWeight: '600' as const, color: colors.textStrong },
+    sm: { fontSize: 14, fontWeight: '400' as const, color: colors.text },
+    smBold: { fontSize: 14, fontWeight: '600' as const, color: colors.textStrong },
+    xs: { fontSize: 12, fontWeight: '500' as const, color: colors.textMuted },
+    caption: { fontSize: 12, fontWeight: '600' as const, letterSpacing: 0.5, textTransform: 'uppercase' as const, color: colors.textMuted },
 };
 
-const shadows = {
+export const shadows = {
     sm: {
         shadowColor: '#64748B',
         shadowOffset: { width: 0, height: 1 },
@@ -106,8 +105,7 @@ const shadows = {
     },
 };
 
-// Reusable style mixins
-const mixins = {
+export const mixins = {
     card: {
         backgroundColor: colors.surface,
         borderRadius: radius.lg,
@@ -130,7 +128,7 @@ const mixins = {
         paddingVertical: spacing.base,
         paddingHorizontal: spacing.xl,
         borderRadius: radius.md,
-        alignItems: 'center',
+        alignItems: 'center' as const,
         ...shadows.glow,
     },
     buttonSecondary: {
@@ -140,7 +138,7 @@ const mixins = {
         borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.border,
-        alignItems: 'center',
+        alignItems: 'center' as const,
     },
     buttonText: {
         color: colors.textStrong,
@@ -158,10 +156,9 @@ const mixins = {
         backgroundColor: colors.primaryLight,
         borderWidth: 1,
         borderColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
+        justifyContent: 'center' as const,
+        alignItems: 'center' as const,
     }),
 };
 
-export { colors, spacing, radius, typography, shadows, mixins };
 export default { colors, spacing, radius, typography, shadows, mixins };

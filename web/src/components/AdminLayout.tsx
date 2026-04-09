@@ -16,7 +16,9 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
     // Governance
     { label: 'Users', path: '/admin/users', icon: '👥', permission: 'users.manage', section: 'Governance' },
+    { label: 'Companies', path: '/admin/companies', icon: '🏢', permission: 'companies.manage', section: 'Governance' },
     { label: 'Categories', path: '/admin/categories', icon: '🏷️', permission: 'categories.manage', section: 'Governance' },
+    { label: 'Guide Types', path: '/admin/guide-types', icon: '📋', permission: 'categories.manage', section: 'Governance' },
     { label: 'Audit Logs', path: '/admin/audit-logs', icon: '📜', permission: 'audit.view', section: 'Governance' },
     { label: 'Analytics', path: '/admin/analytics', icon: '📊', permission: 'analytics.view', section: 'Governance' },
     
@@ -35,13 +37,19 @@ const AdminLayout: React.FC = () => {
     // Filter items based on user permissions
     const role = user?.role || (user as any)?.Role;
     const roleName = (typeof role === 'object' ? role?.name : role || '').toLowerCase();
-    const permissions = (typeof role === 'object' ? role?.permissions : []) || [];
     const isSuperAdmin = roleName === 'super_admin';
+    const isCompanyAdmin = ['company_admin', 'administrator'].includes(roleName);
+    const permissions = (typeof role === 'object' ? role?.permissions : []) || [];
 
     const visibleItems = NAV_ITEMS.filter(item => {
         if (isSuperAdmin) {
-            return item.section === 'Governance';
+            if (item.section === 'Operations' || item.path === '/admin/guide-types' || item.path === '/admin/companies') {
+                return false;
+            }
+            return true;
         }
+        // Company admins get implicit access to their own company page
+        if (isCompanyAdmin && item.path === '/admin/companies') return true;
         return permissions.includes(item.permission);
     });
 
@@ -58,14 +66,14 @@ const AdminLayout: React.FC = () => {
                 <div className="admin-sidebar-header">
                     <img src="/pro-wise.png" alt="PRO-WISE Logo" className="brand-logo" />
                     <div className="sidebar-title">
-                        {isSuperAdmin ? 'Platform Management' : 'Organization Hub'}
+                        {isSuperAdmin ? 'Platform Management' : (isCompanyAdmin ? 'Organization Hub' : 'Operations Dashboard')}
                     </div>
                 </div>
 
                 <nav className="admin-nav">
                     {sections.map((section) => (
                         <div key={section} className="admin-nav-section">
-                            <div className="admin-nav-section-title">{isSuperAdmin ? section : 'Organization Operations'}</div>
+                            <div className="admin-nav-section-title">{isSuperAdmin ? section : (isCompanyAdmin ? 'Organization Management' : 'Operations')}</div>
                             {visibleItems.filter(item => item.section === section).map((item) => (
                                 <NavLink
                                     key={item.path}

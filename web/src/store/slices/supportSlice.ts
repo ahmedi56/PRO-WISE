@@ -7,6 +7,9 @@ interface Guide {
     title: string;
     description?: string;
     product: string;
+    difficulty?: string;
+    estimated_time?: string;
+    isPublished?: boolean;
 }
 
 interface Step {

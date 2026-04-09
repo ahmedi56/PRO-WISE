@@ -18,27 +18,44 @@ import { RootState } from '@/store';
 import { User, Role } from '@/types/user';
 import { Company } from '@/types/company';
 
-const ROLE_BADGE: Record<string, 'accent' | 'info' | 'primary' | 'neutral' | 'success' | 'danger' | 'warning' | 'ghost'> = {
-    super_admin: 'accent',
+const ROLE_BADGE: Record<string, 'info' | 'primary' | 'neutral' | 'success' | 'danger' | 'warning'> = {
+    super_admin: 'primary',
     administrator: 'info',
     company_admin: 'info',
     client: 'primary',
 };
 
-const STATUS_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'neutral' | 'info' | 'primary' | 'warning' | 'ghost'> = {
+const STATUS_BADGE: Record<string, 'success' | 'warning' | 'danger' | 'neutral' | 'info' | 'primary'> = {
     active: 'success',
     pending: 'warning',
     deactivated: 'danger'
 };
 
 const DEFAULT_ROLES: Role[] = [
-    { id: 'super_admin', name: 'super_admin' },
-    { id: 'company_admin', name: 'company_admin' },
-    { id: 'administrator', name: 'administrator' },
-    { id: 'technician', name: 'technician' },
-    { id: 'user', name: 'user' },
-    { id: 'client', name: 'client' }
-];
+    'super_admin',
+    'company_admin',
+    'administrator',
+    'technician',
+    'user',
+    'client'
+] as any;
+
+const getUserInitials = (user: User) => {
+    const name = user.name || user.username || 'U';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+};
+
+const getAvatarColor = (id: string) => {
+    const colors = [
+        '#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', 
+        '#f59e0b', '#10b981', '#06b6d4', '#3b82f6'
+    ];
+    let hash = 0;
+    for (let i = 0; i < id.length; i++) {
+        hash = id.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+};
 
 interface UserEditModalProps {
     user: User;
@@ -48,32 +65,34 @@ interface UserEditModalProps {
     onSave: (data: any) => void;
     saving: boolean;
 }
-
 const UserEditModal: React.FC<UserEditModalProps> = ({ user, roles, companies, onClose, onSave, saving }) => {
+    const { user: currentUser } = useSelector((state: RootState) => state.auth);
+    const currentUserRole = currentUser?.role;
+    const currentUserRoleName = (typeof currentUserRole === 'object' && currentUserRole !== null ? (currentUserRole as any).name : String(currentUserRole || '')).toLowerCase();
+    const isSuperAdmin = currentUserRoleName === 'super_admin';
+
     const [formData, setFormData] = useState({
         name: user.name || '',
         email: user.email || '',
-        role: user.role?.id || user.role?.name || (typeof user.role === 'string' ? user.role : 'client'),
+        role: typeof user.role === 'string' ? user.role : (user.role as any)?.name || 'client',
         status: user.status || 'active',
-        company: user.company?.id || (typeof user.company === 'string' ? user.company : '')
+        company: typeof user.company === 'string' ? user.company : user.company?.id || (currentUser?.company?.id || currentUser?.company || '')
     });
 
     useEffect(() => {
         setFormData({
             name: user.name || '',
             email: user.email || '',
-            role: user.role?.id || user.role?.name || (typeof user.role === 'string' ? user.role : 'client'),
+            role: typeof user.role === 'string' ? user.role : (user.role as any)?.name || 'client',
             status: user.status || 'active',
-            company: user.company?.id || (typeof user.company === 'string' ? user.company : '')
+            company: typeof user.company === 'string' ? user.company : user.company?.id || (currentUser?.company?.id || currentUser?.company || '')
         });
-    }, [user]);
+    }, [user, currentUser]);
 
-    const isAdministrator = useMemo(() => {
-        const selectedRole = roles.find(r => (r.id === formData.role || r.name === formData.role));
-        if (!selectedRole) return false;
-        const name = String(selectedRole.name || '').toLowerCase();
-        return name === 'company_admin' || name === 'administrator';
-    }, [formData.role, roles]);
+    const isCompanyScopedRole = useMemo(() => {
+        const selectedRoleName = String(formData.role || '').toLowerCase();
+        return ['company_admin', 'administrator', 'technician'].includes(selectedRoleName);
+    }, [formData.role]);
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = event.target;
@@ -81,79 +100,108 @@ const UserEditModal: React.FC<UserEditModalProps> = ({ user, roles, companies, o
     };
 
     return (
-        <div className="overlay" style={{ backdropFilter: 'blur(8px)', backgroundColor: 'rgba(0,0,0,0.4)' }}>
-            <Card className="max-w-md w-full">
-                <div className="p-6">
-                    <h3 className="mb-6 text-xl font-bold">Edit User</h3>
-
-                    <InputField
-                        id="edit-user-name"
-                        label="Full Name"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                    />
-                    <InputField
-                        id="edit-user-email"
-                        label="Email"
-                        name="email"
-                        type="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                    />
-
-                    <div className="input-group">
-                        <label className="label" htmlFor="edit-user-role">Role</label>
-                        <select id="edit-user-role" name="role" className="input" value={formData.role} onChange={handleChange}>
-                            {roles.map((role) => (
-                                <option key={role.id || role.name} value={role.id || role.name}>
-                                    {String(role.name).replace('_', ' ')}
-                                </option>
-                            ))}
-                        </select>
+        <div className="overlay" style={{ backdropFilter: 'blur(12px)', backgroundColor: 'rgba(0,0,0,0.6)' }}>
+            <Card className="max-w-md w-full relative overflow-hidden" raised style={{ border: '1px solid var(--color-border)', borderRadius: '24px' }}>
+                <div style={{ position: 'absolute', top: '-20%', right: '-10%', width: '300px', height: '300px', background: 'var(--color-primary)', filter: 'blur(100px)', opacity: 0.1 }} />
+                
+                <div className="p-8 relative z-1">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                        <div style={{ 
+                            width: '48px', height: '48px', 
+                            borderRadius: '16px', 
+                            background: getAvatarColor(user.id), 
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', fontWeight: 800, fontSize: '1.2rem',
+                            boxShadow: '0 8px 16px rgba(0,0,0,0.1)'
+                        }}>
+                            {getUserInitials(user)}
+                        </div>
+                        <div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>Edit Identity</h3>
+                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Updating platform profile policies.</p>
+                        </div>
                     </div>
 
-                    <div className="input-group">
-                        <label className="label" htmlFor="edit-user-status">Status</label>
-                        <select id="edit-user-status" name="status" className="input" value={formData.status} onChange={handleChange}>
-                            <option value="active">Active</option>
-                            <option value="pending">Pending</option>
-                            <option value="deactivated">Deactivated</option>
-                        </select>
-                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <InputField
+                            id="edit-user-name"
+                            label="Physical Identifier (Name)"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            placeholder="Full Legal Name"
+                        />
+                        <InputField
+                            id="edit-user-email"
+                            label="Identity Endpoint (Email)"
+                            name="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            autoComplete="off"
+                        />
 
-                    {isAdministrator ? (
                         <div className="input-group">
-                            <label className="label" htmlFor="edit-user-company">Company</label>
-                            <select
-                                id="edit-user-company"
-                                name="company"
-                                className="input"
-                                value={formData.company}
-                                onChange={handleChange}
-                                required
-                            >
-                                <option value="">Select company</option>
-                                {companies.map((company) => (
-                                    <option key={company.id} value={company.id}>
-                                        {company.name}
+                            <label className="label" htmlFor="edit-user-role">Assigned Role</label>
+                            <select id="edit-user-role" name="role" className="input" value={formData.role} onChange={handleChange} style={{ borderRadius: '12px', padding: '12px' }}>
+                                {roles.map((role) => (
+                                    <option key={typeof role === 'string' ? role : (role as any).id} value={typeof role === 'string' ? role : (role as any).id}>
+                                        {String(typeof role === 'string' ? role : (role as any).name).replace(/_/g, ' ').toUpperCase()}
                                     </option>
                                 ))}
                             </select>
                         </div>
-                    ) : null}
 
-                    <div className="flex gap-4 mt-8">
-                        <Button variant="secondary" fullWidth onClick={onClose} disabled={saving}>
-                            Cancel
+                        <div className="input-group">
+                            <label className="label" htmlFor="edit-user-status">Account Status</label>
+                            <select id="edit-user-status" name="status" className="input" value={formData.status} onChange={handleChange} style={{ borderRadius: '12px', padding: '12px' }}>
+                                <option value="active">ACTIVE ✓</option>
+                                <option value="pending">PENDING ⚖</option>
+                                <option value="deactivated">HIDDEN 🔒</option>
+                            </select>
+                        </div>
+
+                        {(isSuperAdmin || isCompanyScopedRole) ? (
+                            <div className="input-group">
+                                <label className="label" htmlFor="edit-user-company">Organization Mapping</label>
+                                <select
+                                    id="edit-user-company"
+                                    name="company"
+                                    className="input"
+                                    value={formData.company}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={!isSuperAdmin}
+                                    style={{ borderRadius: '12px', padding: '12px' }}
+                                >
+                                    <option value="">Select company</option>
+                                    {companies.map((company) => (
+                                        <option key={company.id} value={company.id}>
+                                            {company.name}
+                                        </option>
+                                    ))}
+                                </select>
+                                {!isSuperAdmin && (
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--color-primary)', marginTop: '0.5rem', opacity: 0.8 }}>
+                                        ★ Fixed to current organization.
+                                    </p>
+                                )}
+                            </div>
+                        ) : null}
+                    </div>
+
+                    <div className="flex gap-4 mt-10">
+                        <Button variant="secondary" fullWidth onClick={onClose} disabled={saving} style={{ borderRadius: '14px' }}>
+                            Discard Changes
                         </Button>
                         <Button
                             variant="primary"
                             fullWidth
                             onClick={() => onSave(formData)}
                             disabled={saving}
+                            style={{ borderRadius: '14px', boxShadow: '0 10px 20px rgba(var(--color-primary-rgb), 0.2)' }}
                         >
-                            Save
+                            {saving ? 'Saving...' : 'Commit Updates'}
                         </Button>
                     </div>
                 </div>
@@ -197,7 +245,7 @@ const AdminUsersPage: React.FC = () => {
             setRoles(Array.isArray(rolesRes.data) && rolesRes.data.length ? rolesRes.data : DEFAULT_ROLES);
             setCompanies(Array.isArray(companiesRes.data) ? companiesRes.data : []);
         } catch (requestError: any) {
-            setError(requestError.response?.data?.message || 'Failed to load users.');
+            setError(requestError.response?.data?.message || 'Failed to sync platform entities.');
         } finally {
             setLoading(false);
         }
@@ -209,12 +257,10 @@ const AdminUsersPage: React.FC = () => {
 
     const filteredUsers = useMemo(() => {
         const query = search.trim().toLowerCase();
-        if (!query) {
-            return users;
-        }
+        if (!query) return users;
 
         return users.filter((user) => {
-            const roleName = String(user.role?.name || user.role || '').toLowerCase();
+            const roleName = String(user.role || '').toLowerCase();
             const companyName = String(user.company?.name || '').toLowerCase();
             return (
                 String(user.name || user.username || '').toLowerCase().includes(query) ||
@@ -229,12 +275,21 @@ const AdminUsersPage: React.FC = () => {
     const finalDisplayUsers = useMemo(() => {
         let base = filteredUsers;
         if (activeTab === 'admins') {
-            base = base.filter(u => ['administrator', 'company_admin'].includes(String(u.role?.name || u.role || '').toLowerCase()));
+            base = base.filter(u => ['administrator', 'company_admin'].includes(String(u.role || '').toLowerCase()));
         } else if (activeTab === 'clients') {
-            base = base.filter(u => !['administrator', 'company_admin', 'super_admin'].includes(String(u.role?.name || u.role || '').toLowerCase()));
+            base = base.filter(u => !['administrator', 'company_admin', 'super_admin'].includes(String(u.role || '').toLowerCase()));
         }
         return base;
     }, [filteredUsers, activeTab]);
+
+    const stats = useMemo(() => {
+        return {
+            total: users.length,
+            active: users.filter(u => u.status === 'active').length,
+            pending: users.filter(u => u.status === 'pending').length,
+            deactivated: users.filter(u => u.status === 'deactivated').length
+        };
+    }, [users]);
 
     useEffect(() => {
         setSelectedUserIds([]);
@@ -261,14 +316,14 @@ const AdminUsersPage: React.FC = () => {
     };
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) return;
+        if (!window.confirm('IRREVERSIBLE: Execute permanent deletion for this identity?')) return;
         setActionLoading(true);
         try {
             await axios.delete(`${API_URL}/users/${id}`);
             setUsers((previous) => previous.filter((entry) => entry.id !== id));
             setSelectedUserIds((previous) => previous.filter(sid => sid !== id));
         } catch (requestError: any) {
-            window.alert(requestError.response?.data?.message || 'Delete failed');
+            window.alert(requestError.response?.data?.message || 'Removal failed');
         } finally {
             setActionLoading(false);
         }
@@ -276,7 +331,7 @@ const AdminUsersPage: React.FC = () => {
 
     const handleBulkDelete = async () => {
         if (!selectedUserIds.length) return;
-        if (!window.confirm(`Are you sure you want to delete ${selectedUserIds.length} users? This action is permanent.`)) return;
+        if (!window.confirm(`CRITICAL: Purge ${selectedUserIds.length} users? This bypasses standard deactivation.`)) return;
         
         setActionLoading(true);
         try {
@@ -286,7 +341,7 @@ const AdminUsersPage: React.FC = () => {
             setUsers((previous) => previous.filter((entry) => !selectedUserIds.includes(entry.id)));
             setSelectedUserIds([]);
         } catch (requestError: any) {
-            window.alert(requestError.response?.data?.message || 'Bulk delete failed. Some users might not have been deleted.');
+            window.alert(requestError.response?.data?.message || 'Purge incomplete.');
             await fetchInitialData();
         } finally {
             setActionLoading(false);
@@ -322,7 +377,7 @@ const AdminUsersPage: React.FC = () => {
             }
             setEditingUser(null);
         } catch (requestError: any) {
-            window.alert(requestError.response?.data?.message || 'Update failed');
+            window.alert(requestError.response?.data?.message || 'Persistence failed');
         } finally {
             setActionLoading(false);
         }
@@ -341,173 +396,137 @@ const AdminUsersPage: React.FC = () => {
     return (
         <div className="page">
             <PageHeader
-                title={statusFilter === 'pending' ? 'Pending Approvals' : 'User Management'}
-                subtitle={statusFilter === 'pending' ? '' : 'Manage all platform users and roles.'}
+                title={statusFilter === 'pending' ? '🛡️ Identity Validation' : '👥 User Governance Hub'}
+                subtitle="Centralized management of platform access, global roles, and organization mapping."
             />
 
+            {/* KPI Stats Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                <Card raised className="text-center p-6 border-l-4" style={{ borderColor: 'var(--color-primary)' }}>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800 }}>{loading ? '—' : stats.total}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Total Identifiers</div>
+                </Card>
+                <Card raised className="text-center p-6 border-l-4" style={{ borderColor: 'var(--color-success)' }}>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--color-success)' }}>{loading ? '—' : stats.active}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Active Sessions</div>
+                </Card>
+                <Card raised className="text-center p-6 border-l-4" style={{ borderColor: 'var(--color-warning)' }}>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--color-warning)' }}>{loading ? '—' : stats.pending}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Pending Review</div>
+                </Card>
+                <Card raised className="text-center p-6 border-l-4" style={{ borderColor: 'var(--color-error)' }}>
+                    <div style={{ fontSize: '2.25rem', fontWeight: 800, color: 'var(--color-error)' }}>{loading ? '—' : stats.deactivated}</div>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Hidden/Locked</div>
+                </Card>
+            </div>
+
             {statusFilter === 'pending' && (
-                <Alert tone="warning" className="mb-6" style={{ borderLeft: '4px solid var(--color-warning)' }}>
-                    <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.2rem' }}>ACTION REQUIRED</div>
-                    <div>Review and validate new administrator accounts to grant platform access.</div>
+                <Alert tone="warning" className="mb-8">
+                    <div style={{ fontWeight: 800, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>⚠️ Pending Entity Lock</span>
+                    </div>
+                    <p style={{ marginTop: '0.25rem', opacity: 0.9 }}>Validate organization administrators to unlock platform features and product management.</p>
                 </Alert>
             )}
 
-            {error ? <Alert tone="error" className="mb-6">{error}</Alert> : null}
+            {error ? <Alert tone="error" className="mb-8">{error}</Alert> : null}
 
-            <Card className="w-full" raised style={{ position: 'relative', overflow: 'hidden' }}>
+            <Card className="w-full relative overflow-hidden" raised style={{ border: '1px solid var(--color-border)', borderRadius: '20px' }}>
                 {actionLoading && <Spinner overlay />}
 
-                <div style={{ padding: 'var(--space-4)', borderBottom: '1px solid var(--color-border)', display: 'grid', gap: '0.75rem' }}>
-                    <InputField
-                        id="admin-user-search"
-                        label="Search Users"
-                        placeholder="Search by name, email, role, company, or status"
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                    />
-
-                    <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid var(--color-border)', marginBottom: '1rem', paddingBottom: '0.5rem' }}>
-                        <button
-                            onClick={() => setActiveTab('all')}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'all' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                                color: activeTab === 'all' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                fontWeight: activeTab === 'all' ? 700 : 400,
-                                cursor: 'pointer',
-                                padding: '0.5rem 1rem'
-                            }}
-                        >
-                            All Users
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('admins')}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'admins' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                                color: activeTab === 'admins' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                fontWeight: activeTab === 'admins' ? 700 : 400,
-                                cursor: 'pointer',
-                                padding: '0.5rem 1rem'
-                            }}
-                        >
-                            Company Administrators
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('clients')}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: activeTab === 'clients' ? '2px solid var(--color-primary)' : '2px solid transparent',
-                                color: activeTab === 'clients' ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                fontWeight: activeTab === 'clients' ? 700 : 400,
-                                cursor: 'pointer',
-                                padding: '0.5rem 1rem'
-                            }}
-                        >
-                            Regular Users / Clients
-                        </button>
+                <div style={{ padding: '2rem', borderBottom: '1px solid var(--color-border)', background: 'var(--color-background-soft)' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '1.5rem', alignItems: 'flex-start' }}>
+                        <div style={{ width: '100%', maxWidth: '600px' }}>
+                            <InputField
+                                id="admin-user-search"
+                                placeholder="Filter identities by name, email, or registry..."
+                                value={search}
+                                onChange={(event) => setSearch(event.target.value)}
+                                icon="search-outline"
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <Button size="sm" variant={statusFilter === 'all' ? 'primary' : 'secondary'} onClick={() => setStatusFilterParam('all')}>All Systems</Button>
+                            <Button size="sm" variant={statusFilter === 'pending' ? 'warning' : 'secondary'} onClick={() => setStatusFilterParam('pending')}>Pending Only</Button>
+                        </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <Button
-                            size="sm"
-                            variant={statusFilter === 'all' ? 'primary' : 'ghost'}
-                            onClick={() => setStatusFilterParam('all')}
-                        >
-                            All
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant={statusFilter === 'pending' ? 'primary' : 'ghost'}
-                            onClick={() => setStatusFilterParam('pending')}
-                        >
-                            Pending
-                        </Button>
-                        <Button
-                            size="sm"
-                            variant={statusFilter === 'deactivated' ? 'primary' : 'ghost'}
-                            onClick={() => setStatusFilterParam('deactivated')}
-                        >
-                            Deactivated
-                        </Button>
+                    <div style={{ display: 'flex', gap: '2rem', marginTop: '1.5rem', borderBottom: '1px solid rgba(0,0,0,0.05)' }}>
+                        {(['all', 'admins', 'clients'] as const).map(tab => (
+                            <button
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                style={{
+                                    background: 'none', border: 'none', padding: '0.75rem 0',
+                                    fontSize: '0.9rem', fontWeight: activeTab === tab ? 800 : 500,
+                                    color: activeTab === tab ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    cursor: 'pointer', position: 'relative', outline: 'none'
+                                }}
+                            >
+                                {tab.toUpperCase()}
+                                {activeTab === tab && <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '3px', background: 'var(--color-primary)', borderRadius: '100px' }} />}
+                            </button>
+                        ))}
                     </div>
 
                     {selectedUserIds.length > 0 && (
                         <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '1rem', 
-                            padding: '0.75rem 1rem', 
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)', 
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--color-error)',
-                            marginTop: '0.5rem',
-                            marginBottom: '1rem'
+                            display: 'flex', alignItems: 'center', gap: '1rem', 
+                            padding: '1rem 1.5rem', background: 'rgba(var(--color-error-rgb), 0.08)', 
+                            borderRadius: '16px', border: '1px solid rgba(var(--color-error-rgb), 0.2)',
+                            marginTop: '1.5rem'
                         }}>
-                            <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-error)' }}>
-                                {selectedUserIds.length} users selected
+                            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-error)' }}>
+                                {selectedUserIds.length} Identities Selected for Policy Action
                             </span>
-                            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
-                                <Button size="sm" variant="ghost" onClick={() => setSelectedUserIds([])}>
-                                    Deselect All
-                                </Button>
-                                <Button size="sm" variant="secondary" style={{ color: 'var(--color-error)' }} onClick={handleBulkDelete}>
-                                    Delete Selected
-                                </Button>
+                            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.75rem' }}>
+                                <Button size="sm" variant="ghost" onClick={() => setSelectedUserIds([])}>Cancel</Button>
+                                <Button size="sm" variant="danger" onClick={handleBulkDelete}>Execute Mass Removal</Button>
                             </div>
                         </div>
                     )}
                 </div>
 
-                <div className="table-container">
+                <div className="table-container" style={{ padding: '0 1rem 1rem' }}>
                     <table className="table">
                         <thead>
-                            <tr className="table-head-row">
-                                <th style={{ width: '40px' }}>
+                            <tr style={{ background: 'transparent' }}>
+                                <th style={{ width: '40px', padding: '1.5rem 1rem' }}>
                                     <input 
                                         type="checkbox" 
                                         checked={finalDisplayUsers.length > 0 && selectedUserIds.length === finalDisplayUsers.filter(u => u.id !== currentUser?.id).length}
                                         onChange={toggleSelectAll}
-                                        style={{ cursor: 'pointer' }}
+                                        style={{ cursor: 'pointer', transform: 'scale(1.2)' }}
                                     />
                                 </th>
-                                <th>User</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                {activeTab !== 'clients' && <th>Company</th>}
-                                <th>Status</th>
-                                <th style={{ textAlign: 'right' }}>Actions</th>
+                                <th style={{ padding: '1.5rem 1rem' }}>Principal Identity</th>
+                                <th style={{ padding: '1.5rem 1rem' }}>Role Authority</th>
+                                {activeTab !== 'clients' && <th style={{ padding: '1.5rem 1rem' }}>Entity Mapping</th>}
+                                <th style={{ padding: '1.5rem 1rem' }}>Registry Status</th>
+                                <th style={{ textAlign: 'right', padding: '1.5rem 1rem' }}>Policy Controls</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? Array.from({ length: 5 }).map((_, index) => (
                                 <tr key={`skeleton-row-${index}`}>
-                                    <td><Skeleton width={20} /></td>
-                                    <td><Skeleton width="70%" /></td>
-                                    <td><Skeleton width="85%" /></td>
-                                    <td><Skeleton width={90} /></td>
-                                    <td><Skeleton width="75%" /></td>
-                                    <td><Skeleton width={80} /></td>
-                                    <td><Skeleton width={180} /></td>
+                                    <td colSpan={6} style={{ padding: '1.5rem 1rem' }}><Skeleton height={60} /></td>
                                 </tr>
                             )) : null}
 
                             {!loading && finalDisplayUsers.length === 0 ? (
                                 <tr>
-                                     <td colSpan={activeTab === 'clients' ? 6 : 7}>
+                                     <td colSpan={activeTab === 'clients' ? 5 : 6} style={{ padding: '4rem' }}>
                                         <EmptyState
-                                            title="No users found"
-                                            text="Try another search query or status filter."
+                                            icon="person-outline"
+                                            title="Registry Sweep Complete"
+                                            text="No identities match the current filter or search criteria."
                                         />
                                     </td>
                                 </tr>
                             ) : null}
 
                             {!loading ? finalDisplayUsers.map((entry) => {
-                                const roleName = String(entry.role?.name || entry.role || 'client').toLowerCase();
+                                const roleName = String(typeof entry.role === 'string' ? entry.role : (entry.role as any).name || 'client').toLowerCase();
                                 const roleTone = ROLE_BADGE[roleName] || 'neutral';
                                 const status = String(entry.status || 'pending').toLowerCase();
                                 const statusTone = STATUS_BADGE[status] || 'neutral';
@@ -515,74 +534,68 @@ const AdminUsersPage: React.FC = () => {
                                 const isPendingAdmin = (roleName === 'administrator' || roleName === 'company_admin') && status === 'pending';
 
                                 return (
-                                    <tr key={entry.id} style={{ backgroundColor: selectedUserIds.includes(entry.id) ? 'rgba(79, 70, 229, 0.05)' : 'transparent' }}>
-                                        <td>
+                                    <tr key={entry.id} style={{ 
+                                        transition: 'background 0.2s',
+                                        background: selectedUserIds.includes(entry.id) ? 'rgba(var(--color-primary-rgb), 0.03)' : 'transparent',
+                                    }} className="hover:bg-surface-soft">
+                                        <td style={{ padding: '1.25rem 1rem' }}>
                                             <input 
                                                 type="checkbox" 
                                                 checked={selectedUserIds.includes(entry.id)}
                                                 onChange={() => toggleSelectUser(entry.id)}
                                                 disabled={isSelf}
-                                                style={{ cursor: isSelf ? 'not-allowed' : 'pointer' }}
+                                                style={{ cursor: isSelf ? 'not-allowed' : 'pointer', transform: 'scale(1.1)' }}
                                             />
                                         </td>
-                                        <td>
-                                            <div style={{ fontWeight: 600 }}>{entry.name || entry.username}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>@{entry.username}</div>
+                                        <td style={{ padding: '1.25rem 1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ 
+                                                    width: '40px', height: '40px', borderRadius: '12px', 
+                                                    background: getAvatarColor(entry.id), color: 'white',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontWeight: 800, fontSize: '0.9rem', flexShrink: 0
+                                                }}>
+                                                    {getUserInitials(entry)}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>
+                                                        {entry.name || entry.username}
+                                                        {isSelf && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', opacity: 0.5 }}>(YOU)</span>}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontFamily: 'monospace' }}>{entry.email}</div>
+                                                </div>
+                                            </div>
                                         </td>
-                                        <td style={{ fontSize: '0.9rem' }}>{entry.email}</td>
-                                        <td>
-                                            <Badge tone={roleTone}>{roleName.replace('_', ' ')}</Badge>
+                                        <td style={{ padding: '1.25rem 1rem' }}>
+                                            <Badge tone={roleTone} size="sm">{roleName.replace(/_/g, ' ').toUpperCase()}</Badge>
                                         </td>
                                         {activeTab !== 'clients' && (
-                                            <td>{entry.company?.name || (roleName === 'administrator' || roleName === 'company_admin' ? 'UNASSIGNED' : 'N/A')}</td>
-                                        )}
-                                        <td>
-                                            <Badge tone={statusTone}>{status}</Badge>
-                                        </td>
-                                        <td style={{ textAlign: 'right' }}>
-                                            <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                                                {isPendingAdmin ? (
-                                                    <Button
-                                                        variant="primary"
-                                                        size="sm"
-                                                        style={{ fontWeight: 700, backgroundColor: 'var(--color-success)', borderColor: 'var(--color-success)' }}
-                                                        onClick={() => handleAction(entry.id, 'validate')}
-                                                    >
-                                                        Approve Access
-                                                    </Button>
-                                                ) : null}
-
-                                                <Button variant="ghost" size="sm" onClick={() => setEditingUser(entry)}>
-                                                    Edit
-                                                </Button>
-
-                                                {status === 'active' ? (
-                                                    <Button
-                                                        variant="warning"
-                                                        size="sm"
-                                                        onClick={() => handleAction(entry.id, 'deactivate')}
-                                                        disabled={isSelf}
-                                                    >
-                                                        Deactivate
-                                                    </Button>
+                                            <td style={{ padding: '1.25rem 1rem', fontSize: '0.9rem', fontWeight: 500 }}>
+                                                {entry.company?.name ? (
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <ion-icon name="business-outline" style={{ opacity: 0.5 }}></ion-icon>
+                                                        {entry.company.name}
+                                                    </span>
                                                 ) : (
-                                                    <Button
-                                                        variant="success"
-                                                        size="sm"
-                                                        onClick={() => handleAction(entry.id, 'activate')}
-                                                    >
-                                                        Activate
+                                                    <span style={{ opacity: 0.3, letterSpacing: '0.1em', fontSize: '0.7rem' }}>EMPTY_ENTITY</span>
+                                                )}
+                                            </td>
+                                        )}
+                                        <td style={{ padding: '1.25rem 1rem' }}>
+                                            <Badge tone={statusTone} size="sm">{status.toUpperCase()}</Badge>
+                                        </td>
+                                        <td style={{ textAlign: 'right', padding: '1.25rem 1rem' }}>
+                                            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                                {isPendingAdmin && (
+                                                    <Button variant="primary" size="sm" onClick={() => handleAction(entry.id, 'validate')} style={{ fontWeight: 800 }}>
+                                                        Verify
                                                     </Button>
                                                 )}
-
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    style={{ color: 'var(--color-error)' }}
-                                                    onClick={() => handleDelete(entry.id)}
-                                                    disabled={isSelf}
-                                                >
-                                                    Delete
+                                                <Button variant="ghost" size="sm" onClick={() => setEditingUser(entry)}>
+                                                    Configure
+                                                </Button>
+                                                <Button variant="secondary" size="sm" onClick={() => handleDelete(entry.id)} disabled={isSelf} style={{ color: 'var(--color-error)' }}>
+                                                    Remove
                                                 </Button>
                                             </div>
                                         </td>

@@ -1,8 +1,7 @@
 /**
  * isProductManager
  *
- * @description :: Policy to check if the user is a Company Admin strictly for product management.
- *                 Super Admins are excluded from day-to-day product CRUD.
+ * @description :: Policy to check if the user is a Super Admin or Company Admin for product management.
  */
 
 module.exports = async function (req, res, proceed) {
@@ -18,10 +17,10 @@ module.exports = async function (req, res, proceed) {
 
   const roleName = (user.role && user.role.name ? user.role.name : '').toLowerCase();
 
-  // ONLY company admins can manage products. Super admins are excluded from day-to-day CRUD.
-  if (roleName === 'company_admin' || roleName === 'administrator') {
+  // Super admins and company admins can manage products
+  if (roleName === 'super_admin' || roleName === 'company_admin' || roleName === 'administrator') {
     return proceed();
   }
 
-  return res.status(403).json({ message: 'Forbidden: Requires active Company Admin role' });
+  return res.status(403).json({ message: 'Forbidden: Requires Admin role' });
 };

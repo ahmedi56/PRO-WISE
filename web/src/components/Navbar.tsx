@@ -103,9 +103,9 @@ const Navbar: React.FC = () => {
                             className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
                             onClick={closeMenu}
                         >
-                            {roleName === 'super_admin' ? 'Super Admin' : 'Admin'}
+                            {['super_admin'].includes(roleName) ? 'Super Admin' : 'Admin'}
                         </Link>
-                        {roleName === 'super_admin' ? (
+                        {['super_admin'].includes(roleName) ? (
                             <>
                                 <Link
                                     to="/admin/users"

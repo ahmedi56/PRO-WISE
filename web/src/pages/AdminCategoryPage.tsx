@@ -2,13 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { API_URL } from '@/config';
 import { useSelector } from 'react-redux';
-import { Alert, Button, Card, EmptyState, InputField, PageHeader, Skeleton } from '@/components/ui';
+import { Alert, Button, Card, EmptyState, InputField, PageHeader, Skeleton, Badge } from '@/components/ui';
 import { RootState } from '@/store';
 import { Category } from '@/types/product';
 
-// Define the recursive category type for trees
+const IonIcon = 'ion-icon' as any;
+
 interface CategoryWithChildren extends Category {
-    id: string; // Ensure id is always string here
+    id: string; 
     children?: CategoryWithChildren[];
     visibility?: 'public' | 'draft' | 'private';
     level?: number;
@@ -19,195 +20,117 @@ interface CategoryWithChildren extends Category {
     image?: { url: string };
 }
 
-/* ─── inline styles (scoped to this page) ─── */
-const S: any = {
+// Inline Glassmorphic Styles
+const GS: any = {
     grid: {
         display: 'grid',
-        gridTemplateColumns: '380px 1fr',
-        gap: '24px',
+        gridTemplateColumns: '400px 1fr',
+        gap: '2rem',
         alignItems: 'start',
     },
     statsRow: {
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '1.25rem',
+        marginBottom: '2.5rem',
     },
-    statCard: {
+    statCard: (borderColor: string = 'var(--color-border)') => ({
         background: 'var(--color-surface)',
         border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg, 12px)',
-        padding: '20px',
+        borderLeft: `4px solid ${borderColor}`,
+        borderRadius: '20px',
+        padding: '24px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '4px',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-    },
-    statValue: {
-        fontSize: '1.75rem',
-        fontWeight: 800,
-        color: 'var(--color-text-strong)',
+        gap: '8px',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.03)',
+        transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+    }),
+    statValue: (color = 'var(--color-text-strong)') => ({
+        fontSize: '2.25rem',
+        fontWeight: 900,
+        color,
         lineHeight: 1,
-    },
+        letterSpacing: '-0.02em',
+    }),
     statLabel: {
-        fontSize: '0.75rem',
-        fontWeight: 600,
+        fontSize: '0.7rem',
+        fontWeight: 800,
         color: 'var(--color-text-muted)',
-        textTransform: 'uppercase',
-        letterSpacing: '0.05em',
+        textTransform: 'uppercase' as any,
+        letterSpacing: '0.1em',
     },
-    statIcon: {
-        fontSize: '1.3rem',
-        marginBottom: '4px',
-    },
-    formCard: {
+    formGlass: {
         position: 'sticky' as any,
         top: '20px',
-        maxHeight: 'calc(100vh - 60px)',
-        overflowY: 'auto' as any,
-        background: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg, 12px)',
-        padding: '24px',
+        background: 'rgba(var(--color-background-rgb), 0.7)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(var(--color-border-rgb), 0.5)',
+        borderRadius: '32px',
+        padding: '32px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+        overflow: 'hidden',
     },
     formTitle: {
-        fontSize: '1.1rem',
-        fontWeight: 700,
+        fontSize: '1.25rem',
+        fontWeight: 900,
         color: 'var(--color-text-strong)',
-        marginBottom: '16px',
+        marginBottom: '24px',
         display: 'flex',
         alignItems: 'center',
-        gap: '8px',
-    },
-    formGroup: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-    },
-    formRow: {
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
         gap: '12px',
+        letterSpacing: '-0.01em',
     },
-    label: {
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        color: 'var(--color-text-muted)',
-        marginBottom: '4px',
-        display: 'block',
-    },
-    select: {
-        width: '100%',
-        padding: '10px 12px',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-md, 8px)',
-        background: 'var(--color-surface)',
-        color: 'var(--color-text-strong)',
-        fontSize: '0.9rem',
-        outline: 'none',
-        transition: 'border-color 0.2s',
-    },
-    textarea: {
-        width: '100%',
-        padding: '10px 12px',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-md, 8px)',
-        background: 'var(--color-surface)',
-        color: 'var(--color-text-strong)',
-        fontSize: '0.9rem',
-        outline: 'none',
-        minHeight: '70px',
-        resize: 'vertical' as any,
-        fontFamily: 'inherit',
-    },
-    treeContainer: {
-        background: 'var(--color-surface)',
-        border: '1px solid var(--color-border)',
-        borderRadius: 'var(--radius-lg, 12px)',
-        overflow: 'hidden',
+    inputIcon: {
+        width: '32px', height: '32px',
+        borderRadius: '10px',
+        background: 'var(--color-primary-soft)',
+        color: 'var(--color-primary)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: '1rem',
     },
     treeHeader: {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: '16px 20px',
+        padding: '24px 32px',
         borderBottom: '1px solid var(--color-border)',
-        background: 'var(--color-surface-raised, var(--color-surface))',
+        background: 'rgba(var(--color-surface-raised-rgb), 0.4)',
     },
-    treeRow: (depth: number, isHovered: boolean) => ({
+    treeRow: (depth: number, isHovered: boolean, isActive: boolean) => ({
         display: 'flex',
         alignItems: 'center',
-        padding: '12px 20px',
-        paddingLeft: `${depth * 24 + 20}px`,
-        borderBottom: '1px solid var(--color-border)',
+        padding: '14px 32px',
+        paddingLeft: `${depth * 32 + 32}px`,
+        borderBottom: '1px solid rgba(var(--color-border-rgb), 0.5)',
         cursor: 'pointer',
-        background: isHovered ? 'var(--color-surface-hover, rgba(0,0,0,0.03))' : 'transparent',
-        transition: 'background 0.15s',
-    }),
-    treeName: (depth: number) => ({
-        fontWeight: depth === 0 ? 700 : 500,
-        fontSize: depth === 0 ? '0.95rem' : '0.88rem',
-        color: 'var(--color-text-strong)',
-        flex: 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
+        background: isActive ? 'rgba(var(--color-primary-rgb), 0.08)' : (isHovered ? 'rgba(var(--color-primary-rgb), 0.03)' : 'transparent'),
+        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        position: 'relative' as any,
     }),
     levelBadge: (level: number) => {
-        const colors: any = {
-            0: { bg: 'rgba(99, 102, 241, 0.12)', color: '#6366f1', text: 'Domain' },
-            1: { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981', text: 'Family' },
-            2: { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b', text: 'Device' },
+        const variants: any = {
+            0: { tone: 'primary', label: 'Domain' },
+            1: { tone: 'success', label: 'Family' },
+            2: { tone: 'warning', label: 'Device' },
         };
-        const c = colors[level] || colors[0];
+        const v = variants[level] || { tone: 'neutral', label: 'Layer' };
         return {
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '2px 8px',
+            background: `rgba(var(--color-${v.tone}-rgb), 0.15)`,
+            color: `var(--color-${v.tone})`,
+            padding: '2px 10px',
             borderRadius: '100px',
-            fontSize: '0.65rem',
-            fontWeight: 700,
+            fontSize: '0.6rem',
+            fontWeight: 900,
             textTransform: 'uppercase' as any,
-            letterSpacing: '0.04em',
-            background: c.bg,
-            color: c.color,
+            letterSpacing: '0.05em',
+            marginLeft: '12px',
         };
     },
-    visBadge: (vis: string) => {
-        const map: any = {
-            public: { bg: 'rgba(16, 185, 129, 0.12)', color: '#10b981' },
-            draft: { bg: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' },
-            private: { bg: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
-        };
-        const c = map[vis] || map.draft;
-        return {
-            display: 'inline-flex',
-            alignItems: 'center',
-            padding: '2px 8px',
-            borderRadius: '100px',
-            fontSize: '0.65rem',
-            fontWeight: 700,
-            textTransform: 'uppercase' as any,
-            letterSpacing: '0.04em',
-            background: c.bg,
-            color: c.color,
-        };
-    },
-    actionBtn: (color = 'var(--color-text-muted)') => ({
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '4px 8px',
-        borderRadius: 'var(--radius-md, 6px)',
-        fontSize: '0.8rem',
-        fontWeight: 600,
-        color,
-        transition: 'background 0.15s, color 0.15s',
-    }),
 };
 
 const AdminCategoryPage: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
     const [categories, setCategories] = useState<CategoryWithChildren[]>([]);
     const [flatCategories, setFlatCategories] = useState<CategoryWithChildren[]>([]);
     const [loading, setLoading] = useState(true);
@@ -235,32 +158,30 @@ const AdminCategoryPage: React.FC = () => {
             setCategories(Array.isArray(treeRes.data) ? treeRes.data : []);
             setFlatCategories(Array.isArray(flatRes.data) ? flatRes.data : []);
             setLoading(false);
-            // Auto-expand top level
-            const topIds = new Set<string>((treeRes.data || []).map((c: any) => c.id));
-            setExpandedIds(topIds);
+            if (!expandedIds.size) {
+                 const topIds = new Set<string>((treeRes.data || []).map((c: any) => c.id));
+                 setExpandedIds(topIds);
+            }
         } catch (err) {
-            setError("Failed to load categories");
+            setError("Failed to synchronize taxonomy registry.");
             setLoading(false);
         }
     };
 
     useEffect(() => { fetchData(); }, []);
 
-    // Compute stats
     const stats = useMemo(() => {
         const total = flatCategories.length;
-        const publicCount = flatCategories.filter(c => c.visibility === 'public').length;
-        const draftCount = flatCategories.filter(c => c.visibility === 'draft').length;
         const domains = flatCategories.filter(c => (c.level || 0) === 0).length;
         const families = flatCategories.filter(c => (c.level || 0) === 1).length;
         const devices = flatCategories.filter(c => (c.level || 0) === 2).length;
-        return { total, publicCount, draftCount, domains, families, devices };
+        const published = flatCategories.filter(c => c.visibility === 'public').length;
+        return { total, domains, families, devices, published };
     }, [flatCategories]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
-        setSuccess(null);
         setSaving(true);
         try {
             let level = 0;
@@ -277,15 +198,15 @@ const AdminCategoryPage: React.FC = () => {
 
             if (editingId) {
                 await axios.put(`${API_URL}/categories/${editingId}`, payload);
-                setSuccess('Category updated successfully');
+                setSuccess('Registry entry updated.');
             } else {
                 await axios.post(`${API_URL}/categories`, payload);
-                setSuccess('Category created successfully');
+                setSuccess('New registry entry created.');
             }
             resetForm();
             fetchData();
         } catch (err: any) {
-            setError(err.response?.data?.message || "Operation failed");
+            setError(err.response?.data?.message || "Persistence failed.");
         } finally {
             setSaving(false);
         }
@@ -322,15 +243,16 @@ const AdminCategoryPage: React.FC = () => {
         try {
             await axios.delete(`${API_URL}/categories/${deleteTarget}`);
             setDeleteTarget(null);
-            setSuccess('Category deleted');
+            setSuccess('Category purged from registry.');
             fetchData();
         } catch (err: any) {
-            setError(err.response?.data?.message || "Delete failed");
+            setError(err.response?.data?.message || "Removal failed.");
             setDeleteTarget(null);
         }
     };
 
-    const toggleExpand = (id: string) => {
+    const toggleExpand = (id: string, e: React.MouseEvent) => {
+        e.stopPropagation();
         setExpandedIds(prev => {
             const next = new Set(prev);
             if (next.has(id)) next.delete(id);
@@ -339,19 +261,12 @@ const AdminCategoryPage: React.FC = () => {
         });
     };
 
-    const expandAll = () => {
-        const allIds = new Set(flatCategories.map(c => c.id));
-        setExpandedIds(allIds);
-    };
-    const collapseAll = () => setExpandedIds(new Set());
-
     const matchesSearch = (cat: CategoryWithChildren): boolean => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         if (cat.name.toLowerCase().includes(q)) return true;
         if (cat.slug?.toLowerCase().includes(q)) return true;
-        if (cat.children?.some(child => matchesSearch(child))) return true;
-        return false;
+        return cat.children?.some(child => matchesSearch(child)) || false;
     };
 
     const filteredCategories = useMemo(() => {
@@ -359,63 +274,65 @@ const AdminCategoryPage: React.FC = () => {
         return categories.filter(matchesSearch);
     }, [categories, searchQuery]);
 
-    const levelLabels: Record<number, string> = { 0: 'Domain', 1: 'Family', 2: 'Device' };
-
     const renderTreeRow = (cat: CategoryWithChildren, depth = 0) => {
-        if (searchQuery && !matchesSearch(cat)) return null;
         const hasChildren = cat.children && cat.children.length > 0;
         const isExpanded = expandedIds.has(cat.id);
         const isHovered = hoveredId === cat.id;
+        const isActive = editingId === cat.id;
 
         return (
             <React.Fragment key={cat.id}>
                 <div
-                    style={S.treeRow(depth, isHovered)}
+                    style={GS.treeRow(depth, isHovered, isActive)}
                     onMouseEnter={() => setHoveredId(cat.id)}
                     onMouseLeave={() => setHoveredId(null)}
+                    onClick={() => handleEdit(cat)}
                 >
-                    <span style={{ width: '20px', display: 'inline-flex', flexShrink: 0 }}>
+                    {/* Depth Connector Line */}
+                    {depth > 0 && <div style={{ position: 'absolute', left: `${depth * 32}px`, top: 0, bottom: 0, width: '1px', background: 'rgba(var(--color-primary-rgb), 0.1)' }} />}
+
+                    <div style={{ width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1 }}>
                         {hasChildren && (
                             <button
                                 style={{ 
-                                    background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.75rem', padding: '2px 4px', color: 'var(--color-text-muted)',
-                                    transition: 'transform 0.2s', marginRight: '4px',
-                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)' 
+                                    background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-primary)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                                    transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}
-                                onClick={() => toggleExpand(cat.id)}
+                                onClick={(e) => toggleExpand(cat.id, e)}
                             >
-                                ▶
+                                <IonIcon name="chevron-forward-outline" style={{ fontSize: '0.9rem' }}></IonIcon>
                             </button>
-                        )}
-                    </span>
-
-                    {depth > 0 && <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', marginRight: '6px', opacity: 0.5 }}>{'─'}</span>}
-
-                    <div style={S.treeName(depth)}>
-                        <span>{cat.name}</span>
-                        <span style={S.levelBadge(cat.level || depth)}>{levelLabels[cat.level || depth] || 'L' + (cat.level || depth)}</span>
-                        {cat.visibility !== 'public' && (
-                            <span style={S.visBadge(cat.visibility || 'draft')}>{cat.visibility}</span>
-                        )}
-                        {hasChildren && (
-                            <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginLeft: '6px' }}>({cat.children!.length})</span>
                         )}
                     </div>
 
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontFamily: 'monospace', marginLeft: '12px', opacity: 0.7 }}>{cat.slug}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, zIndex: 1 }}>
+                        <IonIcon 
+                            name={cat.image?.url || (hasChildren ? (isExpanded ? 'folder-open-outline' : 'folder-outline') : 'cube-outline')} 
+                            style={{ fontSize: '1.2rem', color: isHovered || isActive ? 'var(--color-primary)' : 'var(--color-text-muted)', transition: 'color 0.2s' } as any}
+                        ></IonIcon>
+                        <span style={{ fontWeight: depth === 0 ? 800 : 500, color: 'var(--color-text-strong)', fontSize: depth === 0 ? '1rem' : '0.9rem' }}>
+                            {cat.name}
+                        </span>
+                        <span style={GS.levelBadge(cat.level || 0)}>{cat.level === 0 ? 'DOMAIN' : (cat.level === 1 ? 'FAMILY' : 'DEVICE')}</span>
+                        {cat.visibility !== 'public' && (
+                            <Badge tone="warning" size="sm" style={{ opacity: 0.7, scale: '0.8' }}>{cat.visibility.toUpperCase()}</Badge>
+                        )}
+                    </div>
 
-                    <div style={{ display: 'flex', gap: '4px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.15s' }}>
+                    <div style={{ display: 'flex', gap: '8px', opacity: isHovered ? 1 : 0, transition: 'opacity 0.2s', zIndex: 1 }}>
                         <button
-                            style={S.actionBtn('var(--color-primary, #6366f1)')}
-                            onClick={() => handleEdit(cat)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-text-muted)' }}
+                            onClick={(e) => { e.stopPropagation(); handleEdit(cat); }}
                         >
-                            ✏️ Edit
+                            <IonIcon name="create-outline"></IonIcon>
                         </button>
                         <button
-                            style={S.actionBtn('#ef4444')}
-                            onClick={() => setDeleteTarget(cat.id)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', color: 'var(--color-error)' }}
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(cat.id); }}
                         >
-                            🗑️ Delete
+                            <IonIcon name="trash-outline"></IonIcon>
                         </button>
                     </div>
                 </div>
@@ -425,210 +342,174 @@ const AdminCategoryPage: React.FC = () => {
         );
     };
 
-    useEffect(() => {
-        if (success) {
-            const timer = setTimeout(() => setSuccess(null), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [success]);
-
     return (
         <div className="page">
             <PageHeader
-                title="🏷️ Category Taxonomy"
-                subtitle="Manage the hierarchical product classification system — Domains, Families & Devices."
-                actions={
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                        <Button variant="ghost" size="sm" onClick={expandAll}>Expand All</Button>
-                        <Button variant="ghost" size="sm" onClick={collapseAll}>Collapse All</Button>
-                    </div>
-                }
+                title="🏷️ Global Taxonomy Hub"
+                subtitle="Recursive registry of classification metrics. Define multi-level hardware hierarchies."
             />
 
-            <div style={S.statsRow}>
-                <div style={S.statCard}>
-                    <span style={S.statIcon}>📊</span>
-                    <span style={S.statValue}>{loading ? '—' : stats.total}</span>
-                    <span style={S.statLabel}>Total Categories</span>
+            {/* Premium Stats Grid */}
+            <div style={GS.statsRow}>
+                <div style={GS.statCard('var(--color-primary)')}>
+                    <span style={GS.statValue()}>{loading ? '—' : stats.total}</span>
+                    <span style={GS.statLabel}>Total Taxonomy Nodes</span>
                 </div>
-                <div style={S.statCard}>
-                    <span style={S.statIcon}>🌐</span>
-                    <span style={S.statValue}>{loading ? '—' : stats.domains}</span>
-                    <span style={S.statLabel}>Domains (L0)</span>
+                <div style={GS.statCard('var(--color-info)')}>
+                    <span style={GS.statValue('var(--color-info)')}>{loading ? '—' : stats.domains}</span>
+                    <span style={GS.statLabel}>Foundational Domains (L0)</span>
                 </div>
-                <div style={S.statCard}>
-                    <span style={S.statIcon}>📂</span>
-                    <span style={S.statValue}>{loading ? '—' : stats.families}</span>
-                    <span style={S.statLabel}>Families (L1)</span>
+                <div style={GS.statCard('var(--color-success)')}>
+                    <span style={GS.statValue('var(--color-success)')}>{loading ? '—' : stats.families}</span>
+                    <span style={GS.statLabel}>Assembly Families (L1)</span>
                 </div>
-                <div style={S.statCard}>
-                    <span style={S.statIcon}>📱</span>
-                    <span style={S.statValue}>{loading ? '—' : stats.devices}</span>
-                    <span style={S.statLabel}>Devices (L2)</span>
-                </div>
-                <div style={S.statCard}>
-                    <span style={S.statIcon}>✅</span>
-                    <span style={{ ...S.statValue, color: '#10b981' }}>{loading ? '—' : stats.publicCount}</span>
-                    <span style={S.statLabel}>Published</span>
-                </div>
-                <div style={S.statCard}>
-                    <span style={S.statIcon}>📝</span>
-                    <span style={{ ...S.statValue, color: '#f59e0b' }}>{loading ? '—' : stats.draftCount}</span>
-                    <span style={S.statLabel}>Drafts</span>
+                <div style={GS.statCard('var(--color-warning)')}>
+                    <span style={GS.statValue('var(--color-warning)')}>{loading ? '—' : stats.devices}</span>
+                    <span style={GS.statLabel}>End Devices (L2)</span>
                 </div>
             </div>
 
-            <div style={S.grid}>
-                <div style={S.formCard}>
-                    <div style={S.formTitle}>
-                        <span>{editingId ? '✏️' : '➕'}</span>
-                        <span>{editingId ? 'Edit Category' : 'New Category'}</span>
+            <div style={GS.grid}>
+                {/* Glassmorphic Form Container */}
+                <div style={GS.formGlass}>
+                    <div style={{ position: 'absolute', top: '-10%', left: '-10%', width: '150px', height: '150px', background: 'var(--color-primary)', filter: 'blur(100px)', opacity: 0.1, pointerEvents: 'none' }} />
+                    
+                    <div style={GS.formTitle}>
+                        <div style={GS.inputIcon}>
+                            <IonIcon name={editingId ? "pencil-outline" : "add-outline"}></IonIcon>
+                        </div>
+                        <span>{editingId ? 'Modify Taxonomy Link' : 'Register New Node'}</span>
                     </div>
 
-                    {error && <Alert tone="error" className="mb-4">{error}</Alert>}
-                    {success && <Alert tone="success" className="mb-4">{success}</Alert>}
+                    {error && <Alert tone="error" className="mb-6">{error}</Alert>}
+                    {success && <Alert tone="success" className="mb-6">{success}</Alert>}
 
-                    <form onSubmit={handleSubmit}>
-                        <div style={S.formGroup}>
-                            <InputField
-                                id="cat-name"
-                                label="Category Name"
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                required
-                                placeholder="e.g., Electrical Systems"
-                            />
-                            <InputField
-                                id="cat-slug"
-                                label="Slug (URL-friendly)"
-                                value={formData.slug}
-                                onChange={e => setFormData({ ...formData, slug: e.target.value })}
-                                placeholder="Auto-generated from name"
-                            />
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <InputField
+                            id="cat-name"
+                            label="Node Identifier (Name)"
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            required
+                            placeholder="e.g., Optical Sensors"
+                        />
+                        
+                        <div>
+                            <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--color-text-muted)', marginBottom: '8px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Upstream Parent Node
+                            </label>
+                            <select
+                                style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--color-border)', borderRadius: '14px', background: 'var(--color-background-soft)', color: 'var(--color-text-strong)', outline: 'none' }}
+                                value={formData.parent}
+                                onChange={e => setFormData({ ...formData, parent: e.target.value })}
+                            >
+                                <option value="">— PLATFORM DOMAIN (L0) —</option>
+                                {flatCategories.filter(c => c.id !== editingId).map(c => (
+                                    <option key={c.id} value={c.id}>
+                                        {' ➔ '.repeat(c.level || 0)}{c.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                            <div>
-                                <label style={S.label}>Parent Category</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                           <div>
+                                <label style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--color-text-muted)', marginBottom: '8px', display: 'block', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Visibility</label>
                                 <select
-                                    style={S.select}
-                                    value={formData.parent}
-                                    onChange={e => setFormData({ ...formData, parent: e.target.value })}
+                                    style={{ width: '100%', padding: '12px 16px', border: '1px solid var(--color-border)', borderRadius: '14px', background: 'var(--color-background-soft)', color: 'var(--color-text-strong)', outline: 'none' }}
+                                    value={formData.visibility}
+                                    onChange={e => setFormData({ ...formData, visibility: e.target.value })}
                                 >
-                                    <option value="">— Top Level (Domain) —</option>
-                                    {flatCategories.filter(c => c.id !== editingId).map(c => (
-                                        <option key={c.id} value={c.id}>
-                                            {'  '.repeat((c.level || 0))}{'→ '.repeat(Math.min(c.level || 0, 1))}{c.name}
-                                        </option>
-                                    ))}
+                                    <option value="draft">DRAFT 📝</option>
+                                    <option value="public">PUBLIC 🌐</option>
+                                    <option value="private">PRIVATE 🔒</option>
                                 </select>
                             </div>
-
-                            <div style={S.formRow}>
-                                <div>
-                                    <label style={S.label}>Visibility</label>
-                                    <select
-                                        style={S.select}
-                                        value={formData.visibility}
-                                        onChange={e => setFormData({ ...formData, visibility: e.target.value })}
-                                    >
-                                        <option value="draft">📝 Draft</option>
-                                        <option value="public">✅ Public</option>
-                                        <option value="private">🔒 Private</option>
-                                    </select>
-                                </div>
-                                <InputField
-                                    id="cat-sort"
-                                    label="Sort Order"
-                                    type="number"
-                                    value={formData.sortOrder}
-                                    onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                                />
-                            </div>
-
                             <InputField
-                                id="cat-icon"
-                                label="Icon / Image URL"
-                                value={formData.icon}
-                                onChange={e => setFormData({ ...formData, icon: e.target.value })}
-                                placeholder="https://..."
+                                id="cat-sort"
+                                label="Priority/Sort"
+                                type="number"
+                                value={formData.sortOrder}
+                                onChange={e => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
                             />
+                        </div>
 
-                            <div>
-                                <label style={S.label}>SEO Summary <span style={{ opacity: 0.5 }}>({(formData.summary || '').length}/160)</span></label>
-                                <textarea
-                                    style={S.textarea}
-                                    value={formData.summary}
-                                    onChange={e => setFormData({ ...formData, summary: e.target.value })}
-                                    maxLength={160}
-                                    placeholder="Brief description for search engines..."
-                                />
-                            </div>
+                        <InputField
+                            id="cat-icon"
+                            label="Graphic Token (Icon Name)"
+                            value={formData.icon}
+                            onChange={e => setFormData({ ...formData, icon: e.target.value })}
+                            placeholder="e.g., hardware-chip-outline"
+                        />
 
-                            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', paddingTop: '12px', borderTop: '1px solid var(--color-border)' }}>
-                                <Button type="submit" variant="primary" fullWidth disabled={saving}>
-                                    {saving ? 'Saving...' : editingId ? '💾 Update Category' : '➕ Create Category'}
+                        <div style={{ paddingTop: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <Button type="submit" variant="primary" fullWidth disabled={saving} style={{ borderRadius: '16px', padding: '14px', fontWeight: 800 }}>
+                                {saving ? 'SYNCING...' : (editingId ? '💾 PERSIST UPDATES' : '➕ ENLIST NODE')}
+                            </Button>
+                            {editingId && (
+                                <Button type="button" variant="secondary" onClick={resetForm} style={{ borderRadius: '16px' }}>
+                                    Discard Edits
                                 </Button>
-                                {editingId && (
-                                    <Button type="button" variant="secondary" onClick={resetForm}>
-                                        Cancel
-                                    </Button>
-                                )}
-                            </div>
+                            )}
                         </div>
                     </form>
                 </div>
 
-                <div style={S.treeContainer}>
-                    <div style={S.treeHeader}>
-                        <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text-strong)' }}>
-                            📂 Category Hierarchy
-                            <span style={{ fontWeight: 400, color: 'var(--color-text-muted)', marginLeft: '8px', fontSize: '0.8rem' }}>
-                                {flatCategories.length} total
-                            </span>
-                        </span>
+                {/* Hierarchy Registry Registry */}
+                <Card raised style={{ borderRadius: '32px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                    <div style={GS.treeHeader}>
+                        <div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--color-text-strong)' }}>Registry View</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-muted)' }}>Structured classification of {flatCategories.length} nodes.</div>
+                        </div>
                         <input
-                            style={{ padding: '8px 12px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md, 8px)', background: 'var(--color-surface)', color: 'var(--color-text-strong)', fontSize: '0.85rem', width: '220px', outline: 'none' }}
+                            style={{ 
+                                padding: '12px 24px', border: '1px solid var(--color-border)', borderRadius: '100px', 
+                                background: 'var(--color-background-soft)', color: 'var(--color-text-strong)', 
+                                fontSize: '0.85rem', width: '250px', outline: 'none' 
+                            }}
                             type="text"
-                            placeholder="🔍 Search categories..."
+                            placeholder="🔍 Filter taxonomy..."
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
 
-                    {loading ? (
-                        <div style={{ padding: '20px' }}>
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <div key={i} style={{ padding: '12px 20px', paddingLeft: `${(i % 3) * 24 + 20}px` }}>
-                                    <Skeleton width={140 + (i % 3) * 50} />
-                                </div>
-                            ))}
-                        </div>
-                    ) : filteredCategories.length === 0 ? (
-                        <div style={{ padding: '60px 20px', textAlign: 'center' }}>
-                            <EmptyState
-                                icon="🏷️"
-                                title={searchQuery ? 'No matching categories' : 'No categories yet'}
-                                text={searchQuery ? 'Try a different search term.' : 'Create your first domain category to get started.'}
-                            />
-                        </div>
-                    ) : (
-                        <div>
-                            {filteredCategories.map(cat => renderTreeRow(cat, 0))}
-                        </div>
-                    )}
-                </div>
+                    <div style={{ padding: '0 0 2rem' }}>
+                        {loading ? (
+                            <div style={{ padding: '32px' }}>
+                                {Array.from({ length: 8 }).map((_, i) => (
+                                    <div key={i} style={{ padding: '12px 0', marginLeft: `${(i % 3) * 32}px` }}><Skeleton height={40} /></div>
+                                ))}
+                            </div>
+                        ) : filteredCategories.length === 0 ? (
+                            <div style={{ padding: '5rem 2rem', textAlign: 'center' }}>
+                                <EmptyState
+                                    icon="list-outline"
+                                    title="No Registry Matches"
+                                    text="The current taxonomy definition does not contain a node with this fragment."
+                                />
+                            </div>
+                        ) : (
+                            <div>
+                                {filteredCategories.map(cat => renderTreeRow(cat, 0))}
+                            </div>
+                        )}
+                    </div>
+                </Card>
             </div>
 
+            {/* Premium Confirm Modal */}
             {deleteTarget && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }} onClick={() => setDeleteTarget(null)}>
-                    <Card style={{ background: 'var(--color-surface)', padding: '28px', borderRadius: 'var(--radius-lg, 12px)', maxWidth: '420px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }} onClick={(e: any) => e.stopPropagation()}>
-                        <div style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-strong)', marginBottom: '8px' }}>⚠️ Delete Category</div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', marginBottom: '20px', lineHeight: 1.5 }}>
-                            Are you sure you want to delete this category? This action may affect
-                            products and child categories linked to it. This cannot be undone.
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(10px)' }} onClick={() => setDeleteTarget(null)}>
+                    <Card style={{ maxWidth: '440px', width: '90%', padding: '32px', borderRadius: '28px', border: '1px solid var(--color-border)', boxShadow: '0 30px 70px rgba(0,0,0,0.5)' }} onClick={(e: any) => e.stopPropagation()}>
+                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--color-text-strong)', marginBottom: '12px' }}>Execute Removal?</div>
+                        <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', marginBottom: '2rem', lineHeight: 1.6 }}>
+                            This will permanently excise the node from the platform taxonomy. Any linked products or children will be decoupled. <strong>Continue?</strong>
                         </p>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                            <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-                            <Button variant="danger" onClick={confirmDelete}>🗑️ Delete</Button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                            <Button variant="secondary" onClick={() => setDeleteTarget(null)} style={{ borderRadius: '14px' }}>Reject</Button>
+                            <Button variant="danger" onClick={confirmDelete} style={{ borderRadius: '14px', fontWeight: 800 }}>Confirm Purge</Button>
                         </div>
                     </Card>
                 </div>

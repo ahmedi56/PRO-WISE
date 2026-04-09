@@ -24,8 +24,8 @@ const LoginPage: React.FC = () => {
                 dispatch(clearError());
                 return;
             }
-            const role = user.role || (user as any).Role;
-            const roleName = (typeof role === 'object' ? role?.name : role)?.toLowerCase() || '';
+            const role = user?.role || (user as any)?.Role;
+            const roleName = String(typeof role === 'object' ? role?.name : role || '').toLowerCase();
             navigate(roleName === 'administrator' || roleName === 'company_admin' || roleName === 'super_admin' ? '/admin' : '/products');
         }
 

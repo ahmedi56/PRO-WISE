@@ -83,7 +83,7 @@ const AdminProductTable: React.FC = () => {
                 </div>
             </div>
 
-            {error ? <Alert tone="error">{error}</Alert> : null}
+            {error && <Alert tone="error" className="mb-4">{error}</Alert>}
 
             <div className="table-container">
                 <table className="table">
@@ -128,7 +128,7 @@ const AdminProductTable: React.FC = () => {
                                         <td>{product.modelNumber || '-'}</td>
                                         <td>
                                             <Badge tone="primary">
-                                                {product.category?.name || 'Uncategorized'}
+                                                {typeof product.category === 'object' ? product.category?.name : (product.category || 'Uncategorized')}
                                             </Badge>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>

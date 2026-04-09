@@ -18,8 +18,8 @@ const SuperAdminRoute: React.FC<SuperAdminRouteProps> = ({ children }) => {
         return <Navigate to="/pending-approval" replace />;
     }
 
-    const role = user?.role || (user as any)?.Role;
-    const roleName = (typeof role === 'object' ? role?.name : role || '').toLowerCase();
+    const role = user.role;
+    const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
     const isSuperAdmin = roleName === 'super_admin';
 
     if (!isSuperAdmin) {

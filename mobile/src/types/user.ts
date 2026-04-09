@@ -1,5 +1,5 @@
-export type Role = 'super_admin' | 'company_admin' | 'customer';
-export type UserRole = Role; // Alias for consistency
+export type UserRole = 'super_admin' | 'company_admin' | 'customer';
+export type Role = UserRole; // Alias for consistency
 
 export interface User {
   id: string;
@@ -8,10 +8,9 @@ export interface User {
   name: string;
   firstName?: string;
   lastName?: string;
-  role: Role;
-  phone?: string;
+  role: UserRole;
   company?: any; // Company ID or object
-  status: 'active' | 'deactivated' | 'pending';
+  status: 'active' | 'deactivated';
   createdAt: string;
 }
 
@@ -20,6 +19,5 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
-  updateSuccess?: boolean;
   error: string | null;
 }

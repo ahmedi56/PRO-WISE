@@ -3,26 +3,42 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, typography, shadows } from '../theme';
+import { RootState } from '../store';
+import { MainTabNavigationProp } from '../navigation/types';
 
+interface Action {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    desc: string;
+    screen: 'Home' | 'Shop' | 'Scan' | 'Profile' | null;
+}
 
-const QUICK_ACTIONS = [
+const QUICK_ACTIONS: Action[] = [
     { icon: 'pricetag-outline', title: 'Browse Products', desc: 'Explore our catalog', screen: 'Shop' },
     { icon: 'construct-outline', title: 'Repair Requests', desc: 'Track your repairs', screen: null },
     { icon: 'pulse-outline', title: 'Activity', desc: 'Your recent activity', screen: null },
 ];
 
-const getRoleName = (role) => {
+const getRoleName = (role: any): string => {
     if (!role) return '';
     if (typeof role === 'string') return role.toLowerCase();
     if (typeof role.name === 'string') return role.name.toLowerCase();
     return '';
 };
 
-const HomeScreen = ({ navigation }) => {
-    const { user } = useSelector((state) => state.auth);
-    const permissions = user?.role?.permissions || user?.Role?.permissions || [];
-    const roleName = getRoleName(user?.role || user?.Role);
-    const hasProductsManage = permissions.includes('products.manage') && (roleName === 'company_admin' || roleName === 'administrator');
+interface HomeScreenProps {
+    navigation: MainTabNavigationProp<'Home'>;
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+    const { user } = useSelector((state: RootState) => state.auth);
+    
+    const role = user?.role || (user as any)?.Role;
+    const permissions = (typeof role === 'object' ? role?.permissions : []) || [];
+    const roleName = getRoleName(role);
+    
+    const hasProductsManage = permissions.includes('products.manage') && 
+        (['company_admin', 'administrator', 'super_admin'].includes(roleName));
     const hasUsersManage = permissions.includes('users.manage');
 
     const greeting = () => {
@@ -46,7 +62,7 @@ const HomeScreen = ({ navigation }) => {
                     <TouchableOpacity
                         key={i}
                         style={styles.actionCard}
-                        onPress={() => action.screen && navigation.navigate(action.screen)}
+                        onPress={() => action.screen && navigation.navigate(action.screen as any)}
                         activeOpacity={action.screen ? 0.7 : 1}
                     >
                         <Ionicons name={action.icon} size={28} color={colors.primary} style={{ marginBottom: spacing.md }} />
@@ -62,7 +78,7 @@ const HomeScreen = ({ navigation }) => {
                     {hasUsersManage && (
                         <TouchableOpacity
                             style={styles.adminCard}
-                            onPress={() => navigation.navigate('Register')}
+                            onPress={() => navigation.navigate('Register' as any)}
                         >
                             <Ionicons name="person-add-outline" size={24} color={colors.text} />
                             <View style={{ flex: 1 }}>
@@ -76,7 +92,7 @@ const HomeScreen = ({ navigation }) => {
                     {hasProductsManage && (
                         <TouchableOpacity
                             style={[styles.adminCard, { marginTop: spacing.sm }]}
-                            onPress={() => navigation.navigate('ProductForm')}
+                            onPress={() => navigation.navigate('ProductForm' as any)}
                         >
                             <Ionicons name="add-circle-outline" size={24} color={colors.text} />
                             <View style={{ flex: 1 }}>
@@ -116,7 +132,6 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
         ...shadows.sm,
     },
-    actionIcon: { fontSize: 20, marginBottom: spacing.md },
     actionTitle: { fontSize: typography.bodyBold.fontSize, fontWeight: typography.bodyBold.fontWeight, color: colors.textStrong, marginBottom: spacing.xs },
     actionDesc: { fontSize: typography.sm.fontSize, color: colors.textMuted },
     adminSection: { marginTop: spacing.sm },
@@ -130,10 +145,8 @@ const styles = StyleSheet.create({
         borderColor: colors.border,
         gap: spacing.md,
     },
-    adminCardIcon: { fontSize: 18 },
     adminCardTitle: { fontSize: typography.bodyBold.fontSize, fontWeight: typography.bodyBold.fontWeight, color: colors.textStrong },
     adminCardDesc: { fontSize: typography.sm.fontSize, color: colors.textMuted, marginTop: 2 },
-    chevron: { color: colors.textMuted, fontSize: 22, fontWeight: 'bold' },
 });
 
 export default HomeScreen;

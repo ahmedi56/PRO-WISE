@@ -1,9 +1,15 @@
+interface QRParseResult {
+    valid: boolean;
+    productId: string | null;
+    error: string | null;
+}
+
 /**
  * Extracts a product ID from a PRO-WISE QR code URL.
  * Supports patterns: {any-domain}/products/{id}
  * Returns { valid: boolean, productId: string | null, error: string | null }
  */
-export const parseQRCodeUrl = (url) => {
+export const parseQRCodeUrl = (url: string | undefined): QRParseResult => {
     if (!url) {
         return { valid: false, productId: null, error: 'No URL provided' };
     }

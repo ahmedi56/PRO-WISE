@@ -44,13 +44,16 @@ const AdminIndexRedirect: React.FC = () => {
     const roleName = (typeof role === 'object' ? role?.name : role || '').toLowerCase();
     const permissions = (typeof role === 'object' ? role?.permissions : []) || [];
 
+    const isSuperAdmin = roleName === 'super_admin';
+    const isOrganizationAdmin = ['company_admin', 'administrator'].includes(roleName);
+
     // Super Admin: Focus on governance (User Management)
-    if (roleName === 'super_admin' || permissions.includes('users.manage')) {
+    if (isSuperAdmin || permissions.includes('users.manage')) {
         return <Navigate to="/admin/users" replace />;
     }
 
     // Company Admin / Others: Focus on Operations (Products)
-    if (permissions.includes('analytics.view') || permissions.includes('products.manage')) {
+    if (isOrganizationAdmin || permissions.includes('analytics.view') || permissions.includes('products.manage')) {
         return <Navigate to="/admin/products" replace />;
     }
 
@@ -145,7 +148,7 @@ function App() {
                     />
                     <Route
                         path="companies"
-                        element={<SuperAdminRoute><AdminCompanyPage /></SuperAdminRoute>}
+                        element={<CompanyAdminRoute><AdminCompanyPage /></CompanyAdminRoute>}
                     />
                     <Route
                         path="guide-types"
@@ -153,6 +156,7 @@ function App() {
                     />
 
                     <Route path="qr-generate" element={<PermissionProtectedRoute permission="qr.generate"><QRGeneratorPage /></PermissionProtectedRoute>} />
+                    <Route path="qr-generate/:id" element={<PermissionProtectedRoute permission="qr.generate"><QRGeneratorPage /></PermissionProtectedRoute>} />
                     <Route path="support" element={<PermissionProtectedRoute permission="products.manage"><AdminSupportPage /></PermissionProtectedRoute>} />
                     <Route path="analytics" element={<SuperAdminRoute><AnalyticsPage /></SuperAdminRoute>} />
                     <Route path="audit-logs" element={<SuperAdminRoute><AuditLogPage /></SuperAdminRoute>} />

@@ -1,12 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, ActivityIndicator, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { 
+    View, 
+    Text, 
+    TextInput, 
+    StyleSheet, 
+    Alert, 
+    ActivityIndicator, 
+    TouchableOpacity, 
+    KeyboardAvoidingView, 
+    Platform, 
+    ScrollView 
+} from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateUser, resetSuccess } from '../store/slices/authSlice';
 import { colors, spacing, radius, typography, shadows } from '../theme';
+import { RootState, AppDispatch } from '../store';
+import { RootStackNavigationProp } from '../navigation/types';
 
-const EditProfileScreen = ({ navigation }) => {
-    const dispatch = useDispatch();
-    const { user, loading, error, updateSuccess } = useSelector((state) => state.auth);
+interface EditProfileScreenProps {
+    navigation: RootStackNavigationProp<'EditProfile'>;
+}
+
+const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => {
+    const dispatch = useDispatch<AppDispatch>();
+    const { user, loading, error, updateSuccess } = useSelector((state: RootState) => state.auth);
 
     const [name, setName] = useState('');
     const [username, setUsername] = useState('');
@@ -15,10 +32,10 @@ const EditProfileScreen = ({ navigation }) => {
 
     useEffect(() => {
         if (user) {
-            setName(user.name || '');
+            setName(user.firstName || user.name || '');
             setUsername(user.username || '');
             setEmail(user.email || '');
-            setPhone(user.phone || '');
+            setPhone((user as any).phone || '');
         }
     }, [user]);
 
@@ -34,7 +51,7 @@ const EditProfileScreen = ({ navigation }) => {
     }, [updateSuccess, error, loading, dispatch, navigation]);
 
     const handleUpdate = () => {
-        dispatch(updateUser({ name, username, email, phone }));
+        dispatch(updateUser({ firstName: name, username, email, phone }));
     };
 
     return (

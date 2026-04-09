@@ -7,10 +7,12 @@ import { Badge, Button, EmptyState, PageHeader, Skeleton } from '@/components/ui
 import RecommendationSection from '@/components/RecommendationSection';
 import MainLayout from '@/components/MainLayout';
 import { formatProductName } from '@/utils/formatProduct';
-import { Product } from '@/types/product';
+import { Product, Category, Guide, Media } from '@/types/product';
 import { RootState } from '@/store';
 
-function classifyMedia(guides: any[] = [], supportVideos: any[] = [], supportPDFs: any[] = []) {
+const IonIcon = 'ion-icon' as any;
+
+function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = []) {
     const videos: any[] = [];
     const pdfs: any[] = [];
 
@@ -50,7 +52,7 @@ function classifyMedia(guides: any[] = [], supportVideos: any[] = [], supportPDF
         pdfs.push({
             id: pdf.id,
             title: pdf.title,
-            url: pdf.fileUrl,
+            url: pdf.fileUrl || pdf.url,
             author: pdf.author || 'Internal Support',
             _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Document' }
         });
@@ -247,14 +249,14 @@ const ProductDetailPage: React.FC = () => {
             <div className="page" style={{ padding: 0, maxWidth: 'none' }}>
                 <nav className="breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', fontSize: '0.9rem', color: 'var(--color-text-muted)', flexWrap: 'wrap' }}>
                     <Link to="/categories" style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>Categories</Link>
-                    {categoryPath.map((category, index) => (
-                        <React.Fragment key={category.id}>
+                    {categoryPath.map((cat: any, index) => (
+                        <React.Fragment key={cat.id}>
                             <span style={{ opacity: 0.5 }}>/</span>
                             {index === categoryPath.length - 1 ? (
-                                <span style={{ color: 'var(--color-text)' }}>{category.name}</span>
+                                <span style={{ color: 'var(--color-text)' }}>{cat.name}</span>
                             ) : (
-                                <Link to={`/categories?parent=${category.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
-                                    {category.name}
+                                <Link to={`/categories?parent=${cat.id}`} style={{ color: 'var(--color-primary)', textDecoration: 'none' }}>
+                                    {cat.name}
                                 </Link>
                             )}
                         </React.Fragment>
@@ -268,7 +270,7 @@ const ProductDetailPage: React.FC = () => {
                         <div className="header-main">
                             <PageHeader
                                 title={`${formatProductName(product.name, product.manufacturer)}${product.modelNumber ? ` (${product.modelNumber})` : ''}`}
-                                subtitle={product.manufacturer ? `${product.manufacturer} - ${product.category?.name || 'General Product'}` : (product.category?.name || 'General Product')}
+                                subtitle={product.manufacturer ? `${product.manufacturer} - ${typeof product.category === 'object' ? product.category?.name : 'General Product'}` : (typeof product.category === 'object' ? product.category?.name : 'General Product')}
                                 actions={(
                                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                                         {canManage && (
@@ -316,13 +318,13 @@ const ProductDetailPage: React.FC = () => {
                                 </div>
                                 <div className="spec-item">
                                     <span className="spec-label">Category</span>
-                                    <span className="spec-value">{product.category?.name || 'Uncategorized'}</span>
+                                    <span className="spec-value">{typeof product.category === 'object' ? product.category?.name : 'Uncategorized'}</span>
                                 </div>
                             </div>
 
                             <div className="product-components" style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--color-border)' }}>
                                 <h4 style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <ion-icon name="hardware-chip-outline" style={{ color: 'var(--color-primary)' }}></ion-icon>
+                                    <ion-icon name="hardware-chip-outline" style={{ color: 'var(--color-primary)' } as any}></ion-icon>
                                     Components and Composition
                                 </h4>
                                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.88rem', margin: '0 0 1rem' }}>
@@ -359,7 +361,7 @@ const ProductDetailPage: React.FC = () => {
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.5rem' }}>
                                                         <h5 style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text-strong)' }}>{component.name}</h5>
                                                         {component.type ? (
-                                                            <Badge tone="neutral" style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                                                            <Badge tone="neutral">
                                                                 {component.type}
                                                             </Badge>
                                                         ) : null}
@@ -444,9 +446,9 @@ const ProductDetailPage: React.FC = () => {
                                                         {video.videoId ? (
                                                             <img src={`https://img.youtube.com/vi/${video.videoId}/mqdefault.jpg`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', opacity: 0.6 }} />
                                                         ) : (
-                                                            <div style={{ color: 'var(--color-primary)', fontSize: '1.5rem' }}><ion-icon name="videocam-outline"></ion-icon></div>
+                                                            <div style={{ color: 'var(--color-primary)', fontSize: '1.5rem' }}><IonIcon name="videocam-outline"></IonIcon></div>
                                                         )}
-                                                        <div style={{ position: 'absolute', color: '#fff', fontSize: '2rem' }}><ion-icon name="play-circle-outline"></ion-icon></div>
+                                                        <div style={{ position: 'absolute', color: '#fff', fontSize: '2rem' }}><IonIcon name="play-circle-outline"></IonIcon></div>
                                                     </div>
                                                     <div className="video-info" style={{ padding: 0 }}>
                                                         <span className="video-title" style={{ fontSize: '1.1rem', marginBottom: '0.25rem', display: 'block' }}>{video.title || 'Support Video'}</span>
@@ -470,11 +472,11 @@ const ProductDetailPage: React.FC = () => {
                                             {pdfs.map((pdf: any, index: number) => (
                                                 <div key={pdf.id || index} className="pdf-row card">
                                                     <div className="pdf-row-left">
-                                                        <span className="pdf-icon">PDF</span>
+                                                        <IonIcon name="document-text-outline" style={{ fontSize: '1.5rem', marginRight: '1rem', color: 'var(--color-primary)' } as any}></IonIcon>
                                                         <div className="pdf-meta">
                                                             <span className="pdf-title">{pdf.title || 'Document'}</span>
                                                             <span className="pdf-context">
-                                                                {pdf._ctx.guideTitle} - Step {pdf._ctx.stepNumber}: {pdf._ctx.stepTitle}
+                                                                {pdf.description || 'Reference Guide'}
                                                             </span>
                                                         </div>
                                                     </div>
@@ -488,6 +490,7 @@ const ProductDetailPage: React.FC = () => {
                                                                 window.open(fullUrl, '_blank');
                                                         }}
                                                     >
+                                                        <IonIcon name="download-outline" style={{ fontSize: '1.2rem' } as any}></IonIcon>
                                                         Open PDF
                                                     </Button>
                                                 </div>
@@ -508,7 +511,7 @@ const ProductDetailPage: React.FC = () => {
                                                     <div className="guide-block-header">
                                                         <h4 className="guide-title">{guide.title}</h4>
                                                         <div className="guide-meta-tags">
-                                                            <Badge tone={guide.difficulty === 'hard' ? 'danger' : guide.difficulty === 'medium' ? 'warning' : 'success'} size="sm">
+                                                            <Badge tone={guide.difficulty === 'hard' ? 'danger' : guide.difficulty === 'medium' ? 'warning' : 'success'}>
                                                                 {guide.difficulty?.toUpperCase()}
                                                             </Badge>
                                                             <span className="meta-item" style={{ marginLeft: '0.75rem', fontSize: '0.85rem' }}>
@@ -565,7 +568,7 @@ const ProductDetailPage: React.FC = () => {
                         <RecommendationSection
                             mode="components"
                             currentProductId={id}
-                            categoryId={product.category?.id || (product.category as any)}
+                            categoryId={typeof product.category === 'object' ? product.category?.id : (product.category as any)}
                             selectedComponents={selectedComponents}
                             onClearSelection={() => setSelectedComponents([])}
                         />
@@ -574,7 +577,7 @@ const ProductDetailPage: React.FC = () => {
                     <RecommendationSection
                         mode="product"
                         currentProductId={id}
-                        categoryId={product.category?.id || (product.category as any)}
+                        categoryId={typeof product.category === 'object' ? product.category?.id : (product.category as any)}
                         title="Related Products"
                     />
                 </div>

@@ -12,6 +12,8 @@ import {
 } from '@/store/slices/productSlice';
 import { Alert, Button, Card, InputField } from '@/components/ui';
 import { RootState, AppDispatch } from '@/store';
+
+const IonIcon = 'ion-icon' as any;
 import { ProductComponent } from '@/types/product';
 
 const COMPONENT_FIELDS = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'] as const;
@@ -58,11 +60,13 @@ const ProductFormPage: React.FC = () => {
     const { currentProduct, companies, categories, loading, error, success } = useSelector(
         (state: RootState) => state.products
     );
+    const { user: currentUser } = useSelector((state: RootState) => state.auth);
     const authRoleName = useSelector((state: RootState) => {
         const role = state.auth.user?.role || (state.auth.user as any)?.Role;
         const roleName = (typeof role === 'object' ? role?.name : role || '');
         return String(roleName || '').toLowerCase();
     });
+    const isSuperAdmin = authRoleName === 'super_admin';
 
     const [formData, setFormData] = useState<any>({
         name: '',
@@ -71,14 +75,14 @@ const ProductFormPage: React.FC = () => {
         manufacturer: '',
         modelNumber: '',
         category: '',
-        company: '',
         components: [],
+        company: currentUser?.company?.id || currentUser?.company || ''
     });
     const [localError, setLocalError] = useState('');
 
     useEffect(() => {
-        dispatch(fetchCompanies());
-        dispatch(fetchCategories());
+        dispatch(fetchCompanies(undefined));
+        dispatch(fetchCategories({}));
         if (isEdit && id) {
             dispatch(fetchProductById(id));
         }
@@ -96,12 +100,16 @@ const ProductFormPage: React.FC = () => {
                 content: currentProduct.content || '',
                 manufacturer: currentProduct.manufacturer || '',
                 modelNumber: currentProduct.modelNumber || '',
-                category: currentProduct.category?.id || currentProduct.category || '',
-                company: currentProduct.company?.id || currentProduct.company || '',
+                category: typeof currentProduct.category === 'object' ? currentProduct.category?.id : currentProduct.category || '',
                 components: Array.isArray(currentProduct.components) ? currentProduct.components : [],
             });
+        } else if (!isEdit && currentUser?.company) {
+            setFormData(prev => ({ 
+                ...prev, 
+                company: typeof currentUser.company === 'object' ? currentUser.company.id : currentUser.company 
+            }));
         }
-    }, [isEdit, currentProduct]);
+    }, [isEdit, currentProduct, currentUser]);
 
     useEffect(() => {
         if (success) {
@@ -256,7 +264,7 @@ const ProductFormPage: React.FC = () => {
                                             style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: 'none', border: 'none', color: 'var(--color-error)', cursor: 'pointer', fontSize: '1.2rem', padding: '0.25rem' }}
                                             title="Remove component"
                                         >
-                                            <ion-icon name="close-circle-outline"></ion-icon>
+                                            <ion-icon name="close-circle-outline" style={{ verticalAlign: 'middle' } as any}></ion-icon>
                                         </button>
                                         
                                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '1rem', marginBottom: '0.75rem', paddingRight: '1.5rem' }}>
@@ -306,29 +314,34 @@ const ProductFormPage: React.FC = () => {
                         </select>
                         {categories.find(c => String(c.id) === String(formData.category))?.name === 'Phone' && (
                             <p style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginTop: '0.5rem', fontWeight: 500 }}>
-                                <ion-icon name="information-circle-outline" style={{ verticalAlign: 'middle', marginRight: '4px' }}></ion-icon>
+                                <IonIcon name="information-circle-outline" style={{ verticalAlign: 'middle', marginRight: '4px' }}></IonIcon>
                                 Note: Selecting "Phone" will automatically route this product to the correct brand subcategory (e.g. Samsung/Apple) based on the manufacturer name.
                             </p>
                         )}
                     </div>
 
-                    {authRoleName === 'super_admin' && (
-                        <div className="input-group">
-                            <label className="label" htmlFor="product-company">Company</label>
-                            <select
-                                id="product-company"
-                                name="company"
-                                className="input select"
-                                value={formData.company}
-                                onChange={handleChange}
-                            >
-                                <option value="">Select company</option>
-                                {companies.map((comp) => (
-                                    <option key={comp.id} value={comp.id}>{comp.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
+                    <div className="input-group">
+                        <label className="label" htmlFor="product-company">Assigning Company</label>
+                        <select
+                            id="product-company"
+                            name="company"
+                            className="input select"
+                            value={formData.company}
+                            onChange={handleChange}
+                            disabled={!isSuperAdmin}
+                            required
+                        >
+                            <option value="">Select company</option>
+                            {companies.map((comp) => (
+                                <option key={comp.id} value={comp.id}>{comp.name}</option>
+                            ))}
+                        </select>
+                        {!isSuperAdmin && (
+                            <p style={{ fontSize: '0.85rem', color: 'var(--color-primary)', marginTop: '0.5rem' }}>
+                                Product will be assigned to your organization.
+                            </p>
+                        )}
+                    </div>
 
                     <div className="page-header-actions" style={{ marginTop: 'var(--space-6)' }}>
                         <Button type="submit" variant="primary" size="lg" disabled={loading}>

@@ -29,9 +29,13 @@ module.exports.custom = {
       description: 'Platform Super Administrator — approves/rejects companies, manages users, views platform analytics.',
       permissions: [
         'users.manage',
+        'companies.manage',
         'categories.manage',
+        'products.manage',
+        'guides.manage',
         'audit.view',
-        'analytics.view'
+        'analytics.view',
+        'qr.generate'
       ]
     },
     {

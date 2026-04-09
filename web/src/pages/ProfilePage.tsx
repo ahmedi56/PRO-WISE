@@ -89,10 +89,10 @@ const ProfilePage: React.FC = () => {
         );
     }
 
-    const role = user.role || (user as any).Role;
-    const roleName = (typeof role === 'object' ? role?.name : role || 'User');
-    const displayName = user.name || user.username || 'User';
-    const initial = displayName[0]?.toUpperCase() || 'U';
+    const role = user?.role || (user as any)?.Role;
+    const roleName = String(typeof role === 'object' ? role?.name : role || 'User');
+    const displayName = user?.name || user?.username || 'User';
+    const initial = String(displayName[0] || 'U').toUpperCase();
 
     const handleSubmit = (event: React.FormEvent) => {
         event.preventDefault();
@@ -214,7 +214,7 @@ const ProfilePage: React.FC = () => {
                                     id="company-name"
                                     label="Company Name"
                                     value={companyFormData.name}
-                                    disabled={String(roleName).toLowerCase() !== 'super_admin'}
+                                    disabled={!isCompanyAdmin}
                                     onChange={(event) =>
                                         setCompanyFormData((prev) => ({ ...prev, name: event.target.value }))
                                     }

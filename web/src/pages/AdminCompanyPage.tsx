@@ -17,7 +17,12 @@ import { RootState } from '@/store';
 import { Company } from '@/types/company';
 
 const AdminCompanyPage: React.FC = () => {
-    const { token } = useSelector((state: RootState) => state.auth);
+    const { user, token } = useSelector((state: RootState) => state.auth);
+    const role = user?.role || (user as any)?.Role;
+    const roleName = (typeof role === 'object' ? role?.name : role || '').toLowerCase();
+    const isSuperAdmin = roleName === 'super_admin';
+    const userCompanyId = (typeof user?.company === 'object' ? user.company?.id : user?.company || '');
+
     const [companies, setCompanies] = useState<Company[]>([]);
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
@@ -31,7 +36,21 @@ const AdminCompanyPage: React.FC = () => {
         setError(null);
         try {
             const { data } = await axios.get(`${API_URL}/companies`);
-            setCompanies(Array.isArray(data) ? data : []);
+            const loadedCompanies = Array.isArray(data) ? data : [];
+            setCompanies(loadedCompanies);
+
+            // Auto-select company if not super admin
+            if (!isSuperAdmin && userCompanyId) {
+                const myCompany = loadedCompanies.find(c => String(c.id) === String(userCompanyId));
+                if (myCompany) {
+                    setEditingId(myCompany.id);
+                    setFormData({
+                        name: myCompany.name || '',
+                        description: myCompany.description || '',
+                        status: myCompany.status || 'active'
+                    });
+                }
+            }
         } catch (requestError: any) {
             setError(requestError.response?.data?.message || 'Failed to load companies');
         } finally {
@@ -109,16 +128,23 @@ const AdminCompanyPage: React.FC = () => {
                 subtitle="Create, edit, activate, deactivate, and retire companies."
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: 'var(--space-6)', alignItems: 'start' }}>
+            <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: isSuperAdmin ? 'minmax(300px, 360px) 1fr' : '1fr', 
+                gap: 'var(--space-6)', 
+                alignItems: 'start',
+                maxWidth: isSuperAdmin ? '100%' : '800px',
+                margin: isSuperAdmin ? '0' : '0 auto'
+            }}>
                 <Card raised>
                     <div className="p-6">
                         <h3 className="mb-6 text-xl font-bold">
-                            {editingId ? 'Edit Company' : 'Select a Company'}
+                            {!isSuperAdmin ? 'Organization Profile' : (editingId ? 'Edit Company' : 'Select a Company')}
                         </h3>
 
                         {error ? <Alert tone="error">{error}</Alert> : null}
 
-                        {editingId ? (
+                        {(editingId || !isSuperAdmin) ? (
                             <form onSubmit={handleSubmit}>
                                 <InputField
                                     id="company-name"
@@ -127,6 +153,7 @@ const AdminCompanyPage: React.FC = () => {
                                     onChange={(event) => setFormData({ ...formData, name: event.target.value })}
                                     placeholder="e.g. Atlas Copco"
                                     required
+                                    disabled={!isSuperAdmin}
                                 />
 
                                 <div className="input-group">
@@ -142,43 +169,53 @@ const AdminCompanyPage: React.FC = () => {
                                     />
                                 </div>
 
-                                <div className="input-group">
-                                    <label className="label" htmlFor="company-status">Status</label>
-                                    <select
-                                        id="company-status"
-                                        className="input"
-                                        value={formData.status}
-                                        onChange={(event) => setFormData({ ...formData, status: event.target.value })}
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="pending">Pending</option>
-                                        <option value="deactivated">Deactivated</option>
-                                    </select>
-                                </div>
+                                {!isSuperAdmin && (
+                                    <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>
+                                        To change your official organization name, please contact platform support.
+                                    </p>
+                                )}
+
+                                {isSuperAdmin && (
+                                    <div className="input-group">
+                                        <label className="label" htmlFor="company-status">Status</label>
+                                        <select
+                                            id="company-status"
+                                            className="input"
+                                            value={formData.status}
+                                            onChange={(event) => setFormData({ ...formData, status: event.target.value })}
+                                        >
+                                            <option value="active">Active</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="deactivated">Deactivated</option>
+                                        </select>
+                                    </div>
+                                )}
 
                                 <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
-                                    <Button type="submit" variant="primary" fullWidth disabled={actionLoading}>
-                                        Update
+                                    <Button type="submit" variant="primary" fullWidth disabled={actionLoading || (!isSuperAdmin && !editingId)}>
+                                        {actionLoading ? 'Saving...' : 'Update Profile'}
                                     </Button>
 
-                                    <Button type="button" variant="secondary" onClick={resetForm} disabled={actionLoading}>
-                                        Cancel
-                                    </Button>
+                                    {isSuperAdmin && editingId && (
+                                        <Button type="button" variant="secondary" onClick={resetForm} disabled={actionLoading}>
+                                            Cancel
+                                        </Button>
+                                    )}
                                 </div>
                             </form>
                         ) : (
                             <p className="text-muted" style={{ fontSize: '0.9rem' }}>
-                                Companies are created when a new company administrator registers on the platform. 
                                 Please select an existing company from the list to review, approve, or edit its profile.
                             </p>
                         )}
                     </div>
                 </Card>
 
-                <Card className="p-0" raised style={{ position: 'relative', overflow: 'hidden' }}>
-                    {(loading || actionLoading) ? <Spinner overlay /> : null}
+                {isSuperAdmin && (
+                    <Card className="p-0" raised style={{ position: 'relative', overflow: 'hidden' }}>
+                        {(loading || actionLoading) ? <Spinner overlay /> : null}
 
-                    <div className="table-container">
+                        <div className="table-container">
                         <table className="table">
                             <thead>
                                 <tr className="table-head-row">
@@ -273,7 +310,8 @@ const AdminCompanyPage: React.FC = () => {
                             </tbody>
                         </table>
                     </div>
-                </Card>
+                    </Card>
+                )}
             </div>
 
             {deleteTarget ? (
