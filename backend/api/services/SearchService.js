@@ -1,213 +1,127 @@
 /**
  * SearchService
  *
- * @description :: Service for interacting with the Python Search/Embedding API.
+ * @description :: Service for interacting with Gemini AI for search and ranking.
+ * Optimized for Google AI Studio (Gemini).
  */
 
-const axios = require('axios');
-
-const SEARCH_SERVICE_URL = process.env.SEARCH_SERVICE_URL || 'http://127.0.0.1:5001';
-const RETRIABLE_STATUS_CODES = [429, 500, 502, 503, 504];
-const RETRIABLE_ERROR_CODES = [
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'ECONNABORTED',
-  'ETIMEDOUT',
-  'EAI_AGAIN',
-  'ENOTFOUND',
-];
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const ERROR_THROTTLE_MS = 300000; // 5 minutes
-const lastErrorLog = new Map();
-
-const shouldLog = (key) => {
-  const now = Date.now();
-  if (!lastErrorLog.has(key) || (now - lastErrorLog.get(key) > ERROR_THROTTLE_MS)) {
-    lastErrorLog.set(key, now);
-    return true;
-  }
-  return false;
-};
+const AI_PROVIDER = (process.env.AI_PROVIDER || 'google').toLowerCase();
 
 module.exports = {
 
   /**
-   * Rank a list of candidates against a query using the Flask /rank endpoint.
-   * @param {string} query
-   * @param {Object[]} candidates - List of {id, text, embedding, modelNumber}
+   * Rank a list of candidates against a query.
+   * Uses cosine similarity between candidate embeddings and a query embedding.
+   * @param {string|number[]} queryOrEmbedding - Either query text or pre-generated query embedding
+   * @param {Object[]} candidates - List of {id, text, embedding, modelNumber, manufacturer}
    * @returns {Promise<Object>} - {exact: [], similar: [], related: []}
    */
-  rankCandidates: async function(query, candidates, options = {}) {
-    if (!query || !candidates || candidates.length === 0) {
+  rankCandidates: async function(queryOrEmbedding, candidates, options = {}) {
+    if (!queryOrEmbedding || !candidates || candidates.length === 0) {
       return { exact: [], similar: [], related: [] };
     }
 
-    const timeout = options.timeout || 10000;
-    try {
-      const response = await axios.post(
-        `${SEARCH_SERVICE_URL}/rank`,
-        { query, candidates },
-        { timeout }
-      );
+    sails.log.info(`SearchService: Ranking ${candidates.length} candidates using real vector similarity...`);
 
-      return response.data;
-    } catch (err) {
-      const isConnectionError = err.code === 'ECONNREFUSED' || (err.message && err.message.includes('ECONNREFUSED'));
-      if (isConnectionError) {
-        if (shouldLog('rank_econnrefused')) {
-          sails.log.warn(`SearchService indexing skipped: AI service unreachable at ${SEARCH_SERVICE_URL}. Quietly falling back to database discovery.`);
-        }
-      } else {
-        sails.log.error(`SearchService.rankCandidates failed: ${err.message}`);
+    const cosineSimilarity = (vecA, vecB) => {
+      if (!vecA || !vecB || vecA.length !== vecB.length) {return 0;}
+      let dot = 0; let normA = 0; let normB = 0;
+      for (let i = 0; i < vecA.length; i++) {
+        dot += vecA[i] * vecB[i];
+        normA += vecA[i] * vecA[i];
+        normB += vecB[i] * vecB[i];
       }
-      // Return empty categories as fallback to avoid crashing
-      return { exact: [], similar: [], related: [] };
+      const denom = Math.sqrt(normA) * Math.sqrt(normB);
+      return denom === 0 ? 0 : dot / denom;
+    };
+
+    let queryVec = Array.isArray(queryOrEmbedding) ? queryOrEmbedding : null;
+
+    if (!queryVec && typeof queryOrEmbedding === 'string') {
+      try {
+        const result = await this.getEmbedding(queryOrEmbedding, { mode: 'query' });
+        queryVec = result.embedding;
+      } catch (err) {
+        sails.log.error('SearchService: Error generating query embedding for ranking:', err.message);
+      }
     }
+
+    if (!queryVec) {
+      // Fallback: return candidates as-is but with 0 score if we can't get a vector
+      return { 
+        exact: [], 
+        similar: candidates.slice(0, 5).map(c => ({...c, score: 0, reason: 'Vector unavailable'})), 
+        related: [] 
+      };
+    }
+
+    // Score all candidates
+    const scored = candidates.map(c => {
+      const score = cosineSimilarity(queryVec, c.embedding);
+      return {
+        ...c,
+        score: score,
+        reason: score > 0.85 ? 'Matches technical specifications' : (score > 0.7 ? 'Strong feature overlap' : 'Related functionality')
+      };
+    }).sort((a, b) => b.score - a.score);
+
+    return { 
+      exact: scored.filter(c => c.score >= 0.85), 
+      similar: scored.filter(c => c.score >= 0.7 && c.score < 0.85), 
+      related: scored.filter(c => c.score < 0.7 && c.score > 0.5)
+    };
   },
 
   /**
-   * Get embeddings for a given text from the Flask service.
+   * Get embeddings for a given text using Google Gemini.
    * @param {string} text
-   * @returns {Promise<number[]>}
+   * @returns {Promise<Object>} { embedding, metadata }
    */
   getEmbedding: async function(text, options = {}) {
     const mode = options.mode === 'query' ? 'query' : 'document';
-    const retries = Number.isInteger(options.retries) ? options.retries : 2;
-    const timeout = Number.isInteger(options.timeout) ? options.timeout : 60000;
-    const baseDelayMs = Number.isInteger(options.baseDelayMs) ? options.baseDelayMs : 400;
-
-    let lastError = null;
-
-    for (let attempt = 0; attempt <= retries; attempt += 1) {
-      try {
-        const response = await axios.post(
-          `${SEARCH_SERVICE_URL}/embed`,
-          { text, mode },
-          { timeout }
-        );
-
-        const embedding = response && response.data ? response.data.embedding : null;
-        const metadata = response && response.data ? response.data.metadata : {};
-        
-        if (!Array.isArray(embedding) || embedding.length === 0) {
-          throw new Error('Invalid embedding payload from search service');
-        }
-
-        return { embedding, metadata };
-      } catch (err) {
-        lastError = err;
-        const isRetriable = this.isRetriableError(err);
-        const isLastAttempt = attempt >= retries;
-
-        this.logEmbeddingError(err, attempt + 1, retries + 1);
-
-        if (!isRetriable || isLastAttempt) {
-          break;
-        }
-
-        const delay = baseDelayMs * Math.pow(2, attempt);
-        sails.log.warn(`SearchService: Retrying embedding request in ${delay}ms...`);
-        await sleep(delay);
+    
+    // Skip checking and use Gemini directly
+    try {
+      if (!sails.services.geminiservice.isAvailable()) {
+         throw new Error('Gemini service is not available. Please check GOOGLE_AI_API_KEY.');
       }
-    }
 
-    throw new Error(`Failed to get search embeddings: ${lastError ? lastError.message : 'Unknown error'}`);
+      sails.log.info(`SearchService: Generating ${mode} embedding via Google AI...`);
+      const taskType = mode === 'query' ? 'RETRIEVAL_QUERY' : 'RETRIEVAL_DOCUMENT';
+      const result = await sails.services.geminiservice.getEmbedding(text, taskType);
+      
+      return { 
+        embedding: result.embedding, 
+        metadata: { provider: 'google', model: 'gemini-embedding-001' } 
+      };
+    } catch (err) {
+      sails.log.error('SearchService: Google Gemini embedding failed:', err.message);
+      throw err;
+    }
   },
 
   /**
-   * Check if the search service is healthy with a short-lived cache.
+   * Check if the search service (Gemini) is healthy.
    * @returns {Promise<boolean>}
    */
   checkHealth: async function() {
-    const now = Date.now();
-    // Cache health result for 60 seconds to avoid hammering an unreachable port
-    if (this._lastHealthCheck && (now - this._lastHealthCheck.timestamp < 60000)) {
-      return this._lastHealthCheck.isHealthy;
-    }
-
-    try {
-      const response = await axios.get(`${SEARCH_SERVICE_URL}/health`, { timeout: 2000 });
-      const isHealthy = response.status === 200 && response.data.status === 'ok';
-      this._lastHealthCheck = { isHealthy, timestamp: now };
-      return isHealthy;
-    } catch (err) {
-      this._lastHealthCheck = { isHealthy: false, timestamp: now };
-      return false;
-    }
+    return sails.services.geminiservice.isAvailable();
   },
 
   /**
-   * Wait for the search service to be ready with retries.
-   * @param {number} maxRetries
-   * @param {number} initialDelay
-   * @param {number} maxDelay - Cap the maximum delay between retries
+   * Wait for the search service to be ready.
    */
-  ensureServiceReady: async function(maxRetries = 10, initialDelay = 1000, maxDelay = 5000) {
-    sails.log.info(`SearchService: Checking if embedding service is ready at ${SEARCH_SERVICE_URL}...`);
-    
-    for (let i = 0; i < maxRetries; i++) {
-      if (await this.checkHealth()) {
-        sails.log.info('SearchService: Embedding service is UP and healthy.');
-        return true;
-      }
-      
-      const delay = Math.min(initialDelay * Math.pow(1.5, i), maxDelay);
-      sails.log.warn(`SearchService: Embedding service not ready (attempt ${i + 1}/${maxRetries}). Retrying in ${Math.round(delay)}ms...`);
-      await new Promise(resolve => setTimeout(resolve, delay));
-    }
-    
-    sails.log.error('SearchService: Embedding service failed to become ready after multiple attempts.');
-    return false;
-  },
-
-  isRetriableError: function(err) {
-    if (!err) {
-      return false;
-    }
-
-    if (RETRIABLE_ERROR_CODES.includes(err.code)) {
-      return true;
-    }
-
-    const statusCode = err.response && err.response.status;
-    return RETRIABLE_STATUS_CODES.includes(statusCode);
-  },
-
-  logEmbeddingError: function(err, attemptNumber, totalAttempts) {
-    const prefix = `SearchService: Embedding request failed (attempt ${attemptNumber}/${totalAttempts})`;
-
-    const isConnectionError = err && (err.code === 'ECONNREFUSED' || (err.message && err.message.includes('ECONNREFUSED')));
-    if (isConnectionError) {
-      if (shouldLog(`embed_econnrefused_${attemptNumber}`)) {
-        sails.log.error(`${prefix}. Flask API is not reachable at ${SEARCH_SERVICE_URL}. Ensure the search service is running.`);
-      }
-      return;
-    }
-
-    if (err && err.response && err.response.data && err.response.data.error) {
-      sails.log.error(`${prefix}. Flask API error (${err.response.status}): ${err.response.data.error}`);
-      if (err.response.data.traceback) {
-        sails.log.error(`Flask Traceback: ${err.response.data.traceback}`);
-      }
-      return;
-    }
-
-    sails.log.error(`${prefix}. ${err && err.message ? err.message : 'Unknown error'}`);
+  ensureServiceReady: async function() {
+    return this.checkHealth();
   },
 
   /**
    * Log a message only if it hasn't been logged recently (throttled).
-   * @param {string} level - 'info', 'warn', 'error', 'debug'
-   * @param {string} key - Unique key for this log type
-   * @param {string} message - The message to log
    */
   logThrottled: function(level, key, message) {
-    if (shouldLog(key)) {
-      const logFn = sails.log[level] || sails.log.info;
-      logFn(message);
-    }
+    // Basic log for now, can re-add throttle if needed
+    const logFn = sails.log[level] || sails.log.info;
+    logFn(message);
   }
 
 };

@@ -14,7 +14,7 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
     error?: string;
 }
 
-const SelectField: React.FC<SelectFieldProps> = ({
+export const SelectField: React.FC<SelectFieldProps> = ({
     id,
     label,
     options = [],
@@ -27,9 +27,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
     const describedBy = [
         helperText ? `${id}-helper` : '',
         error ? `${id}-error` : '',
-    ]
-        .filter(Boolean)
-        .join(' ');
+    ].filter(Boolean).join(' ');
 
     return (
         <div className="input-group">
@@ -52,16 +50,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
                     </option>
                 ))}
             </select>
-            {helperText ? (
-                <div id={`${id}-helper`} className="helper-text">
-                    {helperText}
-                </div>
-            ) : null}
-            {error ? (
-                <div id={`${id}-error`} className="error-text">
-                    {error}
-                </div>
-            ) : null}
+            {helperText && <div id={`${id}-helper`} className="helper-text">{helperText}</div>}
+            {error && <div id={`${id}-error`} className="error-text">{error}</div>}
         </div>
     );
 };

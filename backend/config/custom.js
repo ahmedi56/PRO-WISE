@@ -47,7 +47,8 @@ module.exports.custom = {
         'guides.manage',
         'guides.update',
         'technicians.manage',
-        'qr.generate'
+        'qr.generate',
+        'analytics.view'
       ]
     },
     {
@@ -59,7 +60,8 @@ module.exports.custom = {
         'guides.manage',
         'guides.update',
         'technicians.manage',
-        'qr.generate'
+        'qr.generate',
+        'analytics.view'
       ]
     },
     {

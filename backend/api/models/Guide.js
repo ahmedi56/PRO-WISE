@@ -31,8 +31,12 @@ module.exports = {
     },
     status: {
       type: 'string',
-      isIn: ['draft', 'published', 'archived'],
+      isIn: ['draft', 'pending', 'published', 'rejected', 'archived'],
       defaultsTo: 'draft'
+    },
+    createdBy: {
+      model: 'user',
+      required: true
     }
   }
 

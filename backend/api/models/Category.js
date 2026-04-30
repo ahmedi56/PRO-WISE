@@ -71,6 +71,10 @@ module.exports = {
     products: {
       collection: 'product',
       via: 'category'
+    },
+    companies: {
+      collection: 'company',
+      via: 'category'
     }
   },
 

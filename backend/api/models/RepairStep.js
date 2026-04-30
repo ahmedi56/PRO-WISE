@@ -31,6 +31,12 @@ module.exports = {
       description: 'Array of videoIds for this step.'
     },
 
+    pdfs: {
+      type: 'json',
+      columnType: 'array',
+      description: 'Array of document URLs for this step.'
+    },
+
     estimatedTime: {
       type: 'string',
       description: 'Time estimation for this specific step (e.g. "5 mins")'

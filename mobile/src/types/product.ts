@@ -35,13 +35,16 @@ export interface Product {
   supportVideos?: Media[];
   supportPDFs?: Media[];
   metadata?: Record<string, any>;
+  // Match Metadata
+  matchType?: 'exact_model' | 'exact_component' | 'same_brand' | 'same_category' | 'similar_features' | 'semantic_similarity' | 'weak_match';
+  confidence?: 'high' | 'medium' | 'low';
+  reasons?: string[];
+  recommendationReason?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ProductRecommendation {
-  id: string;
-  name: string;
-  relevance: number;
-  type: 'similar' | 'related';
+export interface ProductRecommendation extends Product {
+  score: number;
+  matchScore: number;
 }

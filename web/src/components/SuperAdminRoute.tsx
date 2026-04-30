@@ -1,32 +1,15 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { useAuth } from '../hooks/useAuth';
 
-interface SuperAdminRouteProps {
-    children: React.ReactNode;
-}
+export const SuperAdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isSuperAdmin, loading } = useAuth();
 
-const SuperAdminRoute: React.FC<SuperAdminRouteProps> = ({ children }) => {
-    const { user, token } = useSelector((state: RootState) => state.auth);
-
-    if (!token || !user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (user.status !== 'active') {
-        return <Navigate to="/pending-approval" replace />;
-    }
-
-    const role = user.role;
-    const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
-    const isSuperAdmin = roleName === 'super_admin';
+    if (loading) return null;
 
     if (!isSuperAdmin) {
-        return <Navigate to="/products" replace />;
+        return <Navigate to="/home" replace />;
     }
 
     return <>{children}</>;
 };
-
-export default SuperAdminRoute;

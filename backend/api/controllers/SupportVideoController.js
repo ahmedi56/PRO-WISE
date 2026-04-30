@@ -21,12 +21,12 @@ module.exports = {
       }
 
       // Robust extraction of videoId if provided
-      const cleanVideoId = videoId ? TranslationService.extractVideoId(videoId) : null;
+      const cleanVideoId = videoId ? TranslationService.extractVideoId(videoId) : '';
 
       const newVideo = await SupportVideo.create({
         product,
         videoId: cleanVideoId,
-        videoUrl: videoUrl || null,
+        videoUrl: videoUrl || '',
         title,
         createdBy
       }).fetch();

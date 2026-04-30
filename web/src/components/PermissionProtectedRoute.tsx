@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { RootState } from '../store';
 
 interface PermissionProtectedRouteProps {
     children: React.ReactNode;
@@ -24,9 +24,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({ chi
     const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
     const permissions: string[] = (typeof role === 'object' ? (role as any)?.permissions : []) || [];
 
-    // Super admins always have access
     const isSuperAdmin = roleName === 'super_admin';
-    // Company admins have implicit access to product/guide management routes
     const isCompanyAdmin = ['company_admin', 'administrator'].includes(roleName);
 
     const hasPermission = permissions.includes(permission);
@@ -36,7 +34,7 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({ chi
     ].includes(permission));
 
     if (!hasPermission && !hasImplicitAccess) {
-        return <Navigate to="/products" replace />;
+        return <Navigate to="/home" replace />;
     }
 
     return <>{children}</>;

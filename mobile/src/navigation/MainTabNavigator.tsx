@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View, Text, Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import Animated, { 
     useSharedValue, 
     useAnimatedStyle, 
@@ -9,18 +10,22 @@ import Animated, {
     withRepeat, 
     withSequence, 
     withTiming,
+    interpolate,
 } from 'react-native-reanimated';
+
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ShopStackNavigator from './ShopStackNavigator';
-import { colors, shadows } from '../theme';
+import { colors, radius, typography, spacing } from '../theme';
 import { MainTabParamList } from './types';
+import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const TabNavigator = Tab.Navigator as any;
 
 const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     Home: 'home-outline',
-    Shop: 'grid-outline',
+    Shop: 'layers-outline',
     Scan: 'qr-code-outline',
     Profile: 'person-outline',
 };
@@ -36,9 +41,9 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({ name, focused, color,
     const scale = useSharedValue(1);
 
     useEffect(() => {
-        scale.value = withSpring(focused ? 1.2 : 1, {
-            damping: 12,
-            stiffness: 100,
+        scale.value = withSpring(focused ? 1.15 : 1, {
+            damping: 10,
+            stiffness: 90,
         });
     }, [focused]);
 
@@ -49,85 +54,117 @@ const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({ name, focused, color,
     return (
         <Animated.View style={animatedStyle}>
             <Ionicons name={name} size={size + 2} color={color} />
+            {focused && (
+                <View style={[styles.tabIndicator, { backgroundColor: color }]} />
+            )}
         </Animated.View>
     );
 };
 
-interface AnimatedScanButtonProps {
-    focused: boolean;
-    size: number;
-}
-
-const AnimatedScanButton: React.FC<AnimatedScanButtonProps> = ({ focused, size }) => {
+const AnimatedScanButton: React.FC<{ focused: boolean; size: number }> = ({ focused, size }) => {
     const scale = useSharedValue(1);
     const pulse = useSharedValue(1);
+    const ring1Scale = useSharedValue(1);
 
     useEffect(() => {
         pulse.value = withRepeat(
-            withSequence(
-                withTiming(1.1, { duration: 1000 }),
-                withTiming(1, { duration: 1000 })
-            ),
+            withTiming(1.2, { duration: 2000 }),
             -1,
             true
+        );
+        ring1Scale.value = withRepeat(
+            withTiming(1.6, { duration: 2000 }),
+            -1,
+            false
         );
     }, []);
 
     useEffect(() => {
-        scale.value = withSpring(focused ? 1.15 : 1, {
-            damping: 15,
-            stiffness: 150,
-        });
+        scale.value = withSpring(focused ? 1.1 : 1, { damping: 12, stiffness: 120 });
     }, [focused]);
 
     const animatedStyle = useAnimatedStyle(() => ({
-        transform: [
-            { scale: scale.value * (focused ? 1 : pulse.value) }
-        ],
-        shadowOpacity: focused ? 0.4 : 0.2,
+        transform: [{ scale: scale.value }],
+    }));
+
+    const ringStyle = useAnimatedStyle(() => ({
+        transform: [{ scale: ring1Scale.value }],
+        opacity: interpolate(ring1Scale.value, [1, 1.6], [0.6, 0]),
     }));
 
     return (
-        <Animated.View style={[
-            styles.scanButtonContainer,
-            { width: size + 24, height: size + 24, borderRadius: (size + 24) / 2 },
-            animatedStyle
-        ]}>
-            <Ionicons name="qr-code-outline" size={size + 4} color="white" />
+        <Animated.View style={[styles.scanButtonOuter, animatedStyle]}>
+            <Animated.View style={[styles.scanRing, ringStyle]} />
+            <View style={styles.scanButtonInner}>
+                <Ionicons name="qr-code" size={size + 6} color="#0F131C" />
+            </View>
         </Animated.View>
     );
 };
 
+const BrandedHeader: React.FC<{ title: string }> = ({ title }) => (
+    <View style={styles.headerContainer}>
+        <View style={styles.headerLogo}>
+            <ProWiseLogoSvg width={22} height={22} />
+        </View>
+        <Text style={styles.headerTitleText}>{title.toUpperCase()}</Text>
+    </View>
+);
+
 const MainTabNavigator: React.FC = () => {
     return (
-        <Tab.Navigator
+        <TabNavigator
             screenOptions={({ route }) => ({
+                tabBarBackground: () => (
+                    Platform.OS === 'ios' ? (
+                        <BlurView 
+                            tint="dark" 
+                            intensity={80} 
+                            style={StyleSheet.absoluteFill} 
+                        />
+                    ) : (
+                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15, 19, 28, 0.98)' }]} />
+                    )
+                ),
                 tabBarStyle: {
-                    backgroundColor: colors.glass,
-                    borderTopColor: colors.glassBorder,
-                    borderTopWidth: 1,
-                    paddingBottom: 6,
-                    paddingTop: 6,
-                    height: 60,
                     position: 'absolute',
-                    elevation: 0,
+                    bottom: 24,
+                    left: 20,
+                    right: 20,
+                    height: 72,
+                    borderRadius: radius.xl,
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.12)',
+                    paddingBottom: 0,
+                    ...Platform.select({
+                        ios: { 
+                            shadowColor: colors.primary, 
+                            shadowOffset: { width: 0, height: 10 }, 
+                            shadowOpacity: 0.15, 
+                            shadowRadius: 20 
+                        },
+                        android: { elevation: 12 }
+                    }),
+                    overflow: 'hidden',
                 },
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textMuted,
-                tabBarLabelStyle: {
-                    fontSize: 11,
-                    fontWeight: '600',
-                },
+                tabBarShowLabel: false,
                 tabBarIcon: ({ focused, color, size }) => {
                     const iconName = ICONS[route.name] || 'square-outline';
                     
                     if (route.name === 'Scan') {
-                        return <AnimatedScanButton focused={focused} size={size} />;
+                        return (
+                            <View style={{ top: -12 }}>
+                                <AnimatedScanButton focused={focused} size={size} />
+                            </View>
+                        );
                     }
 
                     return (
                         <AnimatedTabIcon 
-                            name={iconName} 
+                            name={focused ? (iconName.replace('-outline', '') as any) : iconName} 
                             focused={focused} 
                             color={color} 
                             size={size} 
@@ -136,41 +173,95 @@ const MainTabNavigator: React.FC = () => {
                 },
                 headerStyle: {
                     backgroundColor: colors.bg,
-                    borderBottomColor: colors.border,
                     borderBottomWidth: 1,
-                    shadowOpacity: 0,
-                    elevation: 0,
+                    borderBottomColor: colors.border,
+                    height: Platform.OS === 'ios' ? 100 : 80,
                 },
-                headerTitleStyle: {
-                    fontWeight: '700',
-                    color: colors.textStrong,
-                },
+                headerTitle: ({ children }) => <BrandedHeader title={children} />,
+                headerTitleAlign: 'left',
                 headerTintColor: colors.textStrong,
+                headerBackground: () => (
+                    <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+                )
             })}
         >
-            <Tab.Screen name="Home" component={HomeScreen as any} />
-            <Tab.Screen name="Shop" component={ShopStackNavigator as any} options={{ headerShown: false }} />
+            <Tab.Screen name="Home" component={HomeScreen as any} options={{ title: 'Console' }} />
+            <Tab.Screen 
+                name="Shop" 
+                component={ShopStackNavigator as any} 
+                options={{ headerShown: false, title: 'Registry' }} 
+            />
             <Tab.Screen 
                 name="Scan" 
                 component={require('../screens/QRScannerScreen').default} 
-                options={{ 
-                    title: 'Scan',
-                    tabBarLabel: () => null 
-                }} 
+                options={{ title: 'Optical Scan' }} 
             />
-            <Tab.Screen name="Profile" component={ProfileScreen as any} />
-        </Tab.Navigator>
+            <Tab.Screen name="Profile" component={ProfileScreen as any} options={{ title: 'Operator' }} />
+        </TabNavigator>
     );
 };
 
 const styles = StyleSheet.create({
-    scanButtonContainer: {
+    scanButtonOuter: {
+        width: 64,
+        height: 64,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scanRing: {
+        position: 'absolute',
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    scanButtonInner: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
         backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 5,
-        ...shadows.glow,
-    }
+        borderWidth: 3,
+        borderColor: colors.bg,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.8,
+        shadowRadius: 10,
+        elevation: 10,
+    },
+    tabIndicator: {
+        width: 12,
+        height: 2,
+        borderRadius: 1,
+        alignSelf: 'center',
+        marginTop: 4,
+        position: 'absolute',
+        bottom: -8,
+        shadowColor: colors.primary,
+        shadowOpacity: 0.8,
+        shadowRadius: 4,
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingLeft: spacing.sm,
+    },
+    headerLogo: {
+        marginRight: spacing.sm,
+        padding: 4,
+        backgroundColor: colors.surface,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    headerTitleText: {
+        fontSize: 16,
+        color: colors.textStrong,
+        fontWeight: '900',
+        letterSpacing: 2,
+    },
 });
 
 export default MainTabNavigator;

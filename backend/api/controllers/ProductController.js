@@ -104,6 +104,12 @@ const canAccessProduct = ({ roleName, companyId, product }) => {
   return isOwnerAdmin || product.status === 'published';
 };
 
+const logAction = async (req, options) => {
+  if (sails.services.auditservice) {
+    await sails.services.auditservice.log(req, options);
+  }
+};
+
 module.exports = {
 
   /**
@@ -159,15 +165,19 @@ module.exports = {
         category: finalCategory,
         company: company || null,
         components: sanitizedComponents,
-        status: 'published'
+        status: 'draft',
+        createdBy: req.user.id
       }).fetch();
 
-      // NEW: Use ProductEmbeddingService for rich data embedding
-      try {
-        await ProductEmbeddingService.updateEmbedding(product.id);
-      } catch (e) {
-        sails.log.warn('Could not generate rich embedding for product:', product.name);
-      }
+      await logAction(req, {
+        action: 'product.created',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name,
+        details: {
+          company: product.company
+        }
+      });
 
       return res.status(201).json(product);
 
@@ -193,7 +203,20 @@ module.exports = {
       }
 
       const where = {};
-      if (category) {where.category = category;}
+      
+      // If category is provided, resolve it to an ID (handles slugs and IDs)
+      if (category) {
+        let catId = category;
+        if (!category.match(/^[0-9a-fA-F]{24}$/)) {
+          // It's a slug or name — look up the category record
+          const catObj = await Category.findOne({ or: [{ slug: category }, { name: category }] });
+          if (catObj) {
+            catId = catObj.id;
+          }
+        }
+        where.category = catId;
+
+      }
 
       // Respect tenant isolation — (req.user && req.user.companyId) set by tenant-isolation policy
       // If tenantIsolation hasn't run (e.g. getAll uses isAuthenticated only),
@@ -217,7 +240,8 @@ module.exports = {
       }
 
       // Non-admin users (clients) OR admins in public view can only see published products
-      if ((roleName !== 'super_admin' && roleName !== 'administrator' && roleName !== 'company_admin') || (userCompanyId && !isManage)) {
+      const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
+      if (!isAdmin || (userCompanyId && !isManage)) {
         where.status = 'published';
       }
 
@@ -234,12 +258,32 @@ module.exports = {
 
       const skip = (parseInt(page) - 1) * parseInt(limit);
       const total = await Product.count(where);
-      const products = await Product.find(where)
+      
+      let dbSort = sort;
+      if (sort === 'rating DESC' || sort === 'rating ASC' || sort === 'rating') {
+        dbSort = 'createdAt DESC'; // Sort by rating manually after enrichment
+      } else if (sort === 'popularity') {
+        dbSort = 'totalScans DESC';
+      }
+
+      let products = await Product.find(where)
                 .populate('category')
                 .populate('company')
                 .skip(skip)
                 .limit(parseInt(limit))
-                .sort(sort);
+                .sort(dbSort);
+
+      const pIds = products.map(p => p.id);
+      if (pIds.length > 0) {
+        const feedbacks = await Feedback.find({ product: { in: pIds }, isHidden: false });
+        products = products.map(p => {
+            const pFeedbacks = feedbacks.filter(f => String(f.product) === String(p.id));
+            const sum = pFeedbacks.reduce((a, b) => a + b.rating, 0);
+            p.averageRating = pFeedbacks.length ? parseFloat((sum / pFeedbacks.length).toFixed(1)) : 0;
+            return p;
+        });
+        if (sort === 'rating DESC' || sort === 'rating') products.sort((a,b) => b.averageRating - a.averageRating);
+      }
 
       return res.json({
         data: products,
@@ -294,19 +338,18 @@ module.exports = {
         return res.status(404).json({ message: 'Product not found' });
       }
 
-      // Resolve role from DB
-      let roleName = '';
-      if (req.user && req.user.id) {
-        const dbUser = await sails.models.user.findOne({ id: req.user.id }).populate('role');
-        roleName = (dbUser && dbUser.role && dbUser.role.name ? dbUser.role.name : '').toLowerCase();
+      // Resolve role and company from context
+      const { roleName, companyId: userCompanyId } = await getAccessContext(req);
+
+      const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
+      const isOwnerAdmin = isAdmin && String(product.company?.id || product.company) === String(userCompanyId || '');
+      
+      if (!isAdmin && product.status !== 'published') {
+        return res.status(403).json({ message: 'Forbidden: Product is not published' });
       }
 
-      // Clients OR Admins in public view can only see published products
-      // Only the owning company admin or super_admin can see non-published products
-      const isOwnerAdmin = (roleName === 'administrator' || roleName === 'company_admin') && String(product.company?.id || product.company) === String((req.user && req.user.companyId));
-      
-      if (roleName !== 'super_admin' && !isOwnerAdmin && product.status !== 'published') {
-        return res.status(403).json({ message: 'Forbidden: Product is not published' });
+      if (isAdmin && roleName !== 'super_admin' && !isOwnerAdmin && product.status !== 'published') {
+        return res.status(403).json({ message: 'Forbidden: You do not have permission to view this non-published product' });
       }
 
       // Build category path for breadcrumbs
@@ -314,7 +357,11 @@ module.exports = {
       if (product.category) {
         let current = product.category;
         while (current) {
-          const catRecord = typeof current === 'object' ? current : await Category.findOne({ id: current });
+          // Check if current is a populated object (has name) or just an ID/ObjectId
+          const isPopulated = typeof current === 'object' && current !== null && current.name;
+          const currentId = isPopulated ? current.id : (typeof current === 'object' ? current.toString() : current);
+          
+          const catRecord = isPopulated ? current : await Category.findOne({ id: currentId });
           if (catRecord) {
             categoryPath.unshift({ id: catRecord.id, name: catRecord.name });
             current = catRecord.parent;
@@ -323,6 +370,7 @@ module.exports = {
           }
         }
       }
+      product.categoryPath = categoryPath;
 
       // Increment totalScans as a proxy for popularity
       await Product.updateOne({ id: req.params.id }).set({
@@ -331,7 +379,7 @@ module.exports = {
 
       // Also increment popularity for the category and all its ancestors
       if (product.category) {
-        let currentCatId = typeof product.category === 'object' ? product.category.id : product.category;
+        let currentCatId = typeof product.category === 'object' && product.category.id ? product.category.id : (typeof product.category === 'object' ? product.category.toString() : product.category);
         
         // Use a loop to climb up the category tree and increment each parent
         while (currentCatId) {
@@ -346,9 +394,16 @@ module.exports = {
         }
       }
 
+      // Compute average rating
+      const feedbacks = await Feedback.find({ product: req.params.id, isHidden: false });
+      const sum = feedbacks.reduce((acc, curr) => acc + curr.rating, 0);
+      const averageRating = feedbacks.length > 0 ? parseFloat((sum / feedbacks.length).toFixed(1)) : 0;
+
       return res.json({ 
         ...product, 
         categoryPath,
+        averageRating,
+        ratingCount: feedbacks.length,
         supportVideos: supportVideos.map(v => ({
           id: v.id,
           videoId: v.videoId,
@@ -449,17 +504,15 @@ module.exports = {
 
       const product = await Product.updateOne({ id: req.params.id }).set(updateData);
 
-      // NEW: Re-generate embedding if any relevant field changed
-      const fieldsThatTriggerEmbedding = ['name', 'description', 'content', 'manufacturer', 'modelNumber', 'category', 'components'];
-      const hasChanged = fieldsThatTriggerEmbedding.some(f => req.body[f] !== undefined);
-
-      if (hasChanged) {
-        try {
-          await ProductEmbeddingService.updateEmbedding(product.id);
-        } catch (e) {
-          sails.log.warn('Could not update rich embedding for product:', product.name);
+      await logAction(req, {
+        action: 'product.updated',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name,
+        details: {
+          changedFields: Object.keys(updateData)
         }
-      }
+      });
 
       return res.json(product);
 
@@ -489,6 +542,13 @@ module.exports = {
         }
       }
 
+      await logAction(req, {
+        action: 'product.deleted',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name,
+        severity: 'warning'
+      });
       await Product.destroyOne({ id: req.params.id });
 
       return res.json({ message: 'Product deleted successfully' });
@@ -501,11 +561,19 @@ module.exports = {
 
   getRecommendations: async function (req, res) {
     try {
+      const { id } = req.params;
+      const product = await Product.findOne({ id }).populate('category').populate('company');
+      if (!product) return res.status(404).json({ message: 'Product not found' });
+      
       const recommendations = await sails.helpers.getSimilarityRecommendations.with({
-        productId: req.params.id,
-        limit: 5,
-        includeDiagnostics: true,
+        productId: id,
+        excludeProductId: id,
+        categoryId: typeof product.category === 'object' ? product.category?.id : product.category,
+        limit: 6,
+        sort: req.query.sort || 'similarity',
+        includeDiagnostics: true
       });
+
       return res.json(recommendations);
     } catch (err) {
       sails.log.error('Get recommendations error:', err);
@@ -562,6 +630,7 @@ module.exports = {
         filterCompanyId: companyId || undefined,
         categoryId: categoryId || (sourceProduct && sourceProduct.category?.id ? sourceProduct.category.id : undefined),
         limit: parseInt(limit, 10) || 6,
+        sort: req.body.sort || 'similarity',
         includeDiagnostics: true,
       });
 
@@ -587,6 +656,12 @@ module.exports = {
       }
 
       const product = await Product.updateOne({ id: req.params.id }).set({ status: 'published' });
+      await logAction(req, {
+        action: 'product.published',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name
+      });
       return res.json({ message: 'Product published', product });
     } catch (err) {
       return res.status(500).json({ message: 'Internal server error' });
@@ -608,6 +683,12 @@ module.exports = {
       }
 
       const product = await Product.updateOne({ id: req.params.id }).set({ status: 'draft' });
+      await logAction(req, {
+        action: 'product.unpublished',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name
+      });
       return res.json({ message: 'Product unpublished', product });
     } catch (err) {
       return res.status(500).json({ message: 'Internal server error' });
@@ -629,6 +710,12 @@ module.exports = {
       }
 
       const product = await Product.updateOne({ id: req.params.id }).set({ status: 'archived' });
+      await logAction(req, {
+        action: 'product.archived',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name
+      });
       return res.json({ message: 'Product archived', product });
     } catch (err) {
       return res.status(500).json({ message: 'Internal server error' });
@@ -643,19 +730,37 @@ module.exports = {
     try {
       const { q, limit = 10 } = req.query;
       if (!q) {
-        return res.status(400).json({ message: 'Search query is required' });
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Search query is required',
+          code: 'INVALID_QUERY'
+        });
       }
 
       const results = await sails.helpers.getSimilarityRecommendations.with({
         query: q,
-        limit: parseInt(limit),
+        limit: parseInt(limit, 10),
         includeDiagnostics: true,
       });
 
-      return res.json(results);
+      // results is { data, meta: diagnostics }
+      return res.json({
+        success: true,
+        data: results.data,
+        meta: {
+          query: q,
+          total: results.data.length,
+          searchType: results.meta?.fallback ? 'fallback' : 'semantic',
+          diagnostics: results.meta
+        }
+      });
     } catch (err) {
       sails.log.error('Semantic search error:', err);
-      return res.status(500).json({ message: 'Internal server error' });
+      return res.status(500).json({ 
+        success: false, 
+        message: 'The semantic search service is currently unavailable.',
+        code: 'SEARCH_ERROR'
+      });
     }
   },
 
@@ -668,7 +773,7 @@ module.exports = {
       const force = req.query.force === 'true';
       const serviceReady = await sails.services.searchservice.ensureServiceReady();
       if (!serviceReady) {
-        return res.status(503).json({ message: 'Embedding service (Flask) is not available. Please ensure it is running.' });
+        return res.status(503).json({ message: 'Embedding service is not available. Please check GOOGLE_AI_API_KEY connection.' });
       }
 
       const query = force ? {} : { or: [ { embedding: null }, { searchDocument: null } ] };
@@ -706,5 +811,229 @@ module.exports = {
       sails.log.error('triggerBackfill error:', err);
       return res.status(500).json({ message: 'Internal server error' });
     }
+  },
+
+  /**
+   * PUT /api/products/:id/submit
+   * Submit a product for approval
+   */
+  submit: async function (req, res) {
+    try {
+      const product = await Product.findOne({ id: req.params.id });
+      if (!product) {return res.status(404).json({ message: 'Product not found' });}
+
+      const { roleName, companyId } = await getAccessContext(req);
+      const isOwner = companyId && String(product.company?.id || product.company) === String(companyId);
+
+      if (roleName !== 'super_admin' && !isOwner) {
+        return res.status(403).json({ message: 'Forbidden: You do not own this product' });
+      }
+
+      if (product.status !== 'draft' && product.status !== 'rejected') {
+        return res.status(400).json({ message: 'Only draft or rejected products can be submitted' });
+      }
+
+      const updated = await Product.updateOne({ id: req.params.id }).set({
+        status: 'pending',
+        submittedAt: Date.now()
+      });
+
+      await logAction(req, {
+        action: 'product.submitted',
+        target: updated.id,
+        targetType: 'Product',
+        targetLabel: updated.name
+      });
+
+      return res.json({ message: 'Product submitted for approval', product: updated });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * PUT /api/products/:id/approve
+   * Approve a product (Super Admin only)
+   */
+  approve: async function (req, res) {
+    try {
+      const { roleName } = await getAccessContext(req);
+      if (roleName !== 'super_admin') {
+        return res.status(403).json({ message: 'Forbidden: Super Admin access required' });
+      }
+
+      const product = await Product.findOne({ id: req.params.id });
+      if (!product) {return res.status(404).json({ message: 'Product not found' });}
+
+      if (product.status !== 'pending') {
+        return res.status(400).json({ message: 'Only pending products can be approved' });
+      }
+
+      const updated = await Product.updateOne({ id: req.params.id }).set({
+        status: 'published',
+        approvedBy: req.user.id
+      });
+
+      await logAction(req, {
+        action: 'product.activated', // Approved products become published/active
+        target: updated.id,
+        targetType: 'Product',
+        targetLabel: updated.name,
+        details: { context: 'admin_approval' }
+      });
+
+      return res.json({ message: 'Product approved and published', product: updated });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * PUT /api/products/:id/reject
+   * Reject a product (Super Admin only)
+   */
+  reject: async function (req, res) {
+    try {
+      const { roleName } = await getAccessContext(req);
+      if (roleName !== 'super_admin') {
+        return res.status(403).json({ message: 'Forbidden: Super Admin access required' });
+      }
+
+      const product = await Product.findOne({ id: req.params.id });
+      if (!product) {return res.status(404).json({ message: 'Product not found' });}
+
+      if (product.status !== 'pending') {
+        return res.status(400).json({ message: 'Only pending products can be rejected' });
+      }
+
+      const updated = await Product.updateOne({ id: req.params.id }).set({
+        status: 'rejected'
+      });
+
+      await logAction(req, {
+        action: 'product.rejected',
+        target: updated.id,
+        targetType: 'Product',
+        targetLabel: updated.name,
+        severity: 'warning'
+      });
+
+      return res.json({ message: 'Product rejected', product: updated });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+
+  // ─── Feedback & Ratings Actions ───────────────────────────
+  createFeedback: async function (req, res) {
+    try {
+      const { company, product, rating, comment, isAnonymous } = req.body;
+      const userId = req.user.id;
+      if (!company || !rating || !comment) {
+        return res.status(400).json({ message: 'Company, rating, and comment are required.' });
+      }
+      const feedback = await Feedback.create({
+        user: userId, company, product: product || null, rating, comment, isAnonymous: !!isAnonymous
+      }).fetch();
+      return res.status(201).json(feedback);
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  getAllFeedback: async function (req, res) {
+    try {
+      const { company, product, limit = 20, skip = 0 } = req.query;
+      const criteria = { isHidden: false };
+      if (company) criteria.company = company;
+      if (product) criteria.product = product;
+      
+      const total = await Feedback.count(criteria);
+      const feedbacks = await Feedback.find(criteria)
+        .populate('user').populate('product')
+        .sort('createdAt DESC').limit(parseInt(limit, 10)).skip(parseInt(skip, 10));
+
+      const sanitized = feedbacks.map(fb => fb.isAnonymous ? { ...fb, user: { name: 'Anonymous', avatar: null } } : fb);
+      return res.json({ 
+        data: sanitized, 
+        meta: {
+          total,
+          page: Math.floor(parseInt(skip, 10) / parseInt(limit, 10)) + 1,
+          limit: parseInt(limit, 10),
+          totalPages: Math.ceil(total / parseInt(limit, 10))
+        }
+      });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  getFeedbackStats: async function (req, res) {
+    try {
+      const { companyId } = req.params;
+      const feedbacks = await Feedback.find({ company: companyId, isHidden: false });
+      if (!feedbacks.length) return res.json({ averageRating: 0, totalCount: 0 });
+      const sum = feedbacks.reduce((acc, curr) => acc + curr.rating, 0);
+      return res.json({ averageRating: parseFloat((sum / feedbacks.length).toFixed(1)), totalCount: feedbacks.length });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  respondToFeedback: async function (req, res) {
+    try {
+      const { response } = req.body;
+      const updated = await Feedback.updateOne({ id: req.params.id }).set({ response });
+      return res.json(updated);
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  toggleFeedbackVisibility: async function (req, res) {
+    try {
+      const { isHidden } = req.body;
+      const updated = await Feedback.updateOne({ id: req.params.id }).set({ isHidden: !!isHidden });
+      return res.json(updated);
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  getProductFeedback: async function (req, res) {
+    try {
+      const feedbacks = await Feedback.find({ product: req.params.id, isHidden: false })
+        .populate('user')
+        .sort('createdAt DESC');
+      
+      const sanitized = feedbacks.map(fb => fb.isAnonymous ? { ...fb, user: { name: 'Anonymous', avatar: null } } : fb);
+      return res.json({ 
+        data: sanitized,
+        meta: { total: feedbacks.length }
+      });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  replyToFeedback: async function (req, res) {
+    try {
+      const { response } = req.body;
+      const updated = await Feedback.updateOne({ id: req.params.id }).set({ response });
+      return res.json(updated);
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  deleteFeedback: async function (req, res) {
+    try {
+      await Feedback.destroyOne({ id: req.params.id });
+      return res.json({ message: 'Feedback deleted' });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
   }
+
 };

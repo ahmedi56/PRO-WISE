@@ -40,3 +40,5 @@ mobile/.expo-shared/
 # Python (Found some local python scripts)
 __pycache__/
 *.pyc
+# Scratch
+scratch/

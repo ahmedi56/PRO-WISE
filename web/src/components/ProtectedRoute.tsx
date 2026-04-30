@@ -1,39 +1,18 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
+import { Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-interface ProtectedRouteProps {
-    children: React.ReactNode;
-}
+export const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { isAuthenticated, loading } = useAuth();
+    const location = useLocation();
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-    const { token, user, loading } = useSelector((state: RootState) => state.auth);
-
-    if (loading || (token && !user)) {
-        return (
-            <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '100vh', 
-                backgroundColor: 'var(--color-bg)', 
-                color: 'var(--color-text-strong)',
-                fontFamily: 'inherit'
-            }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div className="spinner mb-4" style={{ margin: '0 auto' }}></div>
-                    <p style={{ fontWeight: 600, letterSpacing: '0.05em' }}>VERIFYING SESSION</p>
-                </div>
-            </div>
-        );
+    if (loading) {
+        return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
     }
 
-    if (!token) {
-        return <Navigate to="/login" replace />;
+    if (!isAuthenticated) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     return <>{children}</>;
 };
-
-export default ProtectedRoute;

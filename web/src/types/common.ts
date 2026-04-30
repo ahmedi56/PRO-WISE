@@ -14,6 +14,7 @@ export interface Category {
   description?: string;
   slug?: string;
   image?: { url: string };
+  parent?: any;
   children?: Category[];
 }
 

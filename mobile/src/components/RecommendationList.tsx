@@ -5,12 +5,15 @@ import {
     FlatList, 
     TouchableOpacity, 
     StyleSheet, 
-    ActivityIndicator 
+    ActivityIndicator,
+    Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+
 import API_URL from '../constants/config';
-import { colors, spacing, radius, typography, shadows } from '../theme';
+import { colors, spacing, radius, typography } from '../theme';
 import { apiFetch } from '../utils/api';
 import { formatProductName } from '../utils/formatProduct';
 import { Product, Component } from '../types/product';
@@ -36,21 +39,15 @@ const getComponentLabel = (component: any) => {
 };
 
 const parseRecommendationPayload = (payload: any) => {
-    if (Array.isArray(payload)) {
-        return { items: payload, meta: null };
-    }
-
-    if (payload && Array.isArray(payload.data)) {
-        return { items: payload.data, meta: payload.meta || null };
-    }
-
+    if (Array.isArray(payload)) return { items: payload, meta: null };
+    if (payload && Array.isArray(payload.data)) return { items: payload.data, meta: payload.meta || null };
     return { items: [], meta: payload?.meta || null };
 };
 
 const getRecommendationWarning = (meta: any) => {
     const embeddingMeta = meta?.embedding;
     if (embeddingMeta?.requested && !embeddingMeta?.available) {
-        return 'Semantic matching is temporarily limited. Showing fallback matches.';
+        return 'Semantic index offline. Using secondary matching protocol.';
     }
     return '';
 };
@@ -69,7 +66,7 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
     productId,
     categoryId,
     selectedComponents = [],
-    title = 'Recommended for You',
+    title = 'Cross-Referenced Assets',
     onClearSelection,
 }) => {
     const [recommendations, setRecommendations] = useState<Product[]>([]);
@@ -99,9 +96,7 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
                         }),
                     });
 
-                    if (!res.ok) {
-                        throw new Error('Failed to fetch component matches');
-                    }
+                    if (!res.ok) throw new Error('Failed to fetch component matches');
 
                     const json = await res.json();
                     const { items, meta } = parseRecommendationPayload(json);
@@ -111,9 +106,7 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
                 }
 
                 const res = await apiFetch(`${API_URL}/products/${productId}/recommendations`);
-                if (!res.ok) {
-                    throw new Error('Failed to fetch recommendations');
-                }
+                if (!res.ok) throw new Error('Failed to fetch recommendations');
                 const json = await res.json();
                 const { items, meta } = parseRecommendationPayload(json);
                 setRecommendations(Array.isArray(items) ? items : []);
@@ -121,70 +114,103 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
             } catch (error: any) {
                 console.error('Failed to fetch mobile recommendations:', error.message);
                 setRecommendations([]);
-                setServiceWarning('');
             } finally {
                 setLoading(false);
             }
         };
 
-        if (productId) {
-            fetchRecommendations();
-        }
+        if (productId) fetchRecommendations();
     }, [categoryId, componentMode, productId, selectedComponents]);
 
     const splitMatches = useMemo(() => {
-        if (!componentMode || recommendations.length === 0) return { exact: [], brand: [] };
-        
+        if (recommendations.length === 0) return { exact: [], related: [] };
         const exact: Product[] = [];
-        const brand: Product[] = [];
-        
+        const related: Product[] = [];
         recommendations.forEach(p => {
-            const hasExact = Array.isArray((p as any).matchedComponents) && 
-                (p as any).matchedComponents.some((m: any) => (m.score || 0) >= 180);
-            if (hasExact) exact.push(p);
-            else brand.push(p);
+            const isExact = (p as any).matchType === 'exact_model' || (p as any).matchType === 'exact_component';
+            if (isExact) exact.push(p);
+            else related.push(p);
         });
-        
-        return { exact, brand };
-    }, [componentMode, recommendations]);
+        return { exact, related };
+    }, [recommendations]);
 
-    if (!loading && recommendations.length === 0 && !componentMode) {
-        return null;
-    }
+    if (!loading && recommendations.length === 0 && !componentMode) return null;
 
     const renderItem = ({ item }: { item: Product }) => (
         <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate('ProductDetail', { id: item.id, product: item })}
-            activeOpacity={0.85}
+            activeOpacity={0.8}
         >
-            <View style={styles.reasonRow}>
-                <View style={styles.reasonBadge}>
-                    <Ionicons name="sparkles" size={12} color={colors.primary} />
-                    <Text style={styles.reasonText}>{(item as any).recommendationReason || 'Similar'}</Text>
+            {Platform.OS === 'ios' && (
+                <BlurView tint="dark" intensity={15} style={StyleSheet.absoluteFill} />
+            )}
+            
+            <View style={styles.cardInner}>
+                <View style={styles.cardHeader}>
+                    <View style={[
+                        styles.reasonBadge, 
+                        (item as any).matchType?.startsWith('exact') ? { backgroundColor: 'rgba(79, 70, 229, 0.2)' } : null
+                    ]}>
+                        <Ionicons 
+                            name={(item as any).matchType?.startsWith('exact') ? "checkmark-circle" : "flash"} 
+                            size={10} 
+                            color={(item as any).matchType?.startsWith('exact') ? "#818cf8" : colors.primary} 
+                        />
+                        <Text style={[
+                            styles.reasonText,
+                            (item as any).matchType?.startsWith('exact') ? { color: "#818cf8" } : null
+                        ]}>
+                            {((item as any).matchType || 'similar').replace('_', ' ').toUpperCase()}
+                        </Text>
+                    </View>
+                    {(item as any).confidence ? (
+                        <View style={[
+                            styles.matchScoreWell,
+                            (item as any).confidence === 'high' ? { borderColor: colors.success + '40', borderWidth: 1 } : null
+                        ]}>
+                            <Text style={[
+                                styles.matchScoreText,
+                                (item as any).confidence === 'high' ? { color: colors.success } : null
+                            ]}>
+                                {(item as any).confidence.toUpperCase()}
+                            </Text>
+                        </View>
+                    ) : null}
                 </View>
-                {(item as any).matchScore || (item as any).score ? (
-                    <Text style={styles.scoreText}>
-                        {Math.round(((item as any).matchScore || (item as any).score) * 100)}%
+
+                <View style={styles.productInfo}>
+                    <Text style={styles.productName} numberOfLines={1}>
+                        {formatProductName(item.name, item.manufacturer)}
                     </Text>
-                ) : null}
+                    <Text style={styles.manufacturer} numberOfLines={1}>
+                        {item.manufacturer || 'GEN-UNIT'}
+                    </Text>
+                    {item.recommendationReason && (
+                        <Text style={[styles.manufacturer, { color: colors.primary, marginTop: 4, textTransform: 'none' }]} numberOfLines={1}>
+                             {item.recommendationReason}
+                        </Text>
+                    )}
+                </View>
+
+                {Array.isArray((item as any).matchedComponents) && (item as any).matchedComponents.length > 0 && (
+                    <View style={styles.tagGrid}>
+                        {(item as any).matchedComponents.slice(0, 2).map((comp: any, i: number) => (
+                            <View key={i} style={styles.miniTag}>
+                                <Text style={styles.miniTagText} numberOfLines={1}>{comp.source || comp.matched}</Text>
+                            </View>
+                        ))}
+                    </View>
+                )}
             </View>
-            <Text style={styles.productName} numberOfLines={2}>
-                {formatProductName(item.name, item.manufacturer)}
-            </Text>
-            <Text style={styles.manufacturer} numberOfLines={1}>
-                {[item.manufacturer, item.modelNumber].filter(Boolean).join(' - ') || 'General product'}
-            </Text>
-            <Text style={styles.description} numberOfLines={3}>
-                {item.description || 'View technical details'}
-            </Text>
         </TouchableOpacity>
     );
 
-    const renderSection = (items: Product[], sectionTitle: string, isMuted = false) => (
-        <View style={{ marginBottom: spacing.lg }}>
-            <View style={[styles.sectionHeader, isMuted && { borderLeftColor: colors.textMuted }]}>
-                <Text style={[styles.sectionHeaderText, isMuted && { color: colors.textMuted }]}>{sectionTitle}</Text>
+    const renderSection = (items: Product[], sectionTitle: string) => (
+        <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+                <View style={styles.sectionIndicator} />
+                <Text style={styles.sectionTitle}>{sectionTitle}</Text>
             </View>
             <FlatList
                 data={items}
@@ -199,61 +225,25 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
 
     return (
         <View style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>{title}</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Main')}>
-                    <Text style={styles.seeAll}>See All</Text>
-                </TouchableOpacity>
+            <View style={styles.mainHeader}>
+                <Text style={styles.mainTitle}>{title}</Text>
             </View>
 
             {serviceWarning ? (
-                <View style={styles.warningBanner}>
-                    <Text style={styles.warningText}>{serviceWarning}</Text>
-                </View>
-            ) : null}
-
-            {componentMode ? (
-                <View style={styles.selectionArea}>
-                    <View style={styles.selectionWrap}>
-                        {selectedLabels.map((label, index) => (
-                            <View key={`${label}-${index}`} style={styles.selectionChip}>
-                                <Text style={styles.selectionChipText}>{label}</Text>
-                            </View>
-                        ))}
-                    </View>
-                    {onClearSelection ? (
-                        <TouchableOpacity onPress={onClearSelection} style={styles.clearButton}>
-                            <Text style={styles.clearButtonText}>Clear</Text>
-                        </TouchableOpacity>
-                    ) : null}
+                <View style={styles.alertBanner}>
+                    <Ionicons name="shield-outline" size={14} color={colors.warning} />
+                    <Text style={styles.alertText}>{serviceWarning}</Text>
                 </View>
             ) : null}
 
             {loading ? (
-                <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: spacing.md }} />
-            ) : recommendations.length === 0 ? (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyTitle}>
-                        {componentMode ? "No component matches found" : "No recommendations yet"}
-                    </Text>
-                    <Text style={styles.emptyText}>
-                        {componentMode 
-                            ? "No published products in the catalog share these exact components. Try selecting fewer or different parts."
-                            : "As you explore more products, we'll suggest alternatives here."}
-                    </Text>
+                <View style={styles.loaderContainer}>
+                    <ActivityIndicator size="small" color={colors.primary} />
                 </View>
             ) : componentMode ? (
                 <>
-                    {splitMatches.exact.length > 0 && 
-                        renderSection(splitMatches.exact, 'Exact Model Matches')
-                    }
-                    {splitMatches.brand.length > 0 && 
-                        renderSection(
-                            splitMatches.brand, 
-                            `Other ${selectedComponents[0]?.manufacturer || 'Same Brand'} Products`,
-                            true
-                        )
-                    }
+                    {splitMatches.exact.length > 0 && renderSection(splitMatches.exact, 'High-Confidence Matches')}
+                    {splitMatches.related.length > 0 && renderSection(splitMatches.related, 'Related Discoveries')}
                 </>
             ) : (
                 <FlatList
@@ -270,102 +260,148 @@ const RecommendationList: React.FC<RecommendationListProps> = ({
 };
 
 const styles = StyleSheet.create({
-    container: { marginTop: spacing.xl, marginBottom: spacing.lg },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: spacing.md,
-        paddingHorizontal: spacing.lg,
+    container: {
+        marginTop: spacing.xl,
+        marginBottom: spacing.lg,
     },
-    title: { fontSize: typography.h3.fontSize, fontWeight: '700', color: colors.textStrong, flex: 1, paddingRight: spacing.md },
-    seeAll: { fontSize: typography.body.fontSize, color: colors.primary, fontWeight: '600' },
+    mainHeader: {
+        paddingHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+    },
+    mainTitle: {
+        ...typography.h3,
+        color: colors.textStrong,
+        fontWeight: '800',
+        letterSpacing: -0.5,
+    },
+    sectionContainer: {
+        marginBottom: spacing.lg,
+    },
     sectionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: spacing.lg,
         marginBottom: spacing.sm,
-        borderLeftWidth: 4,
-        borderLeftColor: colors.primary,
-        paddingLeft: spacing.md - 4,
     },
-    sectionHeaderText: {
-        fontSize: typography.sm.fontSize,
-        fontWeight: '700',
-        color: colors.textStrong,
+    sectionIndicator: {
+        width: 3,
+        height: 12,
+        backgroundColor: colors.primary,
+        borderRadius: 2,
+        marginRight: 8,
+    },
+    sectionTitle: {
+        ...typography.smBold,
+        color: colors.textMuted,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
+        letterSpacing: 1,
+        fontSize: 11,
     },
-    selectionArea: { paddingHorizontal: spacing.lg, marginBottom: spacing.md, gap: spacing.sm },
-    selectionWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-    selectionChip: {
-        backgroundColor: colors.primaryLight,
-        borderRadius: 999,
+    alertBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginHorizontal: spacing.lg,
+        marginBottom: spacing.md,
+        padding: spacing.sm,
+        backgroundColor: 'rgba(245, 158, 11, 0.05)',
+        borderRadius: radius.sm,
         borderWidth: 1,
-        borderColor: colors.primary,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
+        borderColor: 'rgba(245, 158, 11, 0.15)',
+        gap: 8,
     },
-    selectionChipText: { color: colors.primary, fontSize: typography.xs.fontSize, fontWeight: '700' },
-    clearButton: { alignSelf: 'flex-start' },
-    clearButtonText: { color: colors.primary, fontWeight: '700' },
-    listContent: { paddingLeft: spacing.lg, paddingRight: spacing.sm },
+    alertText: {
+        ...typography.xs,
+        color: colors.warning,
+        fontWeight: '600',
+    },
+    listContent: {
+        paddingLeft: spacing.lg,
+        paddingRight: spacing.sm,
+    },
     card: {
-        width: 240,
-        backgroundColor: colors.surface,
+        width: 200,
+        height: 160,
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
         borderRadius: radius.lg,
-        padding: spacing.md,
         marginRight: spacing.md,
         borderWidth: 1,
-        borderColor: colors.border,
-        ...shadows.sm,
+        borderColor: 'rgba(255, 255, 255, 0.08)',
+        overflow: 'hidden',
     },
-    reasonRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm, gap: spacing.sm },
+    cardInner: {
+        padding: spacing.md,
+        flex: 1,
+        justifyContent: 'space-between',
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
     reasonBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.primaryLight,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: radius.sm,
-        alignSelf: 'flex-start',
+        backgroundColor: 'rgba(165, 200, 255, 0.1)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        gap: 4,
     },
     reasonText: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: colors.primary,
+        letterSpacing: 0.5,
+    },
+    matchScoreWell: {
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+    },
+    matchScoreText: {
         fontSize: 10,
         fontWeight: '700',
-        color: colors.primary,
-        marginLeft: 4,
+        color: colors.textMuted,
+    },
+    productInfo: {
+        marginTop: spacing.sm,
+    },
+    productName: {
+        ...typography.bodyBold,
+        color: colors.textStrong,
+        fontSize: 14,
+        marginBottom: 2,
+    },
+    manufacturer: {
+        ...typography.xs,
+        color: colors.textMuted,
+        fontWeight: '700',
         textTransform: 'uppercase',
-        flexShrink: 1,
+        fontSize: 9,
     },
-    scoreText: { fontSize: typography.xs.fontSize, color: colors.textMuted, fontWeight: '700' },
-    productName: { fontSize: typography.bodyBold.fontSize, color: colors.textStrong, marginBottom: 4 },
-    manufacturer: { fontSize: typography.xs.fontSize, color: colors.textMuted, marginBottom: spacing.sm },
-    description: { fontSize: typography.sm.fontSize, color: colors.text, lineHeight: 18 },
-    emptyState: {
-        marginHorizontal: spacing.lg,
-        padding: spacing.lg,
-        backgroundColor: colors.surface,
-        borderRadius: radius.lg,
+    tagGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 4,
+        marginTop: 8,
+    },
+    miniTag: {
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: 'rgba(255, 255, 255, 0.05)',
     },
-    emptyTitle: { fontSize: typography.bodyBold.fontSize, color: colors.textStrong, fontWeight: '700', marginBottom: 4 },
-    emptyText: { fontSize: typography.sm.fontSize, color: colors.textMuted, lineHeight: 18 },
-    warningBanner: {
-        marginHorizontal: spacing.lg,
-        marginBottom: spacing.sm,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.warning,
-        backgroundColor: colors.warningLight,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
+    miniTagText: {
+        fontSize: 9,
+        fontWeight: '600',
+        color: colors.textMuted,
     },
-    warningText: {
-        fontSize: typography.sm.fontSize,
-        color: colors.warning,
-        lineHeight: 18,
+    loaderContainer: {
+        padding: spacing.xl,
+        alignItems: 'center',
     },
 });
 

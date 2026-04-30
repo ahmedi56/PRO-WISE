@@ -1,9 +1,8 @@
-/**
- * CategoryController
- *
- * @description :: Server-side actions for category management.
- * @help        :: See https://sailsjs.com/docs/concepts/actions
- */
+const logAction = async (req, options) => {
+  if (sails.services.auditservice) {
+    await sails.services.auditservice.log(req, options);
+  }
+};
 
 module.exports = {
 
@@ -42,6 +41,13 @@ module.exports = {
         parent: parent || null,
         summary, description, image, level, tags, visibility, sortOrder
       }).fetch();
+
+      await logAction(req, {
+        action: 'category.created',
+        target: category.id,
+        targetType: 'Category',
+        targetLabel: category.name
+      });
 
       return res.status(201).json(category);
 
@@ -98,7 +104,17 @@ module.exports = {
         return res.json(roots);
       }
 
-      return res.json(categories);
+      const total = await Category.count(criteria);
+      
+      return res.json({
+        data: categories,
+        meta: {
+          total,
+          page: 1, // Category list is usually small and unpaginated for now
+          limit: categories.length,
+          totalPages: 1
+        }
+      });
 
     } catch (err) {
       sails.log.error('Get categories error:', err);
@@ -187,6 +203,16 @@ module.exports = {
 
       const category = await Category.updateOne({ id: req.params.id }).set(updateData);
 
+      await logAction(req, {
+        action: 'category.updated',
+        target: category.id,
+        targetType: 'Category',
+        targetLabel: category.name,
+        details: { 
+          changedFields: Object.keys(updateData)
+        }
+      });
+
       return res.json(category);
 
     } catch (err) {
@@ -224,6 +250,14 @@ module.exports = {
       if (!category) {
         return res.status(404).json({ message: 'Category not found' });
       }
+
+      await logAction(req, {
+        action: 'category.deleted',
+        target: category.id,
+        targetType: 'Category',
+        targetLabel: category.name,
+        severity: 'warning'
+      });
 
       return res.json({ message: 'Category deleted successfully' });
 

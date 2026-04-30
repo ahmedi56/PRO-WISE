@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator, StackNavigationOptions } from '@react-navigation/stack';
+
+const NavContainer = NavigationContainer as any;
 import { useSelector, useDispatch } from 'react-redux';
 import { loadUser } from '../store/slices/authSlice';
 import LoginScreen from '../screens/LoginScreen';
@@ -12,6 +14,7 @@ import { RootState, AppDispatch } from '../store';
 import { RootStackParamList } from './types';
 
 const Stack = createStackNavigator<RootStackParamList>();
+const StackNavigator = Stack.Navigator as any;
 
 const screenOptions: StackNavigationOptions = {
     headerStyle: {
@@ -39,8 +42,8 @@ const AppNavigator: React.FC = () => {
     }
 
     return (
-        <NavigationContainer>
-            <Stack.Navigator screenOptions={screenOptions}>
+        <NavContainer>
+            <StackNavigator screenOptions={screenOptions}>
                 {token ? (
                     <>
                         <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
@@ -67,8 +70,8 @@ const AppNavigator: React.FC = () => {
                         <Stack.Screen name="Register" component={RegisterScreen as any} options={{ headerShown: false }} />
                     </>
                 )}
-            </Stack.Navigator>
-        </NavigationContainer>
+            </StackNavigator>
+        </NavContainer>
     );
 };
 

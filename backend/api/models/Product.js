@@ -48,8 +48,18 @@ module.exports = {
     },
     status: {
       type: 'string',
-      isIn: ['draft', 'published', 'archived'],
+      isIn: ['draft', 'pending', 'published', 'rejected', 'archived'],
       defaultsTo: 'draft'
+    },
+    submittedAt: {
+      type: 'number',
+      allowNull: true
+    },
+    approvedBy: {
+      model: 'user'
+    },
+    createdBy: {
+      model: 'user'
     },
     totalScans: {
       type: 'number',

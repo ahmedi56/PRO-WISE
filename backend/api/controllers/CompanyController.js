@@ -5,22 +5,11 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
-const COMPANY_STATUSES = ['active', 'deactivated'];
+const COMPANY_STATUSES = ['active', 'deactivated', 'pending'];
 
-const writeAuditLog = async ({ req, action, target, details }) => {
-  if (!req.user || !req.user.id) {
-    return;
-  }
-
-  try {
-    await AuditLog.create({
-      action,
-      user: req.user.id,
-      target,
-      details: details || {}
-    });
-  } catch (err) {
-    sails.log.warn('Audit log write failed:', err.message);
+const logAction = async (req, options) => {
+  if (sails.services.auditservice) {
+    await sails.services.auditservice.log(req, options);
   }
 };
 
@@ -53,6 +42,10 @@ module.exports = {
         where.status = normalizedStatus;
       }
 
+      if (req.query.category) {
+        where.category = req.query.category;
+      }
+
       let companies = await Company.find(where).sort('name ASC');
 
       // If the user is unauthenticated (e.g. registration page),
@@ -65,12 +58,39 @@ module.exports = {
         return res.json(companies);
       }
 
-      // Authenticated users get populated products
-      companies = await Company.find(where)
-                .populate('products')
-                .sort('name ASC');
+      const total = await Company.count(where);
+      const { page = 1, limit = 50 } = req.query;
+      const skip = (parseInt(page) - 1) * parseInt(limit);
 
-      return res.json(companies);
+      let augmentedCompanies = await Company.find(where)
+                .populate('products')
+                .sort('name ASC')
+                .skip(skip)
+                .limit(parseInt(limit));
+
+      const feedbackStats = await Feedback.find({ company: { in: augmentedCompanies.map(c => c.id) }, isHidden: false });
+      
+      const results = augmentedCompanies.map(c => {
+          const companyFeedbacks = feedbackStats.filter(f => f.company === c.id);
+          const sum = companyFeedbacks.reduce((acc, curr) => acc + curr.rating, 0);
+          const avg = companyFeedbacks.length > 0 ? (sum / companyFeedbacks.length).toFixed(1) : 0;
+          return {
+              ...c,
+              averageRating: parseFloat(avg),
+              ratingCount: companyFeedbacks.length,
+              productCount: c.products ? c.products.length : 0
+          };
+      });
+
+      return res.json({
+        data: results,
+        meta: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
+      });
 
     } catch (err) {
       sails.log.error('Get companies error:', err);
@@ -155,10 +175,11 @@ module.exports = {
 
       const company = await Company.updateOne({ id: req.params.id }).set(updateData);
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'company.updated',
-        target: `company:${company.id}`,
+        target: company.id,
+        targetType: 'Company',
+        targetLabel: company.name,
         details: {
           changedFields: Object.keys(updateData)
         }
@@ -200,10 +221,12 @@ module.exports = {
         }).set({ status: 'deactivated' });
       }
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'company.deactivated',
-        target: `company:${company.id}`,
+        target: company.id,
+        targetType: 'Company',
+        targetLabel: company.name,
+        severity: 'warning',
         details: { name: company.name }
       });
 
@@ -219,7 +242,7 @@ module.exports = {
 
   /**
      * PUT /api/companies/:id/activate
-     * Activate a company.
+     * Activate a company and optionally its admins.
      */
   activate: async function (req, res) {
     try {
@@ -230,10 +253,22 @@ module.exports = {
 
       const updatedCompany = await Company.updateOne({ id: company.id }).set({ status: 'active' });
 
-      await writeAuditLog({
-        req,
+      // Also activate any pending administrators for this company
+      const roles = await Role.find({ name: { in: ['administrator', 'company_admin'] } });
+      const roleIds = roles.map(r => r.id);
+      if (roleIds.length > 0) {
+        await User.update({
+          company: company.id,
+          role: { in: roleIds },
+          status: 'pending'
+        }).set({ status: 'active' });
+      }
+
+      await logAction(req, {
         action: 'company.activated',
-        target: `company:${company.id}`,
+        target: company.id,
+        targetType: 'Company',
+        targetLabel: company.name,
         details: { name: company.name }
       });
 
@@ -243,6 +278,59 @@ module.exports = {
       });
     } catch (err) {
       sails.log.error('Activate company error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+     * PUT /api/companies/:id/approve
+     * Specifically for Super Admin to approve a new company request.
+     */
+  approve: async function (req, res) {
+    try {
+      const company = await Company.findOne({ id: req.params.id });
+      if (!company) {
+        return res.status(404).json({ message: 'Company not found' });
+      }
+
+      if (company.status !== 'pending') {
+        return res.status(400).json({ message: 'Company is not in pending status' });
+      }
+
+      const updatedCompany = await Company.updateOne({ id: company.id }).set({ status: 'active' });
+
+      // Activate any pending administrators for this company
+      const roles = await Role.find({ name: { in: ['administrator', 'company_admin'] } });
+      const roleIds = roles.map(r => r.id);
+      if (roleIds.length > 0) {
+        const approvedUsers = await User.update({
+          company: company.id,
+          role: { in: roleIds },
+          status: 'pending'
+        }).set({ status: 'active' }).fetch();
+
+        // Send approval emails if service exists
+        if (sails.services.emailservice) {
+          for (const user of approvedUsers) {
+            await sails.services.emailservice.sendApprovalEmail(user.email);
+          }
+        }
+      }
+
+      await logAction(req, {
+        action: 'company.approved',
+        target: company.id,
+        targetType: 'Company',
+        targetLabel: company.name,
+        details: { name: company.name }
+      });
+
+      return res.json({
+        message: 'Company and associated administrators approved successfully',
+        company: updatedCompany
+      });
+    } catch (err) {
+      sails.log.error('Approve company error:', err);
       return res.status(500).json({ message: 'Internal server error' });
     }
   },
@@ -274,10 +362,12 @@ module.exports = {
 
       await Company.destroyOne({ id: req.params.id });
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'company.deleted',
-        target: `company:${company.id}`,
+        target: company.id,
+        targetType: 'Company',
+        targetLabel: company.name,
+        severity: 'warning',
         details: { name: company.name }
       });
 

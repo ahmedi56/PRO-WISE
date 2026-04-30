@@ -43,6 +43,11 @@ module.exports = async function (req, res, proceed) {
     return proceed();
   }
 
+  // Allow company admins to view analytics even if the DB hasn't synced the permission yet
+  if (['company_admin', 'administrator'].includes(roleName) && requiredPermission === 'analytics.view') {
+    return proceed();
+  }
+
   if (!permissions.includes(requiredPermission)) {
     return res.status(403).json({
       message: `Forbidden: Missing required permission [${requiredPermission}]`,

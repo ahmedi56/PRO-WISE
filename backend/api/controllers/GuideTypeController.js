@@ -30,7 +30,10 @@ module.exports = {
       const { name, slug, description, icon } = req.body;
       if (!name) {return res.status(400).json({ message: 'Name is required' });}
 
-      const newType = await GuideType.create({ name, slug, description, icon }).fetch();
+      // Auto-generate slug if not provided
+      const effectiveSlug = slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+      const newType = await GuideType.create({ name, slug: effectiveSlug, description, icon }).fetch();
       return res.status(201).json(newType);
     } catch (err) {
       if (err.code === 'E_UNIQUE') {

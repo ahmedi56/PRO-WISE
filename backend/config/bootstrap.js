@@ -506,4 +506,16 @@ module.exports.bootstrap = async function () {
     }
   }
 
+
+  // Set up Content auto-approval system interval
+  if (!sails.config.custom.contentApprovalInterval) {
+    sails.config.custom.contentApprovalInterval = setInterval(() => {
+      if (sails.services.contentapprovalservice) {
+        sails.services.contentapprovalservice.runAutoApproval().catch(err => {
+          sails.log.error('Auto-approval error:', err);
+        });
+      }
+    }, 60 * 60 * 1000); // Check every hour
+  }
+
 };

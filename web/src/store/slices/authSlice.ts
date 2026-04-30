@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { API_URL } from '../../config';
-import { User, Role } from '../../types/user';
+import { User } from '../../types/user';
 
 interface AuthState {
-    user: (User & { role: { name: string } | string }) | null;
+    user: User | null;
     token: string | null;
     loading: boolean;
     error: string | null;
@@ -12,15 +12,27 @@ interface AuthState {
     success: boolean;
     registrationMessage: string | null;
     updateSuccess: boolean;
+    isAuthenticated: boolean;
 }
 
-const normalizeRoleName = (role: any): Role => {
+const normalizeRoleName = (role: any): string => {
     if (!role) return 'customer';
     const name = (typeof role === 'string' ? role : (role.name || '')).toLowerCase().trim();
     if (['superadmin', 'super-admin'].includes(name)) return 'super_admin';
     if (name === 'administrator') return 'company_admin';
-    if (name === 'client') return 'customer';
-    return (name as Role) || 'customer';
+    if (name === 'client' || name === 'user' || name === 'customer_role') return 'customer';
+    return name || 'customer';
+};
+
+const normalizeUserRole = (user: any): User => {
+    if (!user) return user;
+    const role = user.role || user.Role;
+    if (role && typeof role === 'object') {
+        return { ...user, role: { ...role, name: normalizeRoleName(role) } };
+    } else if (role) {
+        return { ...user, role: { name: normalizeRoleName(role) } };
+    }
+    return user;
 };
 
 // Thunks
@@ -29,12 +41,16 @@ export const loginUser = createAsyncThunk(
     async ({ email, password }: any, { rejectWithValue }) => {
         try {
             const response = await axios.post(`${API_URL}/auth/login`, { email, password });
-            localStorage.setItem('token', response.data.token);
+            console.log('Login Response:', response.data);
+            const token = response.data.token;
+            localStorage.setItem('token', token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             if (response.data.refreshToken) {
                 localStorage.setItem('refreshToken', response.data.refreshToken);
             }
             return response.data;
         } catch (error: any) {
+            console.error('Login Error:', error.response?.data || error.message);
             return rejectWithValue(error.response?.data?.message || 'Login failed');
         }
     }
@@ -56,14 +72,18 @@ export const loadUser = createAsyncThunk(
     'auth/loadUser',
     async (_, { rejectWithValue }) => {
         const token = localStorage.getItem('token');
-        if (!token) return rejectWithValue('No token found');
+        if (!token) return rejectWithValue('__no_token__');
 
         try {
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             const response = await axios.get(`${API_URL}/auth/me`);
+            console.log('Load User Response:', response.data);
             return response.data;
         } catch (error: any) {
+            console.error('Load User Error:', error.response?.data || error.message);
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
+            delete axios.defaults.headers.common['Authorization'];
             return rejectWithValue(error.response?.data?.message || 'Session expired');
         }
     }
@@ -93,6 +113,24 @@ export const updateCompany = createAsyncThunk(
     }
 );
 
+export const googleLogin = createAsyncThunk(
+    'auth/googleLogin',
+    async (idToken: string, { rejectWithValue }) => {
+        try {
+            const response = await axios.post(`${API_URL}/auth/google`, { idToken });
+            const token = response.data.token;
+            localStorage.setItem('token', token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            if (response.data.refreshToken) {
+                localStorage.setItem('refreshToken', response.data.refreshToken);
+            }
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Google login failed');
+        }
+    }
+);
+
 const initialState: AuthState = {
     user: null,
     token: localStorage.getItem('token'),
@@ -102,6 +140,7 @@ const initialState: AuthState = {
     success: false,
     registrationMessage: null,
     updateSuccess: false,
+    isAuthenticated: !!localStorage.getItem('token'),
 };
 
 const authSlice = createSlice({
@@ -111,9 +150,11 @@ const authSlice = createSlice({
         logout: (state) => {
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
+            delete axios.defaults.headers.common['Authorization'];
             state.user = null;
             state.token = null;
             state.error = null;
+            state.isAuthenticated = false;
             state.logoutMessage = 'You have been logged out successfully.';
         },
         clearError: (state) => {
@@ -136,15 +177,8 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.token = action.payload.token;
-                const user = action.payload.user;
-                if (user && user.role) {
-                    if (typeof user.role === 'object') {
-                        user.role = { ...user.role, name: normalizeRoleName(user.role) };
-                    } else {
-                        user.role = { name: normalizeRoleName(user.role) };
-                    }
-                }
-                state.user = user;
+                state.user = normalizeUserRole(action.payload.user);
+                state.isAuthenticated = true;
             })
             .addCase(loginUser.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
@@ -170,21 +204,18 @@ const authSlice = createSlice({
             })
             .addCase(loadUser.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
-                const user = action.payload;
-                if (user && user.role) {
-                    if (typeof user.role === 'object') {
-                        user.role = { ...user.role, name: normalizeRoleName(user.role) };
-                    } else {
-                        user.role = { name: normalizeRoleName(user.role) };
-                    }
-                }
-                state.user = user;
+                state.user = normalizeUserRole(action.payload);
+                state.isAuthenticated = true;
             })
             .addCase(loadUser.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.user = null;
                 state.token = null;
-                state.error = action.payload || 'Session expired';
+                state.isAuthenticated = false;
+                // Don't set error for "no token" case — it's not a user-facing error
+                if (action.payload && action.payload !== '__no_token__') {
+                    state.error = action.payload;
+                }
             })
             .addCase(updateUser.pending, (state) => {
                 state.loading = true;
@@ -193,16 +224,8 @@ const authSlice = createSlice({
             })
             .addCase(updateUser.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
-                if (state.user) {
-                    const updatedUser = { ...state.user, ...action.payload.user };
-                    if (updatedUser.role) {
-                        if (typeof updatedUser.role === 'object') {
-                            updatedUser.role = { ...updatedUser.role, name: normalizeRoleName(updatedUser.role) };
-                        } else {
-                            updatedUser.role = { name: normalizeRoleName(updatedUser.role) };
-                        }
-                    }
-                    state.user = updatedUser;
+                if (state.user && action.payload.user) {
+                    state.user = normalizeUserRole({ ...state.user, ...action.payload.user });
                 }
                 state.updateSuccess = true;
             })
@@ -221,12 +244,29 @@ const authSlice = createSlice({
                 if (state.user && state.user.company) {
                     const companyId = typeof state.user.company === 'string' ? state.user.company : (state.user.company as any).id;
                     if (companyId === companyData.id) {
-                        state.user.company = { ...(typeof state.user.company === 'object' ? state.user.company : {}), ...companyData };
+                        state.user = {
+                            ...state.user,
+                            company: { ...(typeof state.user.company === 'object' ? state.user.company : {}), ...companyData }
+                        };
                     }
                 }
                 state.updateSuccess = true;
             })
             .addCase(updateCompany.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            .addCase(googleLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.token = action.payload.token;
+                state.user = normalizeUserRole(action.payload.user);
+                state.isAuthenticated = true;
+            })
+            .addCase(googleLogin.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.error = action.payload;
             });

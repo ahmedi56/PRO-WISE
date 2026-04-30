@@ -9,14 +9,18 @@ import {
     ActivityIndicator, 
     KeyboardAvoidingView, 
     Platform, 
-    ScrollView, 
-    Image 
+    ScrollView
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { registerUser, clearError, resetSuccess } from '../store/slices/authSlice';
-import { colors, spacing, radius, typography, shadows } from '../theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius, typography } from '../theme';
 import { RootState, AppDispatch } from '../store';
 import { RootStackNavigationProp } from '../navigation/types';
+import { Ionicons } from '@expo/vector-icons';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
+import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
 
 interface RegisterScreenProps {
     navigation: RootStackNavigationProp<'Register'>;
@@ -33,7 +37,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
     useEffect(() => {
         if (success) {
-            Alert.alert('Success', 'Account created! Please login.');
+            Alert.alert('Registration Successful', 'Your account has been created. Please sign in to continue.');
             dispatch(resetSuccess());
             navigation.navigate('Login');
         }
@@ -45,8 +49,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }, [error]);
 
     const handleRegister = () => {
-        if (!name || !username || !email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!name.trim() || !username.trim() || !email.trim() || !password) {
+            Alert.alert('Incomplete Form', 'Please fill in all fields to create your account.');
             return;
         }
         dispatch(registerUser({ 
@@ -59,85 +63,78 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.container}>
+            <LinearGradient
+                colors={['rgba(34, 211, 238, 0.04)', colors.bg]}
+                style={StyleSheet.absoluteFill}
+            />
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+            <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" bounces={false}>
                 <View style={styles.header}>
-                    <Image
-                        source={require('../../assets/pro-wise.png')}
-                        style={styles.logo}
-                        resizeMode="contain"
-                    />
+                    <View style={styles.logoBadge}>
+                        <ProWiseLogoSvg width={48} height={48} />
+                    </View>
                     <Text style={styles.title}>Create Account</Text>
-                    <Text style={styles.subtitle}>Get started in seconds</Text>
+                    <Text style={styles.subtitle}>Register your new account to continue</Text>
                 </View>
 
-                {/* Mobile registration is for client accounts only.
-                    Company admin registration is available on the web app. */}
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Full Name</Text>
-                    <TextInput 
-                        style={styles.input} 
-                        placeholder="John Doe" 
-                        placeholderTextColor={colors.textMuted}
-                        value={name} 
-                        onChangeText={setName} 
+                <View style={styles.form}>
+                    <CustomInput
+                        label="Full Name"
+                        icon="person-outline"
+                        placeholder="John Doe"
+                        value={name}
+                        onChangeText={setName}
                     />
-                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Username</Text>
-                    <TextInput 
-                        style={styles.input} 
-                        placeholder="johndoe" 
-                        placeholderTextColor={colors.textMuted}
-                        value={username} 
-                        onChangeText={setUsername} 
-                        autoCapitalize="none" 
+                    <CustomInput
+                        label="Username"
+                        icon="at-outline"
+                        placeholder="johndoe"
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
                     />
-                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Email</Text>
-                    <TextInput 
-                        style={styles.input} 
-                        placeholder="email@example.com" 
-                        placeholderTextColor={colors.textMuted}
-                        value={email} 
-                        onChangeText={setEmail} 
-                        keyboardType="email-address" 
-                        autoCapitalize="none" 
+                    <CustomInput
+                        label="Email Address"
+                        icon="mail-outline"
+                        placeholder="you@company.com"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
                     />
-                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Password</Text>
-                    <TextInput 
-                        style={styles.input} 
-                        placeholder="••••••••" 
-                        placeholderTextColor={colors.textMuted}
-                        value={password} 
-                        onChangeText={setPassword} 
-                        secureTextEntry 
+                    <CustomInput
+                        label="Password"
+                        icon="lock-closed-outline"
+                        placeholder="••••••••"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
                     />
+
+                    <CustomButton
+                        title="Create Account"
+                        onPress={handleRegister}
+                        loading={loading}
+                        style={{ marginTop: spacing.md }}
+                    />
+
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>Already have an account? </Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                            <Text style={styles.loginLink}>Sign In</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-
-                {loading ? (
-                    <ActivityIndicator size="large" color={colors.primary} />
-                ) : (
-                    <TouchableOpacity style={styles.button} onPress={handleRegister}>
-                        <Text style={styles.buttonText}>Sign Up</Text>
-                    </TouchableOpacity>
-                )}
-
-                <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.linkContainer}>
-                    <Text style={styles.linkText}>Already have an account? Sign In</Text>
-                </TouchableOpacity>
             </ScrollView>
-        </KeyboardAvoidingView>
+            </KeyboardAvoidingView>
+        </View>
     );
 };
 
@@ -148,53 +145,49 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: spacing.xl,
     },
-    logo: {
-        width: 100,
-        height: 100,
-        marginBottom: spacing.md,
+    logoBadge: {
+        width: 80,
+        height: 80,
+        backgroundColor: colors.surface,
+        borderRadius: radius.xl,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
     },
     title: {
-        fontSize: typography.h1.fontSize,
-        fontWeight: typography.h1.fontWeight,
+        ...typography.h1,
+        fontSize: 32,
         color: colors.textStrong,
-        marginBottom: spacing.sm,
+        marginBottom: spacing.xs,
     },
     subtitle: {
-        fontSize: typography.body.fontSize,
+        ...typography.body,
         color: colors.textMuted,
-        marginBottom: spacing.md,
+        textAlign: 'center',
     },
-    inputGroup: { marginBottom: spacing.lg },
-    label: { 
-        color: colors.text, 
-        marginBottom: spacing.sm, 
-        fontSize: typography.sm.fontSize, 
-        fontWeight: '600' 
+    form: {
+        width: '100%',
     },
-    input: { 
-        backgroundColor: colors.surfaceRaised, 
-        borderWidth: 1, 
-        borderColor: colors.border, 
-        borderRadius: radius.md, 
-        padding: spacing.base, 
-        color: colors.textStrong, 
-        fontSize: typography.body.fontSize 
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: spacing.xl,
     },
-    button: { 
-        backgroundColor: colors.primary, 
-        padding: spacing.base, 
-        borderRadius: radius.md, 
-        alignItems: 'center', 
-        marginTop: spacing.sm, 
-        ...shadows.glow 
+    footerText: {
+        ...typography.body,
+        color: colors.textMuted,
     },
-    buttonText: { 
-        color: '#fff', 
-        fontSize: typography.bodyBold.fontSize, 
-        fontWeight: typography.bodyBold.fontWeight 
+    loginLink: {
+        ...typography.bodyBold,
+        color: colors.primary,
     },
-    linkContainer: { marginTop: spacing.lg, alignItems: 'center' },
-    linkText: { color: colors.primary, fontSize: typography.body.fontSize },
 });
 
 export default RegisterScreen;

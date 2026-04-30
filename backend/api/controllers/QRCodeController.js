@@ -5,6 +5,12 @@
  */
 const QRCodeLib = require('qrcode');
 
+const logAction = async (req, options) => {
+  if (sails.services.auditservice) {
+    await sails.services.auditservice.log(req, options);
+  }
+};
+
 module.exports = {
 
   /**
@@ -71,6 +77,14 @@ module.exports = {
 
       // 8. Store QR URL directly in Product for modular refactor
       await Product.updateOne({ id: product.id }).set({ qrCodeUrl: qrDataUrl });
+
+      await logAction(req, {
+        action: 'qrcode.generated',
+        target: product.id,
+        targetType: 'Product',
+        targetLabel: product.name,
+        details: { url }
+      });
 
       return res.json({
         success: true,

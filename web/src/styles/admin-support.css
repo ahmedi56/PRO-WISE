@@ -160,7 +160,7 @@
 /* Empty State */
 .empty-support-state {
     text-align: center;
-    padding: 4rem;
+    padding: 2rem;
     color: var(--color-text-muted);
 }
 
@@ -359,10 +359,188 @@
 }
 
 @media (max-width: 768px) {
+    .support-admin-container {
+        padding: 1rem;
+    }
     .support-form-grid {
         grid-template-columns: 1fr;
     }
     .full-width {
         grid-column: span 1;
     }
+}
+/* Support Dashboard Grid */
+.support-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.support-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-xl);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 500px; /* Fixed height for consistency */
+    backdrop-filter: blur(10px);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-primary);
+}
+
+/* Repair Guide Section Specifics */
+.guide-content-preview {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.guide-mini-meta {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.text-danger-link {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    font-size: 0.8rem;
+    cursor: pointer;
+    margin-left: auto;
+    text-decoration: underline;
+}
+
+.steps-scroll-list, .content-scroll-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+/* Scrollbar Styling */
+.steps-scroll-list::-webkit-scrollbar, .content-scroll-list::-webkit-scrollbar {
+    width: 4px;
+}
+.steps-scroll-list::-webkit-scrollbar-thumb, .content-scroll-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+}
+
+.step-item-mini, .content-item-mini {
+    background: rgba(255, 255, 255, 0.02);
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.step-item-mini:hover, .content-item-mini:hover {
+    border-color: rgba(var(--color-primary-rgb), 0.3);
+    background: rgba(var(--color-primary-rgb), 0.03);
+}
+
+.step-idx {
+    background: var(--color-primary);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.step-title, .item-title {
+    flex: 1;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.btn-icon-sm {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: flex;
+    transition: color 0.2s;
+}
+
+.btn-icon-sm:hover {
+    color: var(--color-danger);
+}
+
+.item-icon {
+    font-size: 1.5rem;
+}
+.item-icon.video { color: #FF0000; }
+.item-icon.pdf { color: #F40F02; }
+
+.empty-section-lite {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-style: italic;
+    gap: 1rem;
+}
+
+.empty-hint {
+    text-align: center;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    margin-top: 2rem;
+    font-style: italic;
+}
+
+.step-media-badges {
+    display: flex;
+    gap: 0.75rem;
+    color: var(--color-text-muted);
+    font-size: 1rem;
+    margin: 0 1rem;
+}
+
+.step-media-badges ion-icon {
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.step-media-badges ion-icon:hover {
+    opacity: 1;
+    color: var(--color-primary);
 }

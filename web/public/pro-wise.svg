@@ -1,0 +1,76 @@
+<svg width="130" height="160" viewBox="0 0 130 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Dark/Deep Electric Blue -->
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+
+    <!-- Glowing Accent Cyan -->
+    <linearGradient id="cyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#0891B2"/>
+    </linearGradient>
+
+    <!-- Super Glow for the Core Insight Node -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur1" />
+      <feGaussianBlur in="SourceGraphic" stdDeviation="12" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Drop Shadow for hovering 3D components -->
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="2" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- Soft Ambient Spot Lighting -->
+    <radialGradient id="ambience" cx="65" cy="80" r="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Ambient light mapping the area -->
+  <circle cx="65" cy="80" r="90" fill="url(#ambience)"/>
+
+  <!-- ==============================================
+       ICON: THE EXPLODED PRODUCT CORE
+       Symbolizes: Disassembling hardware to intelligently map structural components 
+       Meaning: Product (Cube) + Analytics/Takeaway (Exploded view) + Intelligence (Glowing core)
+       ============================================== -->
+
+  <!-- Top Component Panel (Illuminated by Cyan - representing "Insight") -->
+  <path d="M 65 68 L 37 52 L 65 36 L 93 52 Z" 
+        stroke="url(#cyanGrad)" 
+        stroke-width="10" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="url(#cyanGrad)" fill-opacity="0.15"
+        filter="url(#shadow)"/>
+
+  <!-- Left Component Panel (Core Structural Blue) -->
+  <path d="M 55 86 L 55 118 L 27 102 L 27 70 Z" 
+        stroke="url(#blueGrad)" 
+        stroke-width="10" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="url(#blueGrad)" fill-opacity="0.1"
+        filter="url(#shadow)"/>
+
+  <!-- Right Component Panel (Core Structural Blue) -->
+  <path d="M 75 86 L 103 70 L 103 102 L 75 118 Z" 
+        stroke="url(#blueGrad)" 
+        stroke-width="10" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="url(#blueGrad)" fill-opacity="0.1"
+        filter="url(#shadow)"/>
+
+
+
+</svg>

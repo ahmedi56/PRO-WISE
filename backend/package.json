@@ -1,32 +1,36 @@
 {
   "name": "backend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "PRO-WISE Product Assistance Platform — Sails.js Backend",
   "keywords": [],
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@sailshq/lodash": "^3.10.6",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
     "connect-mongo": "^3.2.0",
     "dotenv": "^16.4.7",
+    "ejs": "^5.0.2",
     "eslint-plugin-react": "7.22.0",
+    "expo": "^49.0.23",
+    "google-auth-library": "^10.6.2",
+    "jimp": "^1.6.1",
     "jsonwebtoken": "^9.0.3",
     "qrcode": "^1.5.4",
-    "sails": "^1.5.11",
+    "rc": "^1.2.8",
+    "sails": "^1.5.17",
     "sails-hook-orm": "^4.0.3",
-    "sails-hook-sockets": "^3.0.0",
+    "sails-hook-sockets": "^3.0.2",
     "sails-mongo": "^2.1.2"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
     "eslint": "^9.39.4"
   },
   "scripts": {
     "start": "cross-env NODE_ENV=production node app.js",
-    "dev": "concurrently \"node app.js\" \"python search_service/app.py\"",
-    "search-service": "python search_service/app.py",
+    "dev": "node app.js",
     "test": "npm run lint && npm run custom-tests && echo 'Done.'",
     "lint": "eslint . --max-warnings=0",
     "custom-tests": "echo \"(No other custom tests yet.)\" && echo"

@@ -22,7 +22,10 @@ import { RootStackParamList } from '../navigation/types';
 import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Component } from '../types/product';
-import { Category, Company } from '../types/common';
+import { Category } from '../types/common';
+import { Company } from '../types/company';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
 
 const COMPONENT_FIELDS: (keyof Component)[] = ['name', 'type', 'manufacturer', 'modelNumber', 'specifications'];
 
@@ -230,7 +233,7 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
     const handleAddComponent = () => {
         setFormData(prev => ({ 
             ...prev, 
-            components: [...(prev.components || []), { name: '', type: '', manufacturer: '', modelNumber: '', specifications: '' }] 
+            components: [...(prev.components || []), { id: `temp-${Date.now()}`, name: '', type: '', manufacturer: '', modelNumber: '', specifications: '' }] 
         }));
     };
 
@@ -267,16 +270,13 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <Text style={styles.title}>{isEdit ? 'Edit Product' : 'New Product'}</Text>
 
-            <View style={styles.formGroup}>
-                <Text style={styles.label}>Name *</Text>
-                <TextInput
-                    style={styles.input}
-                    value={formData.name}
-                    onChangeText={(t) => setFormData({ ...formData, name: t })}
-                    placeholder="Product Name"
-                    placeholderTextColor={colors.textMuted}
-                />
-            </View>
+            <CustomInput
+                label="Name *"
+                icon="pricetag-outline"
+                value={formData.name}
+                onChangeText={(t) => setFormData({ ...formData, name: t })}
+                placeholder="Product Name"
+            />
 
             <View style={styles.formGroup}>
                 <Text style={styles.label}>Description</Text>
@@ -284,7 +284,7 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
                     style={[styles.input, styles.textArea]}
                     value={formData.description}
                     onChangeText={(t) => setFormData({ ...formData, description: t })}
-                    placeholder="Clear summary. AI uses this for search intent."
+                    placeholder="Brief summary of the product"
                     placeholderTextColor={colors.textMuted}
                     multiline
                     numberOfLines={3}
@@ -297,7 +297,7 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
                     style={[styles.input, styles.textArea, { height: 120 }]}
                     value={formData.content}
                     onChangeText={(t) => setFormData({ ...formData, content: t })}
-                    placeholder="Parts, specs, materials... CRITICAL for AI search and related product accuracy."
+                    placeholder="Parts, specs, materials and technical requirements..."
                     placeholderTextColor={colors.textMuted}
                     multiline
                     numberOfLines={6}
@@ -305,31 +305,29 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
             </View>
 
             <View style={styles.row}>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Manufacturer</Text>
-                    <TextInput
-                        style={styles.input}
+                <View style={{ flex: 1 }}>
+                    <CustomInput
+                        label="Manufacturer"
+                        icon="business-outline"
                         value={formData.manufacturer}
                         onChangeText={(t) => setFormData({ ...formData, manufacturer: t })}
-                        placeholder="Brand (Atlas Copco, etc.)"
-                        placeholderTextColor={colors.textMuted}
+                        placeholder="Brand"
                     />
                 </View>
-                <View style={[styles.formGroup, { flex: 1 }]}>
-                    <Text style={styles.label}>Model Number</Text>
-                    <TextInput
-                        style={styles.input}
+                <View style={{ flex: 1 }}>
+                    <CustomInput
+                        label="Model Number"
+                        icon="barcode-outline"
                         value={formData.modelNumber}
                         onChangeText={(t) => setFormData({ ...formData, modelNumber: t })}
                         placeholder="e.g. GA-55"
-                        placeholderTextColor={colors.textMuted}
                     />
                 </View>
             </View>
 
             <View style={[styles.formGroup, { marginTop: 10, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 15 }]}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <Text style={[styles.label, { marginBottom: 0 }]}>Components (AI Context)</Text>
+                    <Text style={[styles.label, { marginBottom: 0 }]}>Product Components</Text>
                     <TouchableOpacity 
                         onPress={handleAddComponent} 
                         style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceHover, borderRadius: 5 }}
@@ -344,53 +342,47 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
                     </Text>
                 ) : (
                     formData.components.map((comp, index) => (
-                        <View key={index} style={{ backgroundColor: colors.surface, padding: 10, borderRadius: 8, borderWidth: 1, borderColor: colors.border, marginBottom: 10 }}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                                <Text style={{ fontWeight: 'bold', color: colors.text }}>Component #{index + 1}</Text>
+                        <View key={index} style={styles.componentCard}>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md, alignItems: 'center' }}>
+                                <Text style={{ fontWeight: '600', color: colors.textStrong }}>Component #{index + 1}</Text>
                                 <TouchableOpacity onPress={() => handleRemoveComponent(index)}>
                                     <Text style={{ color: colors.error }}>Remove</Text>
                                 </TouchableOpacity>
                             </View>
                             
-                            <TextInput
-                                style={[styles.input, { marginBottom: 8 }]}
+                            <CustomInput
                                 value={comp.name}
                                 onChangeText={(t) => handleComponentChange(index, 'name', t)}
                                 placeholder="Component Name *"
-                                placeholderTextColor={colors.textMuted}
                             />
                             
                             <View style={styles.row}>
-                                <TextInput
-                                    style={[styles.input, { flex: 1, marginRight: 5, marginBottom: 8 }]}
-                                    value={comp.type}
-                                    onChangeText={(t) => handleComponentChange(index, 'type', t)}
-                                    placeholder="Type/Category"
-                                    placeholderTextColor={colors.textMuted}
-                                />
-                                <TextInput
-                                    style={[styles.input, { flex: 1, marginLeft: 5, marginBottom: 8 }]}
-                                    value={comp.manufacturer}
-                                    onChangeText={(t) => handleComponentChange(index, 'manufacturer', t)}
-                                    placeholder="Brand"
-                                    placeholderTextColor={colors.textMuted}
-                                />
+                                <View style={{ flex: 1 }}>
+                                    <CustomInput
+                                        value={comp.type}
+                                        onChangeText={(t) => handleComponentChange(index, 'type', t)}
+                                        placeholder="Type/Category"
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <CustomInput
+                                        value={comp.manufacturer}
+                                        onChangeText={(t) => handleComponentChange(index, 'manufacturer', t)}
+                                        placeholder="Brand"
+                                    />
+                                </View>
                             </View>
 
-                            <TextInput
-                                style={[styles.input, { marginBottom: 8 }]}
+                            <CustomInput
                                 value={comp.modelNumber}
                                 onChangeText={(t) => handleComponentChange(index, 'modelNumber', t)}
                                 placeholder="Model Number"
-                                placeholderTextColor={colors.textMuted}
                             />
                             
-                            <TextInput
-                                style={styles.input}
+                            <CustomInput
                                 value={comp.specifications}
                                 onChangeText={(t) => handleComponentChange(index, 'specifications', t)}
                                 placeholder="Specifications (e.g. 16GB RAM)"
-                                placeholderTextColor={colors.textMuted}
                             />
                         </View>
                     ))
@@ -417,17 +409,12 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
                 </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
+            <CustomButton
+                title={isEdit ? 'Update Product' : 'Create Product'}
                 onPress={handleSubmit}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.buttonText}>{isEdit ? 'Update Product' : 'Create Product'}</Text>
-                )}
-            </TouchableOpacity>
+                loading={loading}
+                style={{ marginTop: spacing.md }}
+            />
 
             <Modal visible={showCatModal} animationType="slide">
                 <View style={styles.modalContainer}>
@@ -488,6 +475,19 @@ const styles = StyleSheet.create({
         color: colors.textStrong,
         fontSize: typography.body.fontSize,
     },
+    componentCard: {
+        backgroundColor: colors.surface,
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: spacing.md,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 2,
+    },
     textArea: { height: 80, textAlignVertical: 'top' },
     row: { flexDirection: 'row', gap: spacing.md },
     pickerButton: {
@@ -502,15 +502,6 @@ const styles = StyleSheet.create({
     },
     pickerButtonText: { color: colors.textStrong, fontSize: typography.body.fontSize },
     chevron: { color: colors.textMuted },
-    button: {
-        backgroundColor: colors.primary,
-        padding: spacing.base,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        marginTop: spacing.lg,
-    },
-    buttonDisabled: { opacity: 0.7 },
-    buttonText: { color: '#fff', fontWeight: '700', fontSize: typography.bodyBold.fontSize },
     modalContainer: { flex: 1, backgroundColor: colors.bg, paddingTop: 50 },
     modalHeader: { flexDirection: 'row', justifyContent: 'space-between', padding: spacing.lg, borderBottomWidth: 1, borderColor: colors.border },
     modalTitle: { fontSize: typography.h3.fontSize, fontWeight: '700', color: colors.textStrong },

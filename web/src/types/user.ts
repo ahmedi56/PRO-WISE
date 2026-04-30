@@ -1,6 +1,13 @@
 export type Role = 'super_admin' | 'company_admin' | 'customer';
 export type UserRole = Role; // Alias for consistency
 
+export interface RoleObject {
+  id?: string;
+  name: string;
+  permissions?: string[];
+  description?: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -8,8 +15,9 @@ export interface User {
   name: string;
   firstName?: string;
   lastName?: string;
-  role: Role;
+  role: RoleObject | string;
   phone?: string;
+  avatar?: string;
   company?: any; // Company ID or object
   status: 'active' | 'deactivated' | 'pending';
   createdAt: string;

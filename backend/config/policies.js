@@ -17,7 +17,8 @@ module.exports.policies = {
   AuthController: {
     'login': true,
     'register': true,
-    'refresh': true
+    'refresh': true,
+    'google': true
   },
 
   // ─── User routes ────────────────────────────────────────
@@ -32,6 +33,8 @@ module.exports.policies = {
     'activateUser': ['isAuthenticated', 'isSuperAdmin'],
     'updateUser': ['isAuthenticated', 'isSuperAdmin'],
     'bulkDelete': ['isAuthenticated', 'isSuperAdmin'],
+    'requestTechnicianUpgrade': 'isAuthenticated',
+    'approveTechnician': ['isAuthenticated', 'isSuperAdmin'],
   },
 
   // ─── Role routes ────────────────────────────────────────
@@ -48,11 +51,11 @@ module.exports.policies = {
   // Since the user asked for strictly tenantIsolation, I will use that for mutation routes.
   // For reads, I'll allow isAuthenticated, since ProductController.getAll handles clients inherently.
   ProductController: {
-    'getAll': 'isAuthenticated',
-    'getOne': 'isAuthenticated',
-    'getRecommendations': 'isAuthenticated',
-    'getComponentRecommendations': 'isAuthenticated',
-    'semanticSearch': 'isAuthenticated',
+    'getAll': true,
+    'getOne': true,
+    'getRecommendations': true,
+    'getComponentRecommendations': true,
+    'semanticSearch': true,
     'triggerBackfill': ['isAuthenticated', 'isCompanyAdmin'],
     'create': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],
     'update': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],
@@ -60,6 +63,14 @@ module.exports.policies = {
     'publish': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],
     'unpublish': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],
     'archive': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],
+    'submit': ['isAuthenticated', 'isProductManager', 'tenantIsolation', 'has-permission'],
+    'approve': ['isAuthenticated', 'isSuperAdmin'],
+    'reject': ['isAuthenticated', 'isSuperAdmin'],
+    'createFeedback': 'isAuthenticated',
+    'getAllFeedback': true,
+    'getFeedbackStats': true,
+    'respondToFeedback': ['isAuthenticated', 'isCompanyAdmin'],
+    'toggleFeedbackVisibility': ['isAuthenticated', 'isCompanyAdmin'],
   },
 
   // ─── Company routes ─────────────────────────────────────
@@ -75,8 +86,9 @@ module.exports.policies = {
 
   // ─── Category routes ────────────────────────────────────
   CategoryController: {
-    'getAll': 'isAuthenticated',
-    'getOne': 'isAuthenticated',
+    'getAll': true,
+    'getPopular': true,
+    'getOne': true,
     'create': ['isAuthenticated', 'isSuperAdmin'],
     'update': ['isAuthenticated', 'isSuperAdmin'],
     'delete': ['isAuthenticated', 'isSuperAdmin'],
@@ -93,7 +105,9 @@ module.exports.policies = {
     'create': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
     'update': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
     'delete': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
-    'publish': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
+    'submit': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
+    'approve': ['isAuthenticated', 'isSuperAdmin'],
+    'reject': ['isAuthenticated', 'isSuperAdmin'],
     'unpublish': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
     'archive': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission']
   },
@@ -139,6 +153,33 @@ module.exports.policies = {
     'view': ['isAuthenticated'], // Customers can view
     'getByProduct': 'isAuthenticated',
     'delete': ['isAuthenticated', 'isCompanyAdmin']
-  }
+  },
+
+  // ─── Feedback & Rating System (Moved to ProductController) ───────────────────
+
+  // ─── Homepage & Search ──────────────────────────────────
+  HomeController: {
+    'index': true
+  },
+  SearchController: {
+    'query': 'optionalAuth'
+  },
+
+  // ─── Content Workflow ───────────────────────────────────
+  ContentController: {
+    'find': 'isAuthenticated',
+    'findOne': 'isAuthenticated',
+    'create': ['isAuthenticated', 'isCompanyAdmin'],
+    'update': ['isAuthenticated', 'isCompanyAdmin'],
+    'submit': ['isAuthenticated', 'isCompanyAdmin'],
+    'getPending': ['isAuthenticated', 'isSuperAdmin'],
+    'approve': ['isAuthenticated', 'isSuperAdmin'],
+    'reject': ['isAuthenticated', 'isSuperAdmin']
+  },
+  
+  // ─── AI routes ──────────────────────────────────────────
+  AIController: {
+    '*': 'isAuthenticated'
+  },
 
 };

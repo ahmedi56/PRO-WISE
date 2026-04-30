@@ -13,7 +13,7 @@ module.exports = {
    */
   create: async function (req, res) {
     try {
-      const { guide, step_number, images, videos, estimated_time, translations } = req.body;
+      const { guide, step_number, images, videos, pdfs, estimated_time, translations } = req.body;
 
       if (!guide || !step_number) {
         return res.status(400).json({ message: 'Guide ID and step number are required.' });
@@ -33,6 +33,7 @@ module.exports = {
         stepNumber: step_number,
         images, // Supports both strings and objects {url, caption}
         videos: processedVideos,
+        pdfs: pdfs || [],
         estimatedTime: estimated_time,
         translations
       }).fetch();
@@ -61,6 +62,7 @@ module.exports = {
           step_number: step.stepNumber,
           images: step.images || [],
           videos: step.videos || [],
+          pdfs: step.pdfs || [],
           estimated_time: step.estimatedTime,
           title: stepTrans.title,
           description: stepTrans.description
@@ -80,7 +82,7 @@ module.exports = {
   update: async function (req, res) {
     try {
       const id = req.params.id;
-      const { step_number, images, videos, estimated_time, translations } = req.body;
+      const { step_number, images, videos, pdfs, estimated_time, translations } = req.body;
 
       const existing = await RepairStep.findOne({ id });
       if (!existing) {
@@ -102,6 +104,7 @@ module.exports = {
         stepNumber: step_number,
         images,
         videos: processedVideos,
+        pdfs: pdfs,
         estimatedTime: estimated_time,
         translations
       });

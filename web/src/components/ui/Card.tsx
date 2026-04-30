@@ -2,22 +2,22 @@ import React from 'react';
 
 interface CardProps {
     children: React.ReactNode;
-    glass?: boolean;
     raised?: boolean;
     className?: string;
     style?: React.CSSProperties;
+    onClick?: (e?: React.MouseEvent) => void;
 }
 
-const Card: React.FC<CardProps> = ({ children, glass = false, raised = false, className = '', ...props }) => {
-    const classes = [
-        glass ? 'card-glass' : 'card',
-        raised ? 'card-raised' : '',
-        className,
-    ]
-        .filter(Boolean)
-        .join(' ');
-
-    return <section className={classes} {...props}>{children}</section>;
+const Card: React.FC<CardProps> = ({ children, className = '', raised = false, style, onClick }) => {
+    return (
+        <div 
+            className={`card ${raised ? 'raised' : ''} ${className} ${onClick ? 'clickable' : ''}`} 
+            style={style}
+            onClick={onClick}
+        >
+            {children}
+        </div>
+    );
 };
 
 export default Card;

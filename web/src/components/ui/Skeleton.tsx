@@ -8,10 +8,10 @@ interface SkeletonProps {
     style?: React.CSSProperties;
 }
 
-const Skeleton: React.FC<SkeletonProps> = ({ width = '100%', height = 16, borderRadius = 6, className = '', ...props }) => (
+const Skeleton: React.FC<SkeletonProps> = ({ width = '100%', height = 16, borderRadius = 6, className = '', style, ...props }) => (
     <div
         className={`skeleton ${className}`.trim()}
-        style={{ width, height, borderRadius, ...props.style }}
+        style={{ width, height, borderRadius, ...style }}
         aria-hidden="true"
         {...props}
     />

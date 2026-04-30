@@ -20,11 +20,14 @@ module.exports = {
         return res.status(400).json({ message: 'Product ID is required' });
       }
 
-      // 1. Fetch Published Repair Guide
-      const guide = await RepairGuide.findOne({
-        product: productId,
-        isPublished: true
-      })
+      const manage = req.query.manage === 'true';
+      const criteria = { product: productId };
+      if (!manage) {
+        criteria.isPublished = true;
+      }
+
+      // 1. Fetch Repair Guide
+      const guide = await RepairGuide.findOne(criteria)
       .populate('createdBy')
       .populate('steps', {
         sort: 'stepNumber ASC'

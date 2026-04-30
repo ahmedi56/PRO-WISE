@@ -1,22 +1,26 @@
-import React, { useEffect, useState } from 'react';
-import { 
-    View, 
-    Text, 
-    TextInput, 
-    StyleSheet, 
-    Alert, 
-    ActivityIndicator, 
-    TouchableOpacity, 
-    KeyboardAvoidingView, 
-    Platform, 
-    Image 
+import React, { useState, useEffect } from 'react';
+import {
+    StyleSheet,
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    ActivityIndicator,
+    Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, clearError } from '../store/slices/authSlice';
-import { colors, spacing, radius, typography, shadows } from '../theme';
-import API_URL from '../constants/config';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius, typography } from '../theme';
 import { RootState, AppDispatch } from '../store';
 import { RootStackNavigationProp } from '../navigation/types';
+import { Ionicons } from '@expo/vector-icons';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
+import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
 
 interface LoginScreenProps {
     navigation: RootStackNavigationProp<'Login'>;
@@ -28,22 +32,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
     const dispatch = useDispatch<AppDispatch>();
     const { loading, error } = useSelector((state: RootState) => state.auth);
-    const [isOnline, setIsOnline] = useState<boolean | null>(null);
-
-    useEffect(() => {
-        const checkConnection = async () => {
-            try {
-                const res = await fetch(`${API_URL}/health`);
-                setIsOnline(res.ok);
-            } catch (err: any) {
-                console.warn('Backend Unreachable:', err.message);
-                setIsOnline(false);
-            }
-        };
-        checkConnection();
-        const interval = setInterval(checkConnection, 10000);
-        return () => clearInterval(interval);
-    }, []);
 
     useEffect(() => {
         if (error) {
@@ -52,85 +40,75 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         }
     }, [error, dispatch]);
 
-    const handleLogin = () => {
-        if (!email || !password) {
-            Alert.alert('Input Error', 'Please enter both email and password');
+    const handleLogin = async () => {
+        if (!email.trim() || !password) {
+            Alert.alert('Input Error', 'Please enter your credentials');
             return;
         }
-        dispatch(loginUser({ email: email.trim(), password }));
+        try {
+            await dispatch(loginUser({ email: email.trim(), password })).unwrap();
+        } catch (err: any) {
+            // Error is handled by useEffect via state, but we can also handle here
+            console.error('Login Error:', err);
+        }
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <View style={styles.header}>
-                <Image
-                    source={require('../../assets/pro-wise.png')}
-                    style={styles.logo}
-                    resizeMode="contain"
-                />
-                <Text style={styles.title}>Welcome Back</Text>
-                <Text style={styles.subtitle}>Sign in to your account</Text>
-
-                <View style={[
-                    styles.statusBadge, 
-                    isOnline === true ? styles.online : (isOnline === false ? styles.offline : styles.checking)
-                ]}>
-                    <Text style={[
-                        styles.statusText,
-                        isOnline === true ? styles.textOnline : (isOnline === false ? styles.textOffline : styles.textChecking)
-                    ]}>
-                        {isOnline === true ? '● Online' : (isOnline === false ? '● Offline (Server Unreachable)' : '● Checking Connection...')}
-                    </Text>
+        <View style={styles.container}>
+            <LinearGradient
+                colors={['rgba(59, 130, 246, 0.04)', colors.bg]}
+                style={StyleSheet.absoluteFill}
+            />
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+            <ScrollView contentContainerStyle={styles.scrollContent} bounces={false}>
+                <View style={styles.header}>
+                    <View style={styles.logoBadge}>
+                        <ProWiseLogoSvg width={48} height={48} />
+                    </View>
+                    <Text style={styles.title}>Welcome Back</Text>
+                    <Text style={styles.subtitle}>Sign in to your account</Text>
                 </View>
-            </View>
 
-            <View style={styles.form}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Email</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="email@example.com"
-                        placeholderTextColor={colors.textMuted}
+                <View style={styles.form}>
+                    <CustomInput
+                        label="Email or callsig"
+                        icon="mail-outline"
+                        placeholder="operator@prowise.network"
                         value={email}
                         onChangeText={setEmail}
-                        keyboardType="email-address"
                         autoCapitalize="none"
+                        autoCorrect={false}
                     />
-                </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Password</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="********"
-                        placeholderTextColor={colors.textMuted}
+                    <CustomInput
+                        label="Password"
+                        icon="lock-closed-outline"
+                        placeholder="••••••••"
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry
                     />
-                </View>
 
-                {loading ? (
-                    <ActivityIndicator size="large" color={colors.primary} />
-                ) : (
-                    <View style={{ gap: spacing.md }}>
-                        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                            <Text style={styles.buttonText}>Sign In</Text>
-                        </TouchableOpacity>
+                    <CustomButton
+                        title="Sign In"
+                        onPress={handleLogin}
+                        loading={loading}
+                        style={{ marginTop: spacing.md }}
+                    />
 
-                        <TouchableOpacity
-                            style={styles.secondaryButton}
-                            onPress={() => navigation.navigate('Register')}
-                        >
-                            <Text style={styles.secondaryButtonText}>Create Account</Text>
+                    <View style={styles.footer}>
+                        <Text style={styles.footerText}>Don't have an account? </Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                            <Text style={styles.registerLink}>Sign Up</Text>
                         </TouchableOpacity>
                     </View>
-                )}
-            </View>
-        </KeyboardAvoidingView>
+                </View>
+            </ScrollView>
+            </KeyboardAvoidingView>
+        </View>
     );
 };
 
@@ -138,88 +116,58 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.bg,
+    },
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
         padding: spacing.lg,
     },
     header: {
         alignItems: 'center',
-        marginBottom: spacing.xxxl,
+        marginBottom: spacing.xxl,
     },
-    logo: {
-        width: 120,
-        height: 120,
-        marginBottom: spacing.xl,
+    logoBadge: {
+        width: 80,
+        height: 80,
+        backgroundColor: colors.surface,
+        borderRadius: radius.xl,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: spacing.lg,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 10,
+        elevation: 5,
     },
     title: {
-        fontSize: typography.h1.fontSize,
-        fontWeight: typography.h1.fontWeight,
+        ...typography.h1,
+        fontSize: 32,
         color: colors.textStrong,
-        marginBottom: spacing.sm,
+        marginBottom: spacing.xs,
     },
     subtitle: {
-        fontSize: typography.body.fontSize,
+        ...typography.body,
         color: colors.textMuted,
-        marginBottom: spacing.md,
+        textAlign: 'center',
     },
-    statusBadge: {
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 4,
-        borderRadius: radius.sm,
-        marginTop: spacing.sm,
+    form: {
+        width: '100%',
     },
-    statusText: {
-        fontSize: 10,
-        fontWeight: 'bold',
+    footer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: spacing.xl,
     },
-    textOnline: { color: colors.success },
-    textOffline: { color: colors.error },
-    textChecking: { color: colors.warning },
-    online: { backgroundColor: 'transparent' },
-    offline: { backgroundColor: 'transparent' },
-    checking: { backgroundColor: 'transparent' },
-    form: {},
-    inputGroup: {
-        marginBottom: spacing.lg,
-    },
-    label: {
-        color: colors.text,
-        marginBottom: spacing.sm,
-        fontSize: typography.sm.fontSize,
-        fontWeight: '600',
-    },
-    input: {
-        backgroundColor: colors.surfaceRaised,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: radius.md,
-        padding: spacing.base,
-        color: colors.textStrong,
-        fontSize: typography.body.fontSize,
-    },
-    button: {
-        backgroundColor: colors.primary,
-        padding: spacing.base,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        ...shadows.glow,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: typography.bodyBold.fontSize,
-        fontWeight: typography.bodyBold.fontWeight,
-    },
-    secondaryButton: {
-        backgroundColor: 'transparent',
-        padding: spacing.base,
-        borderRadius: radius.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        alignItems: 'center',
-    },
-    secondaryButtonText: {
+    footerText: {
+        ...typography.body,
         color: colors.textMuted,
-        fontSize: typography.bodyBold.fontSize,
-        fontWeight: typography.bodyBold.fontWeight,
+    },
+    registerLink: {
+        ...typography.bodyBold,
+        color: colors.primary,
     },
 });
 

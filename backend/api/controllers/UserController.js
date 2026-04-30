@@ -25,20 +25,9 @@ const resolveRole = async (roleInput) => {
   return byName || null;
 };
 
-const writeAuditLog = async ({ req, action, target, details }) => {
-  if (!req.user || !req.user.id) {
-    return;
-  }
-
-  try {
-    await AuditLog.create({
-      action,
-      user: req.user.id,
-      target,
-      details: details || {}
-    });
-  } catch (err) {
-    sails.log.warn('Audit log write failed:', err.message);
+const logAction = async (req, options) => {
+  if (sails.services.auditservice) {
+    await sails.services.auditservice.log(req, options);
   }
 };
 
@@ -76,7 +65,7 @@ module.exports = {
 
       const updateData = {};
       if (name !== undefined) {updateData.name = name;}
-      if (username !== undefined) {updateData.username = username;}
+      if (username !== undefined) {updateData.username = String(username).toLowerCase().trim();}
       if (normalized !== undefined) {updateData.email = normalized;}
       if (phone !== undefined) {updateData.phone = phone;}
       if (avatar !== undefined) {updateData.avatar = avatar;}
@@ -100,7 +89,7 @@ module.exports = {
      */
   getAll: async function (req, res) {
     try {
-      const { status, role, company, search } = req.query;
+      const { status, role, company, search, page = 1, limit = 50 } = req.query;
       const where = {};
 
       if (status) {
@@ -117,30 +106,41 @@ module.exports = {
 
       if (role) {
         const roleRecord = await resolveRole(role);
-        if (!roleRecord) {
-          return res.json([]);
+        if (roleRecord) {
+          where.role = roleRecord.id;
+        } else {
+          return res.json({ data: [], meta: { total: 0, page: 1, limit: 50, totalPages: 0 } });
         }
-        where.role = roleRecord.id;
       }
-
-      let users = await User.find(where)
-                .populate('role')
-                .populate('company')
-                .sort('createdAt DESC');
 
       if (search) {
         const q = String(search).toLowerCase().trim();
-        users = users.filter((u) =>
-          String(u.name || '').toLowerCase().includes(q) ||
-                    String(u.username || '').toLowerCase().includes(q) ||
-                    String(u.email || '').toLowerCase().includes(q) ||
-                    String(u.status || '').toLowerCase().includes(q) ||
-                    String((u.role && u.role.name) || '').toLowerCase().includes(q) ||
-                    String((u.company && u.company.name) || '').toLowerCase().includes(q)
-        );
+        where.or = [
+          { name: { contains: q } },
+          { username: { contains: q } },
+          { email: { contains: q } }
+        ];
       }
 
-      return res.json(users.map(sanitizeUser));
+      const total = await User.count(where);
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+
+      const users = await User.find(where)
+                .populate('role')
+                .populate('company')
+                .sort('createdAt DESC')
+                .skip(skip)
+                .limit(parseInt(limit));
+
+      return res.json({
+        data: users.map(sanitizeUser),
+        meta: {
+          total,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          totalPages: Math.ceil(total / parseInt(limit))
+        }
+      });
     } catch (err) {
       sails.log.error('Get all users error:', err);
       return res.status(500).json({ message: 'Internal server error' });
@@ -231,10 +231,11 @@ module.exports = {
       const user = await User.updateOne({ id: req.params.id }).set(updateData);
       const updatedUser = await User.findOne({ id: user.id }).populate('role').populate('company');
 
-      await writeAuditLog({
-        req,
-        action: 'user.role.updated',
-        target: `user:${updatedUser.id}`,
+      await logAction(req, {
+        action: 'user.role_changed',
+        target: updatedUser.id,
+        targetType: 'User',
+        targetLabel: updatedUser.name || updatedUser.email,
         details: {
           oldRole: targetUser.role && targetUser.role.name,
           newRole: role.name
@@ -279,10 +280,12 @@ module.exports = {
 
       await User.destroyOne({ id: req.params.id });
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'user.deleted',
-        target: `user:${targetUser.id}`,
+        target: targetUser.id,
+        targetType: 'User',
+        targetLabel: targetUser.name || targetUser.email,
+        severity: 'warning',
         details: {
           email: targetUser.email,
           role: targetUser.role && targetUser.role.name,
@@ -327,11 +330,17 @@ module.exports = {
 
       // Audit logs for bulk delete
       for (const u of deletedUsers) {
-        await writeAuditLog({
-          req,
-          action: 'user.deleted.bulk',
-          target: `user:${u.id}`,
-          details: { email: u.email, role: u.role && u.role.name }
+        await logAction(req, {
+          action: 'user.deleted',
+          target: u.id,
+          targetType: 'User',
+          targetLabel: u.name || u.email,
+          severity: 'warning',
+          details: { 
+            email: u.email, 
+            role: u.role && u.role.name,
+            context: 'bulk_delete'
+          }
         });
       }
 
@@ -362,53 +371,62 @@ module.exports = {
       const roleName = (user.role && user.role.name ? user.role.name : '').toLowerCase();
       const isCompanyAdminRole = roleName === 'administrator' || roleName === 'company_admin';
       
-      if (!isCompanyAdminRole) {
-        return res.status(400).json({ message: 'Only company administrators require validation' });
-      }
-
       if (user.status !== 'pending') {
-        return res.status(400).json({ message: 'Only pending administrator accounts can be approved' });
+        return res.status(400).json({ message: 'Only pending accounts can be approved' });
       }
 
-      if (!user.company) {
-        return res.status(400).json({ message: 'Administrator must be attached to a company before approval' });
-      }
+      const updateData = { status: 'active' };
 
-      if (user.company.status === 'deactivated') {
-        return res.status(400).json({ message: 'Cannot approve admin for a deactivated company' });
-      }
+      // Role-specific logic
+      if (isCompanyAdminRole) {
+        if (!user.company) {
+          return res.status(400).json({ message: 'Administrator must be attached to a company before approval' });
+        }
 
-      // Also activate the company if it's pending
-      let companyUpdated = false;
-      if (user.company && user.company.id && user.company.status === 'pending') {
-        const updatedCompany = await Company.updateOne({ id: user.company.id }).set({ status: 'active' });
-        if (updatedCompany) {
-          companyUpdated = true;
-          await writeAuditLog({
-            req,
+        if (user.company.status === 'deactivated') {
+          return res.status(400).json({ message: 'Cannot approve admin for a deactivated company' });
+        }
+
+        // Also activate the company if it's pending
+        if (user.company.status === 'pending') {
+          await Company.updateOne({ id: user.company.id }).set({ status: 'active' });
+          await logAction(req, {
             action: 'company.approved',
-            target: `company:${user.company.id}`,
-            details: { name: user.company.name }
+            target: user.company.id,
+            targetType: 'Company',
+            targetLabel: user.company.name,
+            details: { 
+              triggeredByAdmin: user.id 
+            }
           });
+        }
+      } else if (roleName === 'user' || roleName === 'customer') {
+        // This is a technician upgrade request. Promote them!
+        const techRole = await Role.findOne({ name: 'technician' });
+        if (techRole) {
+          updateData.role = techRole.id;
         }
       }
 
-      const updated = await User.updateOne({ id: req.params.id }).set({ status: 'active' });
+      const updated = await User.updateOne({ id: req.params.id }).set(updateData);
       const updatedUser = await User.findOne({ id: updated.id }).populate('role').populate('company');
 
-      await writeAuditLog({
-        req,
-        action: 'admin.approved',
-        target: `user:${updatedUser.id}`,
+      await logAction(req, {
+        action: 'user.activated',
+        target: updatedUser.id,
+        targetType: 'User',
+        targetLabel: updatedUser.name || updatedUser.email,
         details: {
+          role: updatedUser.role && updatedUser.role.name,
           companyId: updatedUser.company && updatedUser.company.id,
-          companyName: updatedUser.company && updatedUser.company.name
+          context: 'admin_validation'
         }
       });
 
       if (sails.services.emailservice) {
         await sails.services.emailservice.sendApprovalEmail(updatedUser.email);
       }
+
 
       return res.json({
         message: 'Administrator validated successfully',
@@ -444,10 +462,12 @@ module.exports = {
       await User.updateOne({ id: req.params.id }).set({ status: 'deactivated' });
       const updatedUser = await User.findOne({ id: req.params.id }).populate('role').populate('company');
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'user.deactivated',
-        target: `user:${updatedUser.id}`,
+        target: updatedUser.id,
+        targetType: 'User',
+        targetLabel: updatedUser.name || updatedUser.email,
+        severity: 'warning',
         details: {
           email: updatedUser.email,
           role: updatedUser.role && updatedUser.role.name
@@ -484,10 +504,11 @@ module.exports = {
       await User.updateOne({ id: req.params.id }).set({ status: 'active' });
       const updatedUser = await User.findOne({ id: req.params.id }).populate('role').populate('company');
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'user.activated',
-        target: `user:${updatedUser.id}`,
+        target: updatedUser.id,
+        targetType: 'User',
+        targetLabel: updatedUser.name || updatedUser.email,
         details: {
           email: updatedUser.email,
           role: updatedUser.role && updatedUser.role.name
@@ -614,10 +635,11 @@ module.exports = {
       const updated = await User.updateOne({ id: req.params.id }).set(updateData);
       const updatedUser = await User.findOne({ id: updated.id }).populate('role').populate('company');
 
-      await writeAuditLog({
-        req,
+      await logAction(req, {
         action: 'user.updated',
-        target: `user:${updatedUser.id}`,
+        target: updatedUser.id,
+        targetType: 'User',
+        targetLabel: updatedUser.name || updatedUser.email,
         details: {
           changedFields: Object.keys(updateData)
         }
@@ -629,6 +651,97 @@ module.exports = {
       });
     } catch (err) {
       sails.log.error('Update user error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * POST /api/users/technician/upgrade
+   * Request upgrade to Technician role
+   */
+  requestTechnicianUpgrade: async function (req, res) {
+    // Handler for technician upgrade requests
+    try {
+      const user = await User.findOne({ id: req.user.id }).populate('role');
+      if (!user) {return res.status(404).json({ message: 'User not found' });}
+
+      const roleName = (user.role && user.role.name ? user.role.name : '').toLowerCase();
+      
+      if (roleName === 'technician') {
+        return res.status(400).json({ message: 'You are already a technician' });
+      }
+
+      if (roleName === 'administrator' || roleName === 'company_admin' || roleName === 'super_admin') {
+        return res.status(403).json({ message: 'Administrators cannot become technicians' });
+      }
+
+      // If the user is a customer, we allow them to request an upgrade.
+      // We'll mark them as 'pending' status if they were active, 
+      // or we can add a specific field. For now, let's use status='pending' 
+      // and we'll check for this in the Super Admin UI.
+      
+      await User.updateOne({ id: req.user.id }).set({
+        status: 'pending'
+      });
+
+      await logAction(req, {
+        action: 'user.technician_upgrade_requested',
+        target: user.id,
+        targetType: 'User',
+        targetLabel: user.name || user.email,
+        details: { 
+          currentRole: roleName 
+        }
+      });
+
+      return res.json({ 
+        message: 'Your request to become a technician has been submitted. A Super Admin will review your profile shortly.',
+        status: 'pending'
+      });
+    } catch (err) {
+      sails.log.error('Request technician upgrade error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * PUT /api/users/:id/technician/approve
+   * Approve technician upgrade (Super Admin only)
+   */
+  approveTechnician: async function (req, res) {
+    try {
+      const targetUser = await User.findOne({ id: req.params.id }).populate('role');
+      if (!targetUser) {return res.status(404).json({ message: 'User not found' });}
+
+      let techRole = await Role.findOne({ name: 'technician' });
+      if (!techRole) {
+        techRole = await Role.create({ name: 'technician', permissions: ['products.view', 'guides.view', 'service.manage'] }).fetch();
+      }
+
+      const oldRoleName = (targetUser.role && targetUser.role.name ? targetUser.role.name : 'unknown');
+
+      await User.updateOne({ id: req.params.id }).set({
+        role: techRole.id,
+        status: 'active'
+      });
+
+      await logAction(req, {
+        action: 'user.activated', // Approving upgrade usually activates them too
+        target: targetUser.id,
+        targetType: 'User',
+        targetLabel: targetUser.name || targetUser.email,
+        details: { 
+          oldRole: oldRoleName,
+          newRole: 'technician'
+        }
+      });
+
+      return res.json({ 
+        message: 'Technician upgrade approved successfully',
+        user: { id: targetUser.id, role: 'technician', status: 'active' }
+      });
+    } catch (err) {
+      sails.log.error('Approve technician error:', err);
       return res.status(500).json({ message: 'Internal server error' });
     }
   }

@@ -1,27 +1,25 @@
 import React from 'react';
+import IonIcon from './IonIcon';
 
-interface SpinnerProps {
-    overlay?: boolean;
-}
-
-const Spinner: React.FC<SpinnerProps> = ({ overlay = false }) => {
-    const content = (
-        <div className="spinner-box">
-            <div className="circle-border">
-                <div className="circle-core"></div>
-            </div>
+export const Spinner: React.FC<{ size?: 'sm' | 'md' | 'lg', color?: string }> = ({ size = 'md', color }) => {
+    const sizeMap = { sm: 16, md: 24, lg: 32 };
+    const dim = sizeMap[size];
+    
+    return (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <IonIcon 
+                name="sync-outline"
+                style={{ 
+                    fontSize: `${dim}px`, 
+                    color: color || 'var(--color-primary)',
+                    animation: 'spin 1s linear infinite'
+                }}
+            />
+            <style>{`
+                @keyframes spin { 100% { transform: rotate(360deg); } }
+            `}</style>
         </div>
     );
-
-    if (overlay) {
-        return (
-            <div className="loading-overlay">
-                {content}
-            </div>
-        );
-    }
-
-    return content;
 };
 
 export default Spinner;

@@ -18,6 +18,13 @@ const normalizeRoleName = (roleName) => {
   return normalized || 'user';
 };
 
+const logAction = async (req, options) => {
+  if (sails.services.auditservice) {
+    // Note: for login/register, req might be a custom object or the actual req
+    await sails.services.auditservice.log(req, options);
+  }
+};
+
 module.exports = {
 
   /**
@@ -35,7 +42,8 @@ module.exports = {
         roleName = 'client',
         companyId,
         newCompanyName,
-        newCompanyDescription
+        newCompanyDescription,
+        newCompanyCategory
       } = req.body;
 
       if (!email || !password) {
@@ -102,6 +110,7 @@ module.exports = {
             company = await Company.create({
               name: requestedName,
               description: newCompanyDescription || 'New company requested during registration',
+              category: newCompanyCategory,
               status: 'pending'
             }).fetch();
           }
@@ -124,7 +133,7 @@ module.exports = {
         status = 'active'; // Strictly active for clients
       }
 
-      const effectiveUsername = username || `${(name || 'user').toLowerCase().replace(/\s+/g, '.')}.${Date.now().toString(36)}`;
+      const effectiveUsername = (username || `${(name || 'user').toLowerCase().replace(/\s+/g, '.')}.${Date.now().toString(36)}`).toLowerCase().trim();
 
       const user = await User.create({
         name: name || username,
@@ -141,6 +150,18 @@ module.exports = {
           await sails.services.emailservice.sendRegistrationEmail(user.email);
         }
       }
+
+      await logAction(req, {
+        action: 'auth.register',
+        target: user.id,
+        targetType: 'User',
+        targetLabel: user.name || user.email,
+        details: {
+          role: normalizedRole,
+          status,
+          companyId: user.company
+        }
+      });
 
       return res.status(201).json({
         message: 'Registration successful',
@@ -174,7 +195,12 @@ module.exports = {
       }
 
       const normalizedEmail = email.toLowerCase().trim();
-      const user = await User.findOne({ email: normalizedEmail })
+      const user = await User.findOne({
+        or: [
+          { email: normalizedEmail },
+          { username: normalizedEmail } // allows "callsig" login
+        ]
+      })
                 .populate('role')
                 .populate('company');
 
@@ -189,9 +215,6 @@ module.exports = {
 
       if (user.status === 'deactivated') {
         return res.status(403).json({ message: 'Your account is deactivated. Contact support.' });
-      }
-      if (user.status === 'pending') {
-        return res.status(403).json({ message: 'Your account is pending approval by a Super Admin.' });
       }
 
       // 8. Prevent login if company status is not 'active'
@@ -234,6 +257,17 @@ module.exports = {
                 secret,
                 { expiresIn: sails.config.custom.refreshTokenExpiresIn }
       );
+
+      await logAction(req, {
+        action: 'auth.login',
+        target: user.id,
+        targetType: 'User',
+        targetLabel: user.name || user.email,
+        details: {
+          email: user.email,
+          role: roleName
+        }
+      });
 
       return res.json({
         token,
@@ -346,6 +380,115 @@ module.exports = {
     } catch (err) {
       sails.log.error('Me error:', err);
       return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * POST /api/auth/google
+   * Authenticate with Google access token
+   */
+  google: async function (req, res) {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return res.status(400).json({ message: 'Google token is required' });
+    }
+
+    try {
+      // Fetch user info from Google using the access token
+      const axios = require('axios');
+      const response = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${idToken}`);
+      const { email, name, picture } = response.data;
+
+      if (!email) {
+        return res.status(400).json({ message: 'Email not provided by Google' });
+      }
+
+      const normalizedEmail = email.toLowerCase().trim();
+      let user = await User.findOne({ email: normalizedEmail }).populate('role').populate('company');
+
+      if (!user) {
+        // Create new user for first-time Google sign-in
+        let role = await Role.findOne({ name: 'user' });
+        if (!role) {
+          role = await Role.create({ name: 'user' }).fetch();
+        }
+
+        // Generate a safe unique username
+        const baseUsername = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+        const usernameSuffix = Math.random().toString(36).substring(7);
+        const username = `${baseUsername}.${usernameSuffix}`;
+
+        user = await User.create({
+          name: name || email.split('@')[0],
+          username: username,
+          email: normalizedEmail,
+          password: Math.random().toString(36).substring(7) + 'A1!', // Dummy password
+          role: role.id,
+          avatar: picture,
+          status: 'active'
+        }).fetch();
+        
+        user = await User.findOne({ id: user.id }).populate('role');
+      }
+
+      if (user.status === 'deactivated') {
+        return res.status(403).json({ message: 'Your account is deactivated. Contact support.' });
+      }
+
+      const secret = sails.config.custom.jwtSecret;
+      const roleName = normalizeRoleName(user.role.name);
+      
+      const token = jwt.sign(
+        { 
+          id: user.id, 
+          email: user.email, 
+          role: roleName,
+          companyId: user.company ? (user.company.id || user.company) : null
+        },
+        secret,
+        { expiresIn: sails.config.custom.jwtExpiresIn }
+      );
+
+      const refreshToken = jwt.sign(
+        { id: user.id, type: 'refresh' },
+        secret,
+        { expiresIn: sails.config.custom.refreshTokenExpiresIn }
+      );
+
+      await logAction(req, {
+        action: 'auth.login',
+        target: user.id,
+        targetType: 'User',
+        targetLabel: user.name || user.email,
+        details: {
+          email: user.email,
+          role: roleName,
+          provider: 'google'
+        }
+      });
+
+      return res.json({
+        token,
+        refreshToken,
+        user: {
+          id: user.id,
+          name: user.name,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar,
+          role: user.role,
+          status: user.status,
+          company: user.company ? {
+            id: user.company.id,
+            name: user.company.name,
+            status: user.company.status
+          } : null
+        }
+      });
+
+    } catch (err) {
+      sails.log.error('Google Auth error:', err.response?.data || err.message);
+      return res.status(500).json({ message: 'Google authentication failed' });
     }
   }
 

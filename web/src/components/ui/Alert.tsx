@@ -6,7 +6,7 @@ interface AlertProps {
     className?: string;
 }
 
-const Alert: React.FC<AlertProps> = ({ tone = 'error', children, className = '' }) => (
+export const Alert: React.FC<AlertProps> = ({ tone = 'error', children, className = '' }) => (
     <div className={`alert alert-${tone} ${className}`.trim()} role="alert">
         {children}
     </div>

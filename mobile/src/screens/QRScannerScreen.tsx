@@ -10,9 +10,11 @@ import {
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+import { colors, spacing, radius, typography, shadows } from '../theme';
 import { parseQRCodeUrl } from '../utils/qrValidation';
 import { RootStackNavigationProp } from '../navigation/types';
+import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
+import CustomButton from '../components/CustomButton';
 
 const { width } = Dimensions.get('window');
 const SCAN_AREA_SIZE = width * 0.7;
@@ -64,11 +66,15 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ navigation }) => {
     if (!permission.granted) {
         return (
             <View style={styles.center}>
-                <Ionicons name="camera-outline" size={64} color={colors.textMuted} />
-                <Text style={styles.message}>We need your permission to show the camera</Text>
-                <TouchableOpacity style={styles.button} onPress={requestPermission}>
-                    <Text style={styles.buttonText}>Grant Permission</Text>
-                </TouchableOpacity>
+                <View style={styles.permissionLogo}>
+                    <ProWiseLogoSvg width={80} height={80} />
+                </View>
+                <Text style={styles.message}>We need camera access to scan product QR codes and provide instant insights.</Text>
+                <CustomButton 
+                    title="Grant Permission" 
+                    onPress={requestPermission}
+                    style={{ width: '100%' }}
+                />
             </View>
         );
     }
@@ -137,12 +143,17 @@ const styles = StyleSheet.create({
         backgroundColor: colors.bg,
         padding: spacing.xl,
     },
+    permissionLogo: {
+        marginBottom: spacing.xxl,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     message: {
         fontSize: typography.body.fontSize,
-        color: colors.text,
+        color: colors.textStrong,
         textAlign: 'center',
-        marginTop: spacing.lg,
-        marginBottom: spacing.xl,
+        marginBottom: spacing.xxl,
+        lineHeight: 24,
     },
     button: {
         backgroundColor: colors.primary,

@@ -40,6 +40,11 @@ module.exports = {
       type: 'number',
       defaultsTo: 5
     },
+    sort: {
+      type: 'string',
+      defaultsTo: 'similarity',
+      description: 'The sorting strategy: similarity, popularity, or rating.'
+    },
     includeDiagnostics: {
       type: 'boolean',
       defaultsTo: false
@@ -132,6 +137,15 @@ module.exports = {
       let boostCategoryId = categoryId || null;
       let sourceManufacturer = '';
       let sourceComponents = componentMatching ? componentMatching.sanitizeComponents(inputs.components) : [];
+      let intent = null;
+
+      if (query) {
+        try {
+          intent = await sails.services.aigenerationservice.extractSearchIntent(query);
+        } catch (e) {
+          sails.log.warn(`Similarity Helper: Failed to extract intent for "${query}": ${e.message}`);
+        }
+      }
 
       if (productId) {
         currentProduct = await sails.models.product.findOne({ id: productId }).populate('category').populate('company');
@@ -313,9 +327,9 @@ module.exports = {
       });
 
       // ── Score every candidate ──
-      const scoreSingleCandidate = (candidate) => {
+      const scoreSingleCandidate = async (candidate) => {
         const aiRank = aiRankMap.get(candidate.id);
-        const semanticSimilarity = aiRank ? aiRank.score : 0;
+        const semanticSimilarity = (aiRank && typeof aiRank.score === 'number') ? aiRank.score : 0;
 
         let rawScore = semanticSimilarity * 100;
         let recommendationReason = aiRank ? aiRank.reason : '';
@@ -408,6 +422,17 @@ module.exports = {
           }
         }
 
+        const matchClassification = await sails.helpers.classifyMatch.with({
+          candidate: candidate,
+          context: {
+            query,
+            intent: intent,
+            sourceProduct: currentProduct,
+            matchedComponents,
+            semanticSimilarity
+          }
+        });
+
         const matchScore = Math.min(1, rawScore / 100);
 
         return {
@@ -415,7 +440,10 @@ module.exports = {
           score: matchScore,
           matchScore,
           rawScore,
-          recommendationReason,
+          matchType: matchClassification.matchType,
+          confidence: matchClassification.confidence,
+          reasons: matchClassification.reasons,
+          recommendationReason: matchClassification.explanation,
           matchedComponents,
           matchDetails,
         };
@@ -423,11 +451,45 @@ module.exports = {
 
       // Score same-category candidates
       let results = sameCategoryCandidates
-        .map(scoreSingleCandidate)
-        .filter(c => c.rawScore >= 10)
-        .sort((a, b) => b.rawScore - a.rawScore);
+        .map(scoreSingleCandidate);
+      
+      // Resolve all scoring promises
+      results = await Promise.all(results);
+      results = results.filter(c => c.rawScore >= 5);
 
-      return wrapResponse(results);
+      // ── Ranking & Enrichment ──
+      const resultIds = results.map(r => r.id);
+      if (resultIds.length > 0) {
+        // Fetch feedback for all candidates to support rating sort
+        const feedbacks = await sails.models.feedback.find({ 
+          product: { in: resultIds },
+          isHidden: false 
+        });
+
+        results = results.map(r => {
+          const pFeedbacks = feedbacks.filter(f => String(f.product) === String(r.id));
+          const sum = pFeedbacks.reduce((a, b) => a + b.rating, 0);
+          r.averageRating = pFeedbacks.length ? parseFloat((sum / pFeedbacks.length).toFixed(1)) : 0;
+          r.ratingCount = pFeedbacks.length;
+          
+          // Boost score if requested rating sort
+          if (inputs.sort === 'rating' && r.averageRating > 0) {
+            r.rawScore += (r.averageRating / 5) * 50; // Add up to 50 points for perfect rating
+            r.matchScore = Math.min(1, r.rawScore / 100);
+          }
+          return r;
+        });
+      }
+
+      // Final Ranking with Gemini LLM (as requested)
+      if (results.length > 0) {
+        const rankingQuery = query || (currentProduct ? `Related products to ${currentProduct.name} by ${currentProduct.manufacturer}` : 'Relevant hardware products');
+        results = await sails.services.aigenerationservice.rankWithGemini(rankingQuery, results);
+      }
+
+      const finalResults = results.slice(0, limit);
+
+      return wrapResponse(finalResults);
     } catch (err) {
       sails.log.error('Similarity Helper Error:', err);
       diagnostics.degraded = true;

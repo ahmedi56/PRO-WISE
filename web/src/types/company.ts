@@ -4,6 +4,7 @@ export interface Company {
   id: string;
   name: string;
   description?: string;
+  category?: any;
   status: Status;
   products?: string[]; // Array of Product IDs
   admin?: string; // User ID

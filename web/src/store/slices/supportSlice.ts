@@ -16,8 +16,11 @@ interface Step {
     id: string;
     step_number: number;
     title: string;
-    instruction: string;
+    description?: string;
     guide: string;
+    images?: string[];
+    videos?: string[];
+    pdfs?: string[];
 }
 
 interface Video {
@@ -55,9 +58,10 @@ const getAuthHeaders = () => {
 
 export const fetchSupportContent = createAsyncThunk(
     'support/fetchSupportContent',
-    async (productId: string, { rejectWithValue }) => {
+    async (params: { productId: string, manage?: boolean }, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${API_URL}/support/products/${productId}`, {
+            const { productId, manage } = params;
+            const response = await axios.get(`${API_URL}/support/products/${productId}${manage ? '?manage=true' : ''}`, {
                 headers: getAuthHeaders()
             });
             return response.data;

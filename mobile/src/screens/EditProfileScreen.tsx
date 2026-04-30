@@ -16,6 +16,9 @@ import { updateUser, resetSuccess } from '../store/slices/authSlice';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import { RootState, AppDispatch } from '../store';
 import { RootStackNavigationProp } from '../navigation/types';
+import { Ionicons } from '@expo/vector-icons';
+import CustomInput from '../components/CustomInput';
+import CustomButton from '../components/CustomButton';
 
 interface EditProfileScreenProps {
     navigation: RootStackNavigationProp<'EditProfile'>;
@@ -61,60 +64,48 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
         >
             <ScrollView contentContainerStyle={styles.scroll}>
                 <View style={styles.form}>
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Full Name</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={name}
-                            onChangeText={setName}
-                            placeholder="John Doe"
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </View>
+                    <CustomInput
+                        label="Full Name"
+                        icon="person-outline"
+                        placeholder="John Doe"
+                        value={name}
+                        onChangeText={setName}
+                    />
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Username</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={username}
-                            onChangeText={setUsername}
-                            placeholder="johndoe"
-                            placeholderTextColor={colors.textMuted}
-                            autoCapitalize="none"
-                        />
-                    </View>
+                    <CustomInput
+                        label="Username"
+                        icon="at-outline"
+                        placeholder="johndoe"
+                        value={username}
+                        onChangeText={setUsername}
+                        autoCapitalize="none"
+                    />
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </View>
+                    <CustomInput
+                        label="Email Address"
+                        icon="mail-outline"
+                        placeholder="you@company.com"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                    />
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.label}>Phone</Text>
-                        <TextInput
-                            style={styles.input}
-                            value={phone}
-                            onChangeText={setPhone}
-                            keyboardType="phone-pad"
-                            placeholder="+1 234 567 890"
-                            placeholderTextColor={colors.textMuted}
-                        />
-                    </View>
+                    <CustomInput
+                        label="Phone Number"
+                        icon="call-outline"
+                        placeholder="+1 234 567 890"
+                        value={phone}
+                        onChangeText={setPhone}
+                        keyboardType="phone-pad"
+                    />
 
-                    {loading ? (
-                        <ActivityIndicator size="large" color={colors.primary} />
-                    ) : (
-                        <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-                            <Text style={styles.buttonText}>Save Changes</Text>
-                        </TouchableOpacity>
-                    )}
+                    <CustomButton
+                        title="Save Changes"
+                        onPress={handleUpdate}
+                        loading={loading}
+                        style={{ marginTop: spacing.md }}
+                    />
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
@@ -125,26 +116,6 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
     scroll: { flexGrow: 1, padding: spacing.lg },
     form: { marginTop: spacing.base },
-    inputGroup: { marginBottom: spacing.lg },
-    label: { color: colors.text, marginBottom: spacing.sm, fontSize: typography.sm.fontSize, fontWeight: '600' },
-    input: {
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: radius.md,
-        padding: spacing.base,
-        color: colors.textStrong,
-        fontSize: typography.body.fontSize,
-    },
-    button: {
-        backgroundColor: colors.primary,
-        padding: spacing.base,
-        borderRadius: radius.md,
-        alignItems: 'center',
-        marginTop: spacing.sm,
-        ...shadows.glow,
-    },
-    buttonText: { color: '#fff', fontSize: typography.bodyBold.fontSize, fontWeight: typography.bodyBold.fontWeight },
 });
 
 export default EditProfileScreen;

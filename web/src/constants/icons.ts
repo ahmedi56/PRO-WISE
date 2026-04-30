@@ -31,5 +31,11 @@ export const CATEGORY_ICON_MAP: Record<string, string> = {
     'automotive': 'car-outline',
     'apparel & accessories': 'shirt-outline',
     'clothing': 'shirt-outline',
-    'car and truck': 'car-sport-outline'
+    'car and truck': 'car-sport-outline',
+    'watch': 'watch-outline',
+    'wearable': 'watch-outline',
+    'audio': 'musical-notes-outline',
+    'speaker': 'volume-medium-outline',
+    'display': 'monitor-outline',
+    'peripheral': 'mouse-outline'
 };

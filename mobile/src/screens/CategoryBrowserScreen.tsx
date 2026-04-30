@@ -7,10 +7,13 @@ import {
     ActivityIndicator, 
     StyleSheet, 
     Alert, 
-    Image 
+    Image,
+    Platform 
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+
 import { logout } from '../store/slices/authSlice';
 import API_URL from '../constants/config';
 import { readJson } from '../utils/apiSettings';
@@ -23,6 +26,8 @@ import { RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Product } from '../types/product';
 import { Category } from '../types/common';
+import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
+import CustomButton from '../components/CustomButton';
 
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     'electronics': 'hardware-chip-outline',
@@ -70,6 +75,7 @@ interface CategoryBrowserScreenProps {
 interface ComponentData {
     subcategories: Category[];
     products: Product[];
+    companies: any[];
     currentCategory?: Category;
 }
 
@@ -78,7 +84,7 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
     const categoryId = params?.categoryId;
     const categoryName = params?.categoryName;
 
-    const [data, setData] = useState<ComponentData>({ subcategories: [], products: [] });
+    const [data, setData] = useState<ComponentData>({ subcategories: [], products: [], companies: [] });
     const [loading, setLoading] = useState(true);
     
     const { user, token } = useSelector((state: RootState) => state.auth);
@@ -93,45 +99,34 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            if (!token) {
-                throw new Error('Session expired. Please sign in again.');
-            }
+            if (!token) throw new Error('Session expired. Please sign in again.');
 
             if (!categoryId) {
                 const res = await apiFetch(`${API_URL}/categories?tree=true`, {}, handleUnauthorized);
                 const tree = await readJson(res);
+                if (!res.ok) throw new Error(tree?.message || 'Failed to load categories');
 
-                if (!res.ok) {
-                    throw new Error(tree?.message || 'Failed to load categories');
-                }
-
-                setData({
-                    subcategories: Array.isArray(tree) ? tree : [],
-                    products: [],
-                });
+                setData({ subcategories: Array.isArray(tree) ? tree : [], products: [], companies: [] });
                 return;
             }
 
-            const [catRes, prodRes] = await Promise.all([
-                apiFetch(`${API_URL}/categories/${categoryId}`, {}, handleUnauthorized),
-                apiFetch(`${API_URL}/products?category=${categoryId}`, {}, handleUnauthorized),
-            ]);
-
-            const [category, products] = await Promise.all([readJson(catRes), readJson(prodRes)]);
+            const catRes = await apiFetch(`${API_URL}/categories/${categoryId}`, {}, handleUnauthorized);
+            const category = await readJson(catRes);
             if (!catRes.ok) throw new Error(category?.message || 'Failed to load category');
-            if (!prodRes.ok) throw new Error(products?.message || 'Failed to load products');
 
-            const productList = Array.isArray(products?.data)
-                ? products.data
-                : (Array.isArray(products) ? products : []);
+            const hasChildren = Array.isArray(category?.children) && category.children.length > 0;
 
-            setData({
-                subcategories: Array.isArray(category?.children) ? category.children : [],
-                products: productList,
-                currentCategory: category
-            });
+            if (hasChildren) {
+                setData({ subcategories: category.children, products: [], companies: [], currentCategory: category });
+            } else {
+                const compRes = await apiFetch(`${API_URL}/companies?category=${categoryId}&status=active`, {}, handleUnauthorized);
+                const companies = await readJson(compRes);
+                if (!compRes.ok) throw new Error(companies?.message || 'Failed to load companies');
+
+                setData({ subcategories: [], products: [], companies: Array.isArray(companies) ? companies : [], currentCategory: category });
+            }
         } catch (err: any) {
-            Alert.alert('Error', err.message || 'Failed to load data');
+            Alert.alert('Registry Error', err.message || 'Failed to synchronize registry');
         } finally {
             setLoading(false);
         }
@@ -143,7 +138,13 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
 
     useEffect(() => {
         if (categoryName) {
-            navigation.setOptions({ title: categoryName });
+            navigation.setOptions({ 
+                title: categoryName.toUpperCase(),
+                headerTitleStyle: { ...typography.h3, fontWeight: '900', letterSpacing: 2 },
+                headerBackground: () => (
+                    <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+                )
+            });
         }
     }, [categoryName, navigation]);
 
@@ -153,7 +154,7 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
                 headerRight: () => (
                     <TouchableOpacity 
                         onPress={() => (navigation as any).navigate('ProductForm')} 
-                        style={{ marginRight: 15 }}
+                        style={styles.adminAddBtn}
                     >
                         <Ionicons name="add" size={28} color={colors.primary} />
                     </TouchableOpacity>
@@ -169,41 +170,8 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
         navigation.push('SubCategory', { categoryId: cat.id, categoryName: cat.name });
     };
 
-    const handleEdit = (product: Product) => {
-        if (!product?.id) return;
-        (navigation as any).navigate('ProductForm', { id: product.id });
-    };
-
-    const deleteProduct = async (id: string) => {
-        try {
-            if (!token) {
-                throw new Error('Session expired. Please sign in again.');
-            }
-
-            const res = await apiFetch(`${API_URL}/products/${id}`, {
-                method: 'DELETE',
-            }, handleUnauthorized);
-
-            if (res.ok) {
-                setData((prev) => ({
-                    ...prev,
-                    products: prev.products.filter((p) => p.id !== id),
-                }));
-                Alert.alert('Success', 'Product deleted');
-            } else {
-                const errData = await readJson(res);
-                Alert.alert('Error', errData?.message || 'Failed to delete product');
-            }
-        } catch (err: any) {
-            Alert.alert('Error', err.message || 'Network error');
-        }
-    };
-
-    const handleDelete = (product: Product) => {
-        Alert.alert('Delete', 'Are you sure?', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: () => deleteProduct(product.id) },
-        ]);
+    const handleCompanyPress = (company: any) => {
+        navigation.push('CompanyProducts', { companyId: company.id, companyName: company.name });
     };
 
     const renderCategoryItem = ({ item }: { item: Category }) => {
@@ -211,73 +179,57 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
         const iconName = getCategoryIcon(item);
         const imageUrl = item.image?.url;
 
-        if (!categoryId) {
-            return (
-                <TouchableOpacity
-                    style={[styles.rootCategoryCard, isSelected && styles.rootCategoryCardActive]}
-                    onPress={() => handleCategoryPress(item)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.rootCategoryIconContainer}>
-                        {imageUrl ? (
-                            <Image
-                                source={{ uri: imageUrl.startsWith('http') ? imageUrl : `${API_URL.replace('/api', '')}${imageUrl}` }}
-                                style={styles.rootCategoryIcon}
-                                resizeMode="contain"
-                            />
-                        ) : (
-                            <Ionicons name={iconName} size={24} color={colors.primary} />
-                        )}
-                    </View>
-                    <Text style={styles.rootCategoryName} numberOfLines={2}>{item.name}</Text>
-                </TouchableOpacity>
-            );
-        }
-
         return (
             <TouchableOpacity
-                style={styles.subCategoryCard}
+                style={[styles.nodeCard, isSelected && styles.nodeCardActive]}
                 onPress={() => handleCategoryPress(item)}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
             >
-                <View style={styles.subCategoryIllustration}>
-                    <Ionicons name={iconName} size={40} color={colors.primary} />
+                <View style={styles.nodeIllustration}>
+                    {imageUrl ? (
+                        <Image
+                            source={{ uri: imageUrl.startsWith('http') ? imageUrl : `${API_URL.replace('/api', '')}${imageUrl}` }}
+                            style={styles.nodeImg}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={styles.nodeIconWell}>
+                            <Ionicons name={iconName} size={32} color={colors.primary} />
+                        </View>
+                    )}
+                    <View style={styles.nodeOverlay}>
+                        <Ionicons name="scan-outline" size={14} color="white" />
+                    </View>
                 </View>
-                <Text style={styles.subCategoryName} numberOfLines={2}>{item.name}</Text>
+                <View style={styles.nodeInfo}>
+                    <Text style={styles.nodeName} numberOfLines={2}>{item.name}</Text>
+                    <Text style={styles.nodeChildCount}>Sub-Archive</Text>
+                </View>
             </TouchableOpacity>
         );
     };
 
-    const renderProductItem = ({ item }: { item: Product }) => (
+    const renderCompanyItem = ({ item }: { item: any }) => (
         <TouchableOpacity
-            style={styles.productCard}
-            activeOpacity={0.7}
-            onPress={() => (navigation as any).navigate('ProductDetail', { id: item.id, product: item })}
+            style={styles.entityCard}
+            activeOpacity={0.75}
+            onPress={() => handleCompanyPress(item)}
         >
-            <View style={styles.productHeader}>
-                <Text style={styles.productName}>{formatProductName(item.name, item.manufacturer)}</Text>
-                {isAdmin && (
-                    <View style={styles.adminActions}>
-                        <TouchableOpacity style={styles.tinyAction} onPress={() => handleEdit(item)}>
-                            <Ionicons name="pencil" size={14} color={colors.textMuted} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.tinyAction} onPress={() => handleDelete(item)}>
-                            <Ionicons name="trash" size={14} color={colors.error} />
-                        </TouchableOpacity>
-                    </View>
-                )}
+            <View style={styles.entityHeader}>
+                <View style={styles.entityIconWell}>
+                    {item.logo ? (
+                        <Image source={{ uri: item.logo }} style={styles.entityLogo} />
+                    ) : (
+                        <Ionicons name="business" size={24} color={colors.primary} />
+                    )}
+                </View>
+                <View style={styles.entityTitleWell}>
+                    <Text style={styles.entityName}>{item.name}</Text>
+                    <Text style={styles.entitySub}>Verified Supplier</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </View>
-            <View style={styles.metaRow}>
-                <Text style={styles.metaText}>
-                    {[item.manufacturer, item.modelNumber].filter(Boolean).join(' ') || 'No manufacturer info'}
-                </Text>
-            </View>
-            {item.description ? <Text style={styles.productDesc} numberOfLines={2}>{item.description}</Text> : null}
-            <View style={styles.badgeContainer}>
-                <Text style={styles.badgeText}>
-                    {typeof item.category === 'object' ? item.category.name : 'Product'}
-                </Text>
-            </View>
+            {item.description ? <Text style={styles.entityDesc} numberOfLines={2}>{item.description}</Text> : null}
         </TouchableOpacity>
     );
 
@@ -290,59 +242,68 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
     }
 
     const hasSubcategories = data.subcategories.length > 0;
-    const hasProducts = data.products.length > 0;
 
     return (
         <View style={styles.container}>
-            {categoryId && data.currentCategory && (
-                <View style={styles.headerPanel}>
-                    <View style={styles.headerIllustration}>
-                        <Ionicons name="settings-outline" size={60} color={colors.primary} />
-                    </View>
-                    <View style={styles.headerInfo}>
-                        <Text style={styles.headerTitle}>{data.currentCategory.name}</Text>
-                        <Text style={styles.headerSubtitle}>
-                            {data.currentCategory.description || 'Professional grade category for industrial assistance.'}
-                        </Text>
-                        <TouchableOpacity style={styles.primaryActionButton}>
-                            <Ionicons name="list" size={16} color="white" />
-                            <Text style={styles.primaryActionText}>View Tutorials</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
-
             <FlatList
-                ListHeaderComponent={hasSubcategories ? (
-                    <Text style={styles.sectionTitle}>{data.subcategories.length} Categories</Text>
-                ) : null}
+                ListHeaderComponent={
+                    <View>
+                        {categoryId && data.currentCategory && (
+                            <View style={styles.headerPanel}>
+                                <View style={styles.logoBadgeContainer}>
+                                    <ProWiseLogoSvg width={44} height={44} />
+                                </View>
+                                <View style={styles.headerInfo}>
+                                    <Text style={styles.headerTitle}>{data.currentCategory.name}</Text>
+                                    <Text style={styles.headerSubtitle}>{data.currentCategory.description || 'System registry archive for professional grade assets.'}</Text>
+                                    <View style={styles.headerActions}>
+                                        <View style={styles.headerPill}>
+                                            <Ionicons name="shield-checkmark" size={10} color={colors.primary} />
+                                            <Text style={styles.headerPillText}>VERIFIED_INDEX</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </View>
+                        )}
+                        {hasSubcategories && (
+                            <Text style={styles.sectionTitle}>Foundational Archives</Text>
+                        )}
+                    </View>
+                }
                 data={data.subcategories}
                 keyExtractor={(item) => `cat_${item.id}`}
                 renderItem={renderCategoryItem}
                 numColumns={2}
-                columnWrapperStyle={styles.row}
+                columnWrapperStyle={hasSubcategories ? styles.row : undefined}
                 contentContainerStyle={styles.list}
-                ListFooterComponent={hasProducts ? (
-                    <View style={{ marginTop: spacing.lg }}>
-                        <Text style={styles.sectionTitle}>Products</Text>
-                        <FlatList
-                            data={data.products}
-                            keyExtractor={(item) => `prod_${item.id}`}
-                            renderItem={renderProductItem}
-                            scrollEnabled={false}
-                        />
+                ListFooterComponent={
+                    <View>
+                        {data.companies.length > 0 && (
+                            <View style={{ marginTop: spacing.xl }}>
+                                <Text style={styles.sectionTitle}>Vendor Registry</Text>
+                                <FlatList
+                                    data={data.companies}
+                                    keyExtractor={(item) => `comp_${item.id}`}
+                                    renderItem={renderCompanyItem}
+                                    scrollEnabled={false}
+                                />
+                            </View>
+                        )}
                     </View>
-                ) : null}
-                ListEmptyComponent={!hasSubcategories && !hasProducts ? (
+                }
+                ListEmptyComponent={!hasSubcategories && data.companies.length === 0 ? (
                     <View style={styles.empty}>
-                        <Ionicons 
-                            name="search-outline" 
-                            size={48} 
-                            color={colors.textMuted} 
-                            style={{ marginBottom: spacing.md, opacity: 0.5 }} 
+                        <View style={styles.emptyLogo}>
+                            <ProWiseLogoSvg width={64} height={64} />
+                        </View>
+                        <Text style={styles.emptyTitle}>Archive Empty</Text>
+                        <Text style={styles.emptyText}>Registry synchronization contains no records for this entry.</Text>
+                        <CustomButton 
+                            title="RETURN TO ARCHIVES" 
+                            onPress={() => navigation.goBack()} 
+                            variant="outline"
+                            style={{ marginTop: spacing.xl }}
                         />
-                        <Text style={styles.emptyTitle}>No items found</Text>
-                        <Text style={styles.emptyText}>This search did not return any results.</Text>
                     </View>
                 ) : null}
             />
@@ -353,137 +314,136 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg },
-    list: { padding: spacing.base, paddingBottom: spacing.huge },
+    list: { padding: spacing.lg, paddingBottom: 120 },
     row: { justifyContent: 'space-between' },
-    sectionTitle: {
-        fontSize: typography.sm.fontSize,
-        fontWeight: '800',
-        color: colors.textStrong,
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-        marginBottom: spacing.md,
-        paddingHorizontal: 2
+    
+    adminAddBtn: {
+        marginRight: 15,
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
+
     headerPanel: {
         flexDirection: 'row',
         padding: spacing.lg,
         backgroundColor: colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+        borderRadius: radius.md,
+        borderWidth: 1,
+        borderColor: colors.border,
         gap: spacing.lg,
-        alignItems: 'center'
+        alignItems: 'center',
+        marginBottom: spacing.xl,
     },
-    headerIllustration: {
-        width: 120,
-        height: 120,
-        backgroundColor: colors.surfaceRaised,
+    logoBadgeContainer: {
+        width: 72,
+        height: 72,
+        backgroundColor: colors.bg,
         borderRadius: radius.md,
         borderWidth: 1,
         borderColor: colors.border,
         justifyContent: 'center',
         alignItems: 'center',
-        ...shadows.sm
     },
     headerInfo: { flex: 1 },
-    headerTitle: { fontSize: typography.h3.fontSize, fontWeight: '700', color: colors.textStrong, marginBottom: 4 },
-    headerSubtitle: { fontSize: typography.xs.fontSize, color: colors.textMuted, lineHeight: 16, marginBottom: spacing.md },
-    primaryActionButton: {
-        backgroundColor: colors.primary,
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: radius.sm,
-        gap: 8,
-        alignSelf: 'flex-start'
+    headerTitle: { fontSize: 20, fontWeight: '800', color: colors.textStrong, marginBottom: 4 },
+    headerSubtitle: { fontSize: 12, color: colors.textMuted, lineHeight: 18, marginBottom: 10 },
+    headerActions: { flexDirection: 'row', gap: 8 },
+    headerPill: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        gap: 4, 
+        backgroundColor: colors.primaryLight, 
+        paddingHorizontal: 8, 
+        paddingVertical: 2, 
+        borderRadius: radius.full,
+        borderWidth: 0.5,
+        borderColor: colors.primary
     },
-    primaryActionText: { color: 'white', fontSize: typography.xs.fontSize, fontWeight: '700' },
-    rootCategoryCard: {
-        flex: 0.48,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        padding: spacing.sm,
-        borderRadius: radius.md,
-        marginBottom: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        gap: spacing.sm,
+    headerPillText: { fontSize: 8, fontWeight: '900', color: colors.primary, letterSpacing: 0.5 },
+
+    sectionTitle: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: colors.primary,
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        marginBottom: spacing.lg,
+        paddingHorizontal: 2,
+        opacity: 0.8,
     },
-    rootCategoryCardActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-    rootCategoryIconContainer: {
-        width: 44,
-        height: 44,
-        borderRadius: radius.sm,
-        backgroundColor: colors.surfaceRaised,
-        borderWidth: 1,
-        borderColor: colors.border,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'hidden'
-    },
-    rootCategoryIcon: {
-        width: '100%',
-        height: '100%',
-    },
-    rootCategoryName: { flex: 1, color: colors.textStrong, fontSize: typography.xs.fontSize, fontWeight: '600' },
-    subCategoryCard: {
+
+    nodeCard: {
         flex: 0.48,
         backgroundColor: colors.surface,
-        borderRadius: radius.md,
-        marginBottom: spacing.md,
-        borderWidth: 1,
-        borderColor: colors.border,
-        overflow: 'hidden',
-        alignItems: 'center',
-        paddingBottom: spacing.sm
-    },
-    subCategoryIllustration: {
-        width: '100%',
-        aspectRatio: 1.2,
-        backgroundColor: colors.surfaceRaised,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    subCategoryName: {
-        marginTop: spacing.sm,
-        paddingHorizontal: spacing.sm,
-        textAlign: 'center',
-        color: colors.textStrong,
-        fontSize: typography.xs.fontSize,
-        fontWeight: '600'
-    },
-    productCard: {
-        backgroundColor: colors.surface,
-        padding: spacing.base,
         borderRadius: radius.lg,
         marginBottom: spacing.md,
         borderWidth: 1,
         borderColor: colors.border,
-        ...shadows.sm,
+        overflow: 'hidden',
+        ...Platform.select({
+            ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 },
+            android: { elevation: 2 }
+        })
     },
-    productHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    productName: { color: colors.textStrong, fontSize: typography.bodyBold.fontSize, fontWeight: '700', marginBottom: 2, flex: 1 },
-    adminActions: { flexDirection: 'row', gap: 8 },
-    tinyAction: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.surfaceRaised, justifyContent: 'center', alignItems: 'center' },
-    metaRow: { marginBottom: spacing.xs },
-    metaText: { color: colors.textMuted, fontSize: typography.sm.fontSize, fontWeight: '500' },
-    productDesc: { color: colors.text, fontSize: typography.sm.fontSize, marginBottom: spacing.sm },
-    badgeContainer: {
+    nodeCardActive: { borderColor: colors.primary },
+    nodeIllustration: {
+        width: '100%',
+        height: 120,
         backgroundColor: colors.surfaceRaised,
-        alignSelf: 'flex-start',
-        paddingHorizontal: spacing.sm,
-        paddingVertical: 2,
-        borderRadius: radius.sm,
+        position: 'relative',
+    },
+    nodeImg: { width: '100%', height: '100%', opacity: 0.8 },
+    nodeIconWell: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    nodeOverlay: { 
+        position: 'absolute', 
+        top: 8, 
+        right: 8, 
+        width: 24, 
+        height: 24, 
+        borderRadius: 12, 
+        backgroundColor: 'rgba(0,0,0,0.5)', 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+    },
+    nodeInfo: { padding: spacing.md },
+    nodeName: { color: colors.textStrong, fontSize: 13, fontWeight: '800', marginBottom: 2 },
+    nodeChildCount: { color: colors.textMuted, fontSize: 10, fontWeight: '600', textTransform: 'uppercase' },
+
+    entityCard: {
+        backgroundColor: colors.surface,
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+        marginBottom: spacing.md,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    entityHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
+    entityIconWell: { 
+        width: 48, 
+        height: 48, 
+        borderRadius: 12, 
+        backgroundColor: colors.surfaceRaised, 
+        justifyContent: 'center', 
+        alignItems: 'center',
         borderWidth: 1,
         borderColor: colors.border
     },
-    badgeText: { color: colors.textMuted, fontSize: typography.xs.fontSize, fontWeight: '600' },
+    entityLogo: { width: '100%', height: '100%', borderRadius: 12 },
+    entityTitleWell: { flex: 1 },
+    entityName: { color: colors.textStrong, fontSize: 16, fontWeight: '800' },
+    entitySub: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 1, marginTop: 2 },
+    entityDesc: { color: colors.text, fontSize: 13, lineHeight: 20 },
+
     empty: { alignItems: 'center', paddingVertical: spacing.huge },
-    emptyTitle: { fontSize: typography.h4.fontSize, fontWeight: '600', color: colors.text, marginBottom: spacing.xs },
-    emptyText: { fontSize: typography.sm.fontSize, color: colors.textMuted },
+    emptyLogo: { marginBottom: spacing.xl, opacity: 0.2 },
+    emptyTitle: { fontSize: 20, fontWeight: '800', color: colors.textStrong, marginBottom: spacing.xs },
+    emptyText: { fontSize: 14, color: colors.textMuted, textAlign: 'center', paddingHorizontal: spacing.huge },
 });
 
 export default CategoryBrowserScreen;

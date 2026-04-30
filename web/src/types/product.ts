@@ -24,9 +24,14 @@ export interface Product {
   modelNumber: string;
   manufacturer: string;
   category: Category | string;
+  categoryId?: string;
   company: any; // Company ID or object
   status: ProductStatus | Status;
   isPublic: boolean;
+  type?: string;
+  thumbnailUrl?: string;
+  images?: Media[];
+  image?: Media;
   qrCodeUrl?: string;
   guides?: Guide[];
   components?: ProductComponent[];
@@ -34,13 +39,18 @@ export interface Product {
   supportVideos?: Media[];
   supportPDFs?: Media[];
   metadata?: Record<string, any>;
+  ratingCount?: number;
+  averageRating?: number;
+  // Match Metadata (for search and recommendations)
+  matchType?: 'exact_model' | 'exact_component' | 'same_brand' | 'same_category' | 'similar_features' | 'semantic_similarity' | 'weak_match';
+  confidence?: 'high' | 'medium' | 'low';
+  reasons?: string[];
+  recommendationReason?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface ProductRecommendation {
-  id: string;
-  name: string;
-  relevance: number;
-  type: 'similar' | 'related';
+export interface ProductRecommendation extends Product {
+  score: number;
+  matchScore: number;
 }

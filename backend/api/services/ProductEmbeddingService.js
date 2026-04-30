@@ -104,7 +104,7 @@ module.exports = {
           throw new Error('Embedding service is not healthy or unreachable');
         }
 
-        // Use the existing SearchService (Flask wrapper)
+        // Use the existing SearchService API integration
         sails.log.info(`ProductEmbeddingService: Generating embedding for "${product.name}" (doc length: ${searchDocument.length})`);
         const result = await sails.services.searchservice.getEmbedding(searchDocument, { mode: 'document', retries: 3 });
         embedding = result && result.embedding ? result.embedding : null;

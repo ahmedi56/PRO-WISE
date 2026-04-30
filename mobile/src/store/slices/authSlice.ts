@@ -169,15 +169,10 @@ const authSlice = createSlice({
             .addCase(loginUser.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.token = action.payload.token;
-                const user = action.payload.user;
-                if (user && user.role) {
-                    if (typeof user.role === 'object') {
-                        user.role.name = normalizeRoleName(user.role);
-                    } else {
-                        user.role = { name: normalizeRoleName(user.role) };
-                    }
+                state.user = action.payload.user;
+                if (state.user && state.user.role) {
+                    state.user.role = { name: normalizeRoleName(state.user.role) };
                 }
-                state.user = user;
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
@@ -201,15 +196,10 @@ const authSlice = createSlice({
             .addCase(loadUser.fulfilled, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.token = action.payload.token;
-                const user = action.payload.user;
-                if (user && user.role) {
-                    if (typeof user.role === 'object') {
-                        user.role.name = normalizeRoleName(user.role);
-                    } else {
-                        user.role = { name: normalizeRoleName(user.role) };
-                    }
+                state.user = action.payload.user;
+                if (state.user && state.user.role) {
+                    state.user.role = { name: normalizeRoleName(state.user.role) };
                 }
-                state.user = user;
             })
             .addCase(loadUser.rejected, (state) => {
                 state.loading = false;
@@ -225,11 +215,7 @@ const authSlice = createSlice({
                 state.loading = false;
                 const user = { ...state.user, ...action.payload.user };
                 if (user && user.role) {
-                    if (typeof user.role === 'object') {
-                        user.role.name = normalizeRoleName(user.role);
-                    } else {
-                        user.role = { name: normalizeRoleName(user.role) };
-                    }
+                    user.role = { name: normalizeRoleName(user.role) };
                 }
                 state.user = user;
                 state.updateSuccess = true;

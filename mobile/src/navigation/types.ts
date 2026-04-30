@@ -23,6 +23,7 @@ export type MainTabParamList = {
 export type ShopStackParamList = {
     Categories: undefined;
     SubCategory: { categoryId: string; categoryName: string };
+    CompanyProducts: { companyId: string; companyName: string };
 };
 
 // Helper types for navigation and route props

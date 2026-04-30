@@ -14,6 +14,7 @@ module.exports.routes = {
   'POST /api/auth/register': 'AuthController.register',
   'POST /api/auth/login': 'AuthController.login',
   'POST /api/auth/refresh': 'AuthController.refresh',
+  'POST /api/auth/google': 'AuthController.google',
   'GET /api/auth/me': 'AuthController.me',
 
   'POST /api/users/bulk-delete': 'UserController.bulkDelete',
@@ -27,6 +28,8 @@ module.exports.routes = {
   'PUT /api/users/:id/activate': 'UserController.activateUser',
   'PUT /api/users/:id': 'UserController.updateUser',
   'DELETE /api/users/:id': 'UserController.deleteUser',
+  // Technician upgrade request handler
+  'POST /api/tech-upgrade': 'UserController.requestTechnicianUpgrade',
 
   // ─── Roles ───────────────────────────────────────────────
   'GET /api/roles': 'RoleController.getAll',
@@ -57,6 +60,10 @@ module.exports.routes = {
   'GET /api/companies': 'CompanyController.getAll',
   'GET /api/companies/:id': 'CompanyController.getOne',
   'PUT /api/companies/:id': 'CompanyController.update',
+  'PUT /api/companies/:id/activate': 'CompanyController.activate',
+  'PUT /api/companies/:id/deactivate': 'CompanyController.deactivate',
+  'PUT /api/companies/:id/approve': 'CompanyController.approve',
+  'DELETE /api/companies/:id': 'CompanyController.delete',
   // Mutative routes are now considered redundant for separate Super Admin module
   // but kept for system integrity if needed by controllers. 
   // However, per requirement "Remove Companies from Super Admin UI", 
@@ -120,5 +127,44 @@ module.exports.routes = {
 
   // ─── Utilities ───────────────────────────────────────────
   'POST /api/products/backfill-embeddings': 'ProductController.triggerBackfill',
+  
+  'POST /api/ai/generate-description': 'AIController.generateDescription',
+  'POST /api/ai/suggest-steps': 'AIController.suggestSteps',
+  'POST /api/ai/chat': 'AIController.chat',
+  'GET /api/ai/analyze-feedback/:feedbackId': 'AIController.analyzeFeedback',
+
+  'GET /api/homepage': 'HomeController.index',
+  'GET /api/search': 'SearchController.query',
+
+  'POST /api/feedback': 'ProductController.createFeedback',
+  'GET /api/feedback': 'ProductController.getAllFeedback',
+  'GET /api/feedback/stats/:companyId': 'ProductController.getFeedbackStats',
+  'PUT /api/feedback/:id/respond': 'ProductController.respondToFeedback',
+  'POST /api/feedback/:id/reply': 'ProductController.replyToFeedback',
+  'PUT /api/feedback/:id/toggle-visibility': 'ProductController.toggleFeedbackVisibility',
+  'DELETE /api/feedback/:id': 'ProductController.deleteFeedback',
+  'GET /api/products/:id/feedback': 'ProductController.getProductFeedback',
+
+  // ─── Content Submission and Approval Workflow ────────────
+  'GET /api/content': 'ContentController.find',
+  'POST /api/content': 'ContentController.create',
+  'GET /api/content/pending': 'ContentController.getPending',
+  'GET /api/content/:id': 'ContentController.findOne',
+  'PUT /api/content/:id': 'ContentController.update',
+  'PUT /api/content/:id/submit': 'ContentController.submit',
+  'PUT /api/content/:id/approve': 'ContentController.approve',
+  'PUT /api/content/:id/reject': 'ContentController.reject',
+
+  // ─── Notifications ──────────────────────────────────────
+  'GET /api/notifications': 'NotificationController.find',
+  'PATCH /api/notifications/:id': 'NotificationController.update',
+  'PUT /api/notifications/mark-all-read': 'NotificationController.markAllAsRead',
+  'DELETE /api/notifications/:id': 'NotificationController.destroy',
+
+  // ─── Maintenance ──────────────────────────────────────────
+  'POST /api/maintenance/requests': 'MaintenanceController.create',
+  'GET /api/maintenance/requests/user': 'MaintenanceController.listByUser',
+  'GET /api/maintenance/requests/technician': 'MaintenanceController.listByTechnician',
+  'PATCH /api/maintenance/requests/:id/status': 'MaintenanceController.updateStatus',
 
 };

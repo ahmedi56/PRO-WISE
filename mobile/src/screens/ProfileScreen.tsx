@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+
 import { logout } from '../store/slices/authSlice';
-import { colors, spacing, radius, typography, mixins } from '../theme';
+import { colors, spacing, radius, typography } from '../theme';
 import { RootState, AppDispatch } from '../store';
 import { MainTabNavigationProp } from '../navigation/types';
+import CustomButton from '../components/CustomButton';
 
 interface ProfileScreenProps {
     navigation: MainTabNavigationProp<'Profile'>;
@@ -16,62 +20,110 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
     const handleLogout = () => {
         Alert.alert(
-            'Logout',
-            'Are you sure you want to logout?',
+            'System Termination',
+            'Are you sure you want to terminate the current session?',
             [
                 { text: 'Cancel', style: 'cancel' },
-                { text: 'Logout', style: 'destructive', onPress: () => dispatch(logout()) },
+                { text: 'Terminate', style: 'destructive', onPress: () => dispatch(logout()) },
             ]
         );
     };
 
     if (!user) return null;
 
-    const displayName = user.firstName || user.username || 'User';
-    const initial = displayName[0]?.toUpperCase() || 'U';
-    
+    const displayName = user.firstName || user.username || 'Operator';
+    const initial = displayName[0]?.toUpperCase() || 'O';
+
     const role = user.role || (user as any).Role;
-    const roleName = (typeof role === 'object' ? role?.name : role) || 'User';
+    const roleName = (typeof role === 'object' ? role?.name : role) || 'Standard Operator';
 
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+            {/* Operator Header */}
             <View style={styles.header}>
-                <View style={styles.avatar}>
-                    <Text style={styles.avatarText}>{initial}</Text>
+                <View style={styles.avatarMount}>
+                    <LinearGradient
+                        colors={[colors.primary, 'transparent']}
+                        style={styles.avatarGlow}
+                    />
+                    <View style={styles.avatarInner}>
+                        <Text style={styles.avatarText}>{initial}</Text>
+                    </View>
                 </View>
-                <Text style={styles.name}>{displayName}</Text>
-                {user.username && <Text style={styles.username}>@{user.username}</Text>}
 
-                <View style={styles.roleBadge}>
-                    <Text style={styles.roleText}>{roleName}</Text>
+                <View style={styles.identityWell}>
+                    <Text style={styles.nameText}>{displayName}</Text>
+                    <Text style={styles.usernameText}>ID: {user.username || 'operator-721'}</Text>
+
+                    <View style={styles.clearanceBadge}>
+                        <Ionicons name="shield-checkmark" size={12} color={colors.primary} />
+                        <Text style={styles.clearanceText}>{roleName.toUpperCase()}</Text>
+                    </View>
                 </View>
             </View>
 
-            <View style={styles.infoSection}>
-                <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Email</Text>
-                    <Text style={styles.infoValue}>{user.email}</Text>
+            {/* Account Metadata */}
+            <View style={styles.sectionLabelContainer}>
+                <Text style={styles.sectionLabel}>System Credentials</Text>
+            </View>
+
+            <View style={styles.metaCard}>
+                <View style={styles.metaRow}>
+                    <View style={styles.metaIconWell}>
+                        <Ionicons name="mail-outline" size={18} color={colors.textMuted} />
+                    </View>
+                    <View style={styles.metaInfo}>
+                        <Text style={styles.metaKey}>Email Protocol</Text>
+                        <Text style={styles.metaVal}>{user.email}</Text>
+                    </View>
                 </View>
-                <View style={styles.infoRow}>
-                    <Text style={styles.infoLabel}>Status</Text>
-                    <Text style={styles.infoValue}>{user.status || 'Active'}</Text>
+
+                <View style={[styles.metaRow, styles.metaRowBorder]}>
+                    <View style={styles.metaIconWell}>
+                        <Ionicons name="pulse-outline" size={18} color={colors.textMuted} />
+                    </View>
+                    <View style={styles.metaInfo}>
+                        <Text style={styles.metaKey}>Clearance Status</Text>
+                        <Text style={styles.metaVal}>{user.status || 'Verified Active'}</Text>
+                    </View>
                 </View>
             </View>
 
-            <View style={styles.actions}>
-                <TouchableOpacity
-                    style={styles.button}
+            {/* Command Interface */}
+            <View style={styles.sectionLabelContainer}>
+                <Text style={styles.sectionLabel}>Operator Commands</Text>
+            </View>
+
+            <View style={styles.actionStack}>
+                <CustomButton
+                    title="Edit Operator Profile"
+                    variant="outline"
+                    icon={<Ionicons name="construct-outline" size={20} color={colors.primary} />}
                     onPress={() => (navigation as any).navigate('EditProfile')}
-                >
-                    <Text style={styles.buttonText}>Edit Profile</Text>
-                </TouchableOpacity>
+                    style={styles.actionBtn}
+                />
 
-                <TouchableOpacity
-                    style={[styles.button, styles.logoutButton]}
+                <CustomButton
+                    title="Security Settings"
+                    variant="ghost"
+                    icon={<Ionicons name="lock-closed-outline" size={18} color={colors.textMuted} />}
+                    onPress={() => { }}
+                    style={styles.actionBtn}
+                    textStyle={{ color: colors.textMuted }}
+                />
+
+                <CustomButton
+                    title="Terminate Session"
+                    variant="danger"
+                    icon={<Ionicons name="power-outline" size={20} color="#ef4444" />}
                     onPress={handleLogout}
-                >
-                    <Text style={[styles.buttonText, styles.logoutText]}>Logout</Text>
-                </TouchableOpacity>
+                    style={styles.logoutBtn}
+                />
+            </View>
+
+            <View style={styles.footer}>
+                <Text style={styles.versionText}>PRO-WISE v1.2.0 • CORE-NODE-B1</Text>
+                <Text style={styles.copyrightText}>© 2026 INTELLIGENCE UNIT</Text>
             </View>
         </ScrollView>
     );
@@ -79,64 +131,147 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.bg },
-    content: { padding: spacing.lg },
-    header: { alignItems: 'center', marginVertical: spacing.xxl },
-    avatar: {
-        ...mixins.avatar(90),
+    content: { padding: spacing.lg, paddingBottom: 110 },
+
+    // Header
+    header: { alignItems: 'center', marginTop: spacing.xxl, marginBottom: spacing.xl },
+    avatarMount: {
+        width: 110,
+        height: 110,
+        justifyContent: 'center',
+        alignItems: 'center',
         marginBottom: spacing.md,
+    },
+    avatarGlow: {
+        ...StyleSheet.absoluteFillObject,
+        opacity: 0.15,
+        borderRadius: 55,
+    },
+    avatarInner: {
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        backgroundColor: colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(165, 200, 255, 0.2)',
+        ...Platform.select({
+            ios: { shadowColor: colors.primary, shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 15 },
+            android: { elevation: 8 }
+        }),
     },
     avatarText: {
         fontSize: 36,
-        fontWeight: '700',
+        fontWeight: '800',
         color: colors.primary,
+        fontFamily: Platform.OS === 'ios' ? 'Inter-Bold' : 'sans-serif-bold',
     },
-    name: { fontSize: typography.h2.fontSize, fontWeight: typography.h2.fontWeight, color: colors.textStrong, marginBottom: spacing.xs, textAlign: 'center' },
-    username: { fontSize: typography.body.fontSize, color: colors.textMuted, marginBottom: spacing.md },
-    roleBadge: {
-        backgroundColor: colors.primaryGlow,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.xs,
-        borderRadius: radius.full,
-        marginTop: spacing.sm,
-    },
-    roleText: { color: colors.primary, fontWeight: '600', textTransform: 'capitalize', fontSize: typography.sm.fontSize },
-    infoSection: {
-        backgroundColor: colors.surface,
-        borderRadius: radius.lg,
-        padding: spacing.lg,
-        marginBottom: spacing.xl,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    infoRow: {
-        marginBottom: spacing.md,
-    },
-    infoLabel: {
-        fontSize: typography.xs.fontSize,
-        color: colors.textMuted,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-        marginBottom: spacing.xs,
-    },
-    infoValue: {
-        fontSize: typography.body.fontSize,
+    identityWell: { alignItems: 'center' },
+    nameText: {
+        ...typography.h2,
         color: colors.textStrong,
+        fontSize: 28,
+        fontWeight: '800',
+        letterSpacing: -0.5,
     },
-    actions: { gap: spacing.md },
-    button: {
+    usernameText: {
+        ...typography.body,
+        color: colors.textMuted,
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+        fontSize: 13,
+        marginTop: 2,
+    },
+    clearanceBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.surface,
-        padding: spacing.base,
-        borderRadius: radius.lg,
+        backgroundColor: 'rgba(165, 200, 255, 0.1)',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: radius.md,
+        marginTop: spacing.md,
+        gap: 6,
+    },
+    clearanceText: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: colors.primary,
+        letterSpacing: 1,
+    },
+
+    // Meta Card
+    sectionLabelContainer: { paddingHorizontal: spacing.sm, marginBottom: spacing.sm },
+    sectionLabel: {
+        ...typography.smBold,
+        fontSize: 10,
+        color: colors.textMuted,
+        textTransform: 'uppercase',
+        letterSpacing: 1.5,
+    },
+    metaCard: {
+        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+        borderRadius: radius.xl,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: 'rgba(255, 255, 255, 0.06)',
+        paddingVertical: spacing.sm,
+        marginBottom: spacing.xl,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
         gap: spacing.md,
     },
-    buttonText: { fontSize: typography.bodyBold.fontSize, fontWeight: typography.bodyBold.fontWeight, color: colors.textStrong },
-    logoutButton: { borderColor: colors.errorLight, backgroundColor: colors.errorLight },
-    logoutText: { color: colors.error },
+    metaRowBorder: {
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    },
+    metaIconWell: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    metaInfo: { flex: 1 },
+    metaKey: {
+        ...typography.xs,
+        color: colors.textMuted,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        fontSize: 9,
+        marginBottom: 2,
+    },
+    metaVal: {
+        ...typography.body,
+        color: colors.textStrong,
+        fontWeight: '600',
+    },
+
+    // Actions
+    actionStack: { gap: spacing.sm },
+    actionBtn: { marginBottom: 2 },
+    logoutBtn: { marginTop: spacing.md },
+
+    // Footer
+    footer: {
+        marginTop: spacing.xxl,
+        alignItems: 'center',
+        opacity: 0.3,
+    },
+    versionText: {
+        ...typography.xs,
+        color: colors.textMuted,
+        fontWeight: '700',
+        fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    },
+    copyrightText: {
+        ...typography.xs,
+        fontSize: 8,
+        color: colors.textMuted,
+        marginTop: 4,
+    },
 });
 
 export default ProfileScreen;

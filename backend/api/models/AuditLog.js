@@ -14,11 +14,39 @@ module.exports = {
     },
     user: {
       model: 'user',
-      required: true
+      required: false
+    },
+    actorRole: {
+      type: 'string',
+      allowNull: true
     },
     target: {
       type: 'string',
       allowNull: true
+    },
+    targetType: {
+      type: 'string',
+      allowNull: true
+    },
+    targetLabel: {
+      type: 'string',
+      allowNull: true
+    },
+    ipAddress: {
+      type: 'string',
+      allowNull: true
+    },
+    userAgent: {
+      type: 'string',
+      allowNull: true
+    },
+    severity: {
+      type: 'string',
+      defaultsTo: 'info',
+      isIn: ['info', 'warning', 'critical']
+    },
+    company: {
+      model: 'company'
     },
     details: {
       type: 'json'
