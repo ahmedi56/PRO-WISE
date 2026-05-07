@@ -1,150 +1,183 @@
 .tech-page-layout {
     display: grid;
-    grid-template-columns: 400px 1fr;
-    gap: 2rem;
-    height: calc(100vh - 200px);
-    margin-top: 1rem;
+    grid-template-columns: 440px 1fr;
+    gap: 0;
+    height: calc(100vh - 80px);
+    overflow: hidden;
 }
 
 .tech-sidebar {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    padding: 2rem;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.05);
 }
 
-.tech-header {
+.tech-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    margin-bottom: 0.5rem;
+    color: var(--color-text-strong);
+}
+
+.modern-subtitle {
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
     margin-bottom: 2rem;
 }
 
 .filters-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding: 1.25rem;
     background: var(--color-surface-variant);
-    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border-radius: 1.25rem;
     border: 1px solid var(--color-border);
-}
-
-.filter-group label {
-    display: block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.5rem;
-}
-
-.filter-group select {
-    width: 100%;
-    padding: 0.5rem;
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: var(--color-text);
-    font-size: 0.875rem;
-    outline: none;
-    transition: border-color 0.2s;
-}
-
-.filter-group select:focus {
-    border-color: var(--color-primary);
-}
-
-.tech-list {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 0.5rem;
+    margin-bottom: 2.5rem;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
 }
 
-.tech-card {
-    padding: 1.5rem;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.tech-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-}
-
-.tech-avatar-small {
-    width: 48px;
-    height: 48px;
-    border-radius: var(--radius-full);
-    background: var(--color-primary-light);
-    color: var(--color-primary);
+.filter-group {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.25rem;
-    overflow: hidden;
-    border: 2px solid var(--color-border);
-}
-
-.tech-avatar-small img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.tech-tags {
-    display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 0.5rem;
 }
 
-.tech-tag {
-    font-size: 0.7rem;
-    padding: 0.25rem 0.6rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
+.filter-group label {
+    font-size: 0.8rem;
+    font-weight: 700;
     color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.filter-group select, .filter-group input {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 0.85rem;
+    border-radius: 0.85rem;
+    font-weight: 500;
+    color: var(--color-text);
+    outline: none;
+    transition: all 0.2s;
+}
+
+.filter-group select:focus, .filter-group input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.tech-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.tech-card {
+    border-radius: 1.25rem;
+    border: 1px solid var(--color-border);
+    padding: 1.75rem;
+    background: var(--color-surface);
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+
+.tech-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.1);
+    border-color: var(--color-primary);
+}
+
+.featured-tech {
+    border: 2px solid #fbbf24 !important;
+    background: linear-gradient(to bottom right, rgba(251, 191, 36, 0.05), transparent);
+}
+
+.featured-tech::after {
+    content: 'TOP EXPERT';
+    position: absolute;
+    top: -12px;
+    right: 24px;
+    background: #fbbf24;
+    color: #000;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 900;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 2;
+}
+
+.tech-avatar-small {
+    width: 56px;
+    height: 56px;
+    border-radius: 1rem;
+    background: var(--color-surface-variant);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    border: 1px solid var(--color-border);
+}
+
+.tech-tag {
+    background: var(--color-surface-variant);
+    color: var(--color-text-strong);
+    padding: 0.5rem 0.9rem;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    border: 1px solid var(--color-border);
 }
 
 .tech-map-container {
+    flex: 1;
+    position: relative;
+    background: var(--color-surface-variant);
+    z-index: 1;
+    isolation: isolate;
+}
+
+#map-container {
     height: 100%;
-    min-height: 500px;
+    width: 100%;
 }
 
-.map-popup {
-    font-family: var(--font-manrope);
-    padding: 0.5rem;
+/* Leaflet Overrides */
+.leaflet-container {
+    background: var(--color-surface-variant) !important;
 }
 
-.map-popup strong {
-    color: var(--color-primary);
-    font-size: 1rem;
+.leaflet-popup-content-wrapper {
+    background: var(--color-surface) !important;
+    color: var(--color-text) !important;
+    border-radius: 1rem !important;
+    padding: 0.5rem !important;
 }
 
-/* Custom Scrollbar */
-.tech-list::-webkit-scrollbar {
-    width: 6px;
+.leaflet-popup-tip {
+    background: var(--color-surface) !important;
 }
 
-.tech-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.tech-list::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: 10px;
-}
-
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
     .tech-page-layout {
         grid-template-columns: 1fr;
         height: auto;
     }
-    
+    .tech-sidebar {
+        border-right: none;
+        padding: 1.5rem;
+    }
     .tech-map-container {
-        height: 400px;
+        height: 450px;
         order: -1;
     }
 }

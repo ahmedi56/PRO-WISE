@@ -38,6 +38,7 @@ export interface Product {
   content?: string;
   supportVideos?: Media[];
   supportPDFs?: Media[];
+  approvedContent?: any[];
   metadata?: Record<string, any>;
   ratingCount?: number;
   averageRating?: number;

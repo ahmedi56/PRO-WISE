@@ -31,7 +31,7 @@ export const Input = forwardRef<HTMLInputElement | HTMLTextAreaElement, InputPro
                 {multiline ? (
                     <textarea 
                         ref={ref as React.Ref<HTMLTextAreaElement>}
-                        className={inputClasses} 
+                        className={`pw-textarea ${error ? 'pw-border-error' : ''} ${className}`} 
                         style={icon ? { paddingLeft: '40px' } : {}}
                         {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)}
                     />

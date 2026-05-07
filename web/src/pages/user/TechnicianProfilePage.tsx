@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { PageWrapper, PageHeader, Button, IonIcon, Section } from '../../components/index';
+import React, { useState, useEffect } from 'react';
+import { PageWrapper, PageHeader, Button, IonIcon, Section, Badge } from '../../components/index';
 import { InputField } from '../../components/ui/InputField';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
+import '../../styles/technician-application.css';
 
 export const TechnicianProfilePage: React.FC = () => {
     const { user } = useAuth();
@@ -12,40 +13,69 @@ export const TechnicianProfilePage: React.FC = () => {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
 
-    if (!user) return null;
-
-    const profile = user.technicianProfile || {};
-
     const [formData, setFormData] = useState({
-        headline: profile.headline || '',
-        bio: profile.bio || '',
-        skills: profile.skills?.join(', ') || '',
-        serviceCategories: profile.serviceCategories?.join(', ') || '',
-        experienceYears: profile.experienceYears || 0,
-        governorate: profile.governorate || '',
-        city: profile.city || '',
-        address: profile.address || '',
-        phone: profile.phone || '',
-        whatsapp: profile.whatsapp || '',
-        email: profile.email || user.email || '',
-        preferredContactMethod: profile.preferredContactMethod || 'phone',
-        serviceRadiusKm: profile.serviceRadiusKm || 20,
-        certifications: profile.certifications?.join(', ') || '',
-        availability: profile.availability || {
+        headline: '',
+        bio: '',
+        city: '',
+        governorate: '',
+        phone: '',
+        whatsapp: '',
+        email: '',
+        address: '',
+        preferredContactMethod: 'phone',
+        latitude: null as number | null,
+        longitude: null as number | null,
+        specializations: [] as any[],
+        certifications: [] as any[],
+        serviceRadiusKm: 20,
+        availability: {
             weekdays: true,
             weekends: false,
             morning: true,
             afternoon: true,
             evening: false,
             emergencyAvailable: false
-        },
-        latitude: profile.latitude || null,
-        longitude: profile.longitude || null
+        }
     });
 
+    const [currentSpec, setCurrentSpec] = useState({ name: '', skillLevel: 'Intermediate', yearsExperience: 1 });
+    const [currentCert, setCurrentCert] = useState({ title: '', organization: '', verificationUrl: '' });
+
+    useEffect(() => {
+        if (user?.technicianProfile) {
+            const profile = user.technicianProfile;
+            setFormData({
+                headline: profile.headline || '',
+                bio: profile.bio || '',
+                city: profile.city || '',
+                governorate: profile.governorate || '',
+                phone: profile.phone || user.phone || '',
+                whatsapp: profile.whatsapp || '',
+                email: profile.email || user.email || '',
+                address: profile.address || '',
+                preferredContactMethod: profile.preferredContactMethod || 'phone',
+                latitude: profile.latitude || null,
+                longitude: profile.longitude || null,
+                specializations: profile.specializations || [],
+                certifications: profile.certifications || [],
+                serviceRadiusKm: profile.serviceRadiusKm || 20,
+                availability: profile.availability || {
+                    weekdays: true,
+                    weekends: false,
+                    morning: true,
+                    afternoon: true,
+                    evening: false,
+                    emergencyAvailable: false
+                }
+            });
+        }
+    }, [user]);
+
+    if (!user) return null;
+
     const handleChange = (e: any) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
     const handleToggleAvailability = (key: string) => {
@@ -53,8 +83,40 @@ export const TechnicianProfilePage: React.FC = () => {
             ...prev,
             availability: {
                 ...prev.availability,
-                [key]: !prev.availability[key]
+                [key as keyof typeof prev.availability]: !prev.availability[key as keyof typeof prev.availability]
             }
+        }));
+    };
+
+    const addSpecialization = () => {
+        if (!currentSpec.name) return;
+        setFormData(prev => ({
+            ...prev,
+            specializations: [...prev.specializations, { ...currentSpec }]
+        }));
+        setCurrentSpec({ name: '', skillLevel: 'Intermediate', yearsExperience: 1 });
+    };
+
+    const removeSpecialization = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            specializations: prev.specializations.filter((_, i) => i !== index)
+        }));
+    };
+
+    const addCertification = () => {
+        if (!currentCert.title) return;
+        setFormData(prev => ({
+            ...prev,
+            certifications: [...prev.certifications, { ...currentCert, verificationStatus: 'pending' }]
+        }));
+        setCurrentCert({ title: '', organization: '', verificationUrl: '' });
+    };
+
+    const removeCertification = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            certifications: prev.certifications.filter((_, i) => i !== index)
         }));
     };
 
@@ -65,19 +127,9 @@ export const TechnicianProfilePage: React.FC = () => {
         setLoading(true);
 
         try {
-            const submissionData = {
-                ...formData,
-                skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
-                serviceCategories: formData.serviceCategories.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
-                certifications: formData.certifications.split(',').map((s: string) => s.trim()).filter((s: string) => s !== ''),
-                experienceYears: Number(formData.experienceYears),
-                serviceRadiusKm: Number(formData.serviceRadiusKm)
-            };
-
-            await authService.updateTechnicianProfile(submissionData);
-            setMessage('Technician profile updated successfully!');
-            // Refresh to update local user state
-            setTimeout(() => window.location.reload(), 1500);
+            await authService.updateTechnicianProfile(formData);
+            setMessage('Profile updated successfully!');
+            setTimeout(() => setMessage(''), 3000);
         } catch (err: any) {
             setError(err.response?.data?.message || 'Failed to update profile.');
         } finally {
@@ -91,7 +143,7 @@ export const TechnicianProfilePage: React.FC = () => {
                 <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                     <IonIcon name="lock-closed-outline" style={{ fontSize: '3rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }} />
                     <h2>Access Restricted</h2>
-                    <p>You must be an approved technician to edit your professional profile.</p>
+                    <p>You must be an approved technician to manage your professional profile.</p>
                     <Button onClick={() => navigate('/profile')} style={{ marginTop: '1.5rem' }}>Back to Profile</Button>
                 </div>
             </PageWrapper>
@@ -99,193 +151,146 @@ export const TechnicianProfilePage: React.FC = () => {
     }
 
     return (
-        <PageWrapper maxWidth="900px">
+        <PageWrapper maxWidth="1000px">
             <PageHeader 
-                title="Technician Profile" 
-                subtitle="Complete your professional information to attract more customers" 
+                title="Professional Profile" 
+                subtitle={`Verification Level: ${user.technicianProfile?.verificationLevel || 'Basic'}`}
                 backTo="/technician-portal"
             />
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                {message && (
-                    <div style={{ padding: '1rem', backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', borderRadius: '12px', fontWeight: 600 }}>
-                        {message}
-                    </div>
-                )}
-                {error && (
-                    <div style={{ padding: '1rem', backgroundColor: 'var(--color-error-light)', color: 'var(--color-error)', borderRadius: '12px', fontWeight: 600 }}>
-                        {error}
-                    </div>
-                )}
+            <form onSubmit={handleSubmit} className="tech-profile-form">
+                {message && <div className="alert alert-success" style={{ marginBottom: '2rem' }}>{message}</div>}
+                {error && <div className="alert alert-danger" style={{ marginBottom: '2rem' }}>{error}</div>}
 
-                <Section title="Professional Identity">
-                    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                        <InputField 
-                            id="headline"
-                            name="headline"
-                            label="Professional Headline"
-                            value={formData.headline}
-                            onChange={handleChange}
-                            required
-                        />
-                        <InputField 
-                            id="bio"
-                            name="bio"
-                            label="Detailed Bio"
-                            textArea
-                            value={formData.bio}
-                            onChange={handleChange}
-                            required
-                        />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                            <InputField 
-                                id="skills"
-                                name="skills"
-                                label="Skills (comma separated)"
-                                value={formData.skills}
-                                onChange={handleChange}
-                            />
-                            <InputField 
-                                id="experienceYears"
-                                name="experienceYears"
-                                label="Years of Experience"
-                                type="number"
-                                value={formData.experienceYears}
-                                onChange={handleChange}
-                            />
-                        </div>
-                        <InputField 
-                            id="certifications"
-                            name="certifications"
-                            label="Certifications (comma separated)"
-                            value={formData.certifications}
-                            onChange={handleChange}
-                        />
-                    </div>
-                </Section>
+                <div className="profile-layout-grid">
+                    <div className="profile-main-column">
+                        <Section title="Professional Identity">
+                            <div className="card glass-card">
+                                <InputField id="headline" name="headline" label="Professional Headline" placeholder="e.g. Expert Hardware Technician & Smartphone Repair" value={formData.headline} onChange={handleChange} required />
+                                <InputField id="bio" name="bio" label="About Me" textArea placeholder="Describe your experience and services..." value={formData.bio} onChange={handleChange} required />
+                                
+                                <div className="subsection">
+                                    <h4 className="modern-h4">Specializations</h4>
+                                    <div className="spec-adder">
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '1rem', marginBottom: '1rem' }}>
+                                            <InputField id="new-spec-name" label="Specialization" value={currentSpec.name} onChange={(e) => setCurrentSpec({...currentSpec, name: e.target.value})} />
+                                            <div className="input-group">
+                                                <label className="label">Level</label>
+                                                <select className="input" value={currentSpec.skillLevel} onChange={(e) => setCurrentSpec({...currentSpec, skillLevel: e.target.value})}>
+                                                    <option>Beginner</option>
+                                                    <option>Intermediate</option>
+                                                    <option>Expert</option>
+                                                    <option>Master</option>
+                                                </select>
+                                            </div>
+                                            <InputField id="new-spec-years" label="Years" type="number" value={currentSpec.yearsExperience} onChange={(e) => setCurrentSpec({...currentSpec, yearsExperience: Number(e.target.value)})} />
+                                        </div>
+                                        <Button type="button" variant="secondary" onClick={addSpecialization} fullWidth>Add Specialization</Button>
+                                    </div>
 
-                <Section title="Service & Location">
-                    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                        <InputField 
-                            id="serviceCategories"
-                            name="serviceCategories"
-                            label="Service Categories (comma separated)"
-                            value={formData.serviceCategories}
-                            onChange={handleChange}
-                        />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                            <InputField id="governorate" name="governorate" label="Governorate" value={formData.governorate} onChange={handleChange} />
-                            <InputField id="city" name="city" label="City" value={formData.city} onChange={handleChange} />
-                            <InputField id="serviceRadiusKm" name="serviceRadiusKm" label="Radius (KM)" type="number" value={formData.serviceRadiusKm} onChange={handleChange} />
-                        </div>
-                        <InputField id="address" name="address" label="Full Address / Shop Location" value={formData.address} onChange={handleChange} />
-                        
-                        <div style={{ padding: '1rem', background: 'var(--color-surface-variant)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <h5 style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-strong)' }}>Map Position</h5>
-                                    <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                                        {formData.latitude ? `Pin active: ${Number(formData.latitude).toFixed(4)}, ${Number(formData.longitude).toFixed(4)}` : 'Set your location for the public map'}
-                                    </p>
-                                </div>
-                                <Button 
-                                    type="button" 
-                                    size="sm" 
-                                    variant={formData.latitude ? 'success' : 'secondary'}
-                                    onClick={() => {
-                                        if (navigator.geolocation) {
-                                            navigator.geolocation.getCurrentPosition((pos) => {
-                                                setFormData(prev => ({
-                                                    ...prev,
-                                                    latitude: pos.coords.latitude,
-                                                    longitude: pos.coords.longitude
-                                                }));
-                                            }, (err) => {
-                                                setError('Failed to detect location. Please check browser permissions.');
-                                            });
-                                        }
-                                    }}
-                                >
-                                    <IonIcon name="navigate-outline" style={{ marginRight: '8px' }} />
-                                    {formData.latitude ? 'Location Updated' : 'Detect My Location'}
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </Section>
-
-                <Section title="Contact Information">
-                    <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                            <InputField id="phone" name="phone" label="Phone Number" value={formData.phone} onChange={handleChange} />
-                            <InputField id="whatsapp" name="whatsapp" label="WhatsApp Number" value={formData.whatsapp} onChange={handleChange} />
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                            <InputField id="email" name="email" label="Contact Email" type="email" value={formData.email} onChange={handleChange} />
-                            <div className="input-group">
-                                <label className="label">Preferred Contact Method</label>
-                                <select 
-                                    name="preferredContactMethod" 
-                                    value={formData.preferredContactMethod} 
-                                    onChange={handleChange}
-                                    className="input"
-                                >
-                                    <option value="phone">Phone</option>
-                                    <option value="whatsapp">WhatsApp</option>
-                                    <option value="email">Email</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                </Section>
-
-                <Section title="Availability">
-                    <div className="card" style={{ padding: '1.5rem' }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                            <div>
-                                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--color-text-strong)' }}>Work Days</h4>
-                                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                    <Button 
-                                        type="button"
-                                        size="sm" 
-                                        variant={formData.availability.weekdays ? 'primary' : 'outline'} 
-                                        onClick={() => handleToggleAvailability('weekdays')}
-                                    >
-                                        Weekdays
-                                    </Button>
-                                    <Button 
-                                        type="button"
-                                        size="sm" 
-                                        variant={formData.availability.weekends ? 'primary' : 'outline'} 
-                                        onClick={() => handleToggleAvailability('weekends')}
-                                    >
-                                        Weekends
-                                    </Button>
+                                    <div className="spec-list" style={{ marginTop: '1rem' }}>
+                                        {formData.specializations.map((s, i) => (
+                                            <div key={i} className="spec-chip">
+                                                <span><strong>{s.name}</strong> • {s.skillLevel} ({s.yearsExperience}y)</span>
+                                                <button type="button" onClick={() => removeSpecialization(i)}><IonIcon name="close-outline" /></button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--color-text-strong)' }}>Time Slots</h4>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                    {['morning', 'afternoon', 'evening', 'emergencyAvailable'].map(slot => (
-                                        <Button 
-                                            key={slot}
-                                            type="button"
-                                            size="sm" 
-                                            variant={formData.availability[slot] ? 'secondary' : 'outline'} 
-                                            onClick={() => handleToggleAvailability(slot)}
-                                        >
-                                            {slot === 'emergencyAvailable' ? 'Emergency' : slot.charAt(0).toUpperCase() + slot.slice(1)}
-                                        </Button>
+                        </Section>
+
+                        <Section title="Verified Credentials">
+                            <div className="card glass-card">
+                                <div className="cert-adder">
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                                        <InputField id="new-cert-title" label="Certification Name" value={currentCert.title} onChange={(e) => setCurrentCert({...currentCert, title: e.target.value})} />
+                                        <InputField id="new-cert-org" label="Issuing Organization" value={currentCert.organization} onChange={(e) => setCurrentCert({...currentCert, organization: e.target.value})} />
+                                    </div>
+                                    <InputField id="new-cert-url" label="Verification URL (Link to certificate/document)" value={currentCert.verificationUrl} onChange={(e) => setCurrentCert({...currentCert, verificationUrl: e.target.value})} />
+                                    <Button type="button" variant="secondary" onClick={addCertification} fullWidth style={{ marginTop: '1rem' }}>Add Certificate</Button>
+                                </div>
+
+                                <div className="cert-list-manage" style={{ marginTop: '2rem' }}>
+                                    {formData.certifications.map((c, i) => (
+                                        <div key={i} className="cert-item-card">
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                <div>
+                                                    <h5 style={{ margin: 0, fontWeight: 700 }}>{c.title}</h5>
+                                                    <p style={{ margin: '4px 0', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{c.organization}</p>
+                                                    <Badge tone={c.verificationStatus === 'verified' ? 'success' : c.verificationStatus === 'rejected' ? 'danger' : 'warning'}>
+                                                        {c.verificationStatus || 'pending'}
+                                                    </Badge>
+                                                </div>
+                                                <button type="button" className="btn-icon-danger" onClick={() => removeCertification(i)}><IonIcon name="trash-outline" /></button>
+                                            </div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
-                        </div>
+                        </Section>
                     </div>
-                </Section>
 
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '4rem' }}>
-                    <Button type="submit" loading={loading} style={{ flex: 1 }}>Save Profile</Button>
-                    <Button variant="ghost" onClick={() => navigate('/technician-portal')}>Cancel</Button>
+                    <div className="profile-side-column">
+                        <Section title="Service & Location">
+                            <div className="card glass-card">
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <InputField id="governorate" name="governorate" label="Governorate" value={formData.governorate} onChange={handleChange} />
+                                    <InputField id="city" name="city" label="City" value={formData.city} onChange={handleChange} />
+                                </div>
+                                <InputField id="serviceRadiusKm" name="serviceRadiusKm" label="Service Radius (KM)" type="number" value={formData.serviceRadiusKm} onChange={handleChange} />
+                                
+                                <div className="location-picker-mini" style={{ padding: '1rem', background: 'rgba(0,0,0,0.05)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '1rem' }}>
+                                    <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: 600 }}>Map Coordinates</div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{formData.latitude ? `${formData.latitude.toFixed(4)}, ${formData.longitude?.toFixed(4)}` : 'Not set'}</span>
+                                        <Button type="button" size="sm" onClick={() => {
+                                            if (navigator.geolocation) {
+                                                navigator.geolocation.getCurrentPosition((pos) => {
+                                                    setFormData(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+                                                });
+                                            }
+                                        }}>Update</Button>
+                                    </div>
+                                </div>
+
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                                    <input type="checkbox" name="emergencyAvailable" checked={formData.availability.emergencyAvailable} onChange={() => handleToggleAvailability('emergencyAvailable')} />
+                                    <span style={{ fontWeight: 600, color: 'var(--color-danger)' }}>Available for 24/7 Emergencies</span>
+                                </label>
+                            </div>
+                        </Section>
+
+                        <Section title="Contact Info">
+                            <div className="card glass-card">
+                                <InputField id="phone" name="phone" label="Phone" value={formData.phone} onChange={handleChange} />
+                                <InputField id="whatsapp" name="whatsapp" label="WhatsApp" value={formData.whatsapp} onChange={handleChange} />
+                                <InputField id="email" name="email" label="Contact Email" value={formData.email} onChange={handleChange} />
+                                <div className="input-group">
+                                    <label className="label">Preferred Method</label>
+                                    <select name="preferredContactMethod" value={formData.preferredContactMethod} onChange={handleChange} className="input">
+                                        <option value="phone">Phone</option>
+                                        <option value="whatsapp">WhatsApp</option>
+                                        <option value="email">Email</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </Section>
+
+                        <Section title="Work Slots">
+                            <div className="card glass-card">
+                                <div className="availability-grid">
+                                    {['weekdays', 'weekends', 'morning', 'afternoon', 'evening'].map(slot => (
+                                        <button key={slot} type="button" className={`slot-btn ${formData.availability[slot as keyof typeof formData.availability] ? 'active' : ''}`} onClick={() => handleToggleAvailability(slot)}>
+                                            {slot.charAt(0).toUpperCase() + slot.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </Section>
+
+                        <Button type="submit" loading={loading} fullWidth size="lg" style={{ marginTop: '2rem' }}>Save All Changes</Button>
+                    </div>
                 </div>
             </form>
         </PageWrapper>

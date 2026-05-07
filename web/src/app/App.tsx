@@ -16,7 +16,7 @@ import {
 import { 
     HomePage, CategoryPage, CategoryProductsPage, 
     ProductDetailPage, SearchPage, VideoPlayerPage,
-    TechniciansPage
+    TechniciansPage, ExpertProfilePage
 } from '../pages/public';
 
 // Auth Pages
@@ -86,6 +86,7 @@ const App: React.FC = () => {
                         <Route path="/search" element={<SearchPage />} />
                         <Route path="/video/:videoId" element={<VideoPlayerPage />} />
                         <Route path="/technicians" element={<TechniciansPage />} />
+                        <Route path="/experts/:id" element={<ExpertProfilePage />} />
 
                         <Route path="/profile" element={
                             <ProtectedRoute>

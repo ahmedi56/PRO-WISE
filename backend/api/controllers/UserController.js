@@ -677,57 +677,60 @@ module.exports = {
       const {
         headline,
         bio,
-        skills,
-        experienceYears,
         city,
         governorate,
-        serviceCategories,
+        latitude,
+        longitude,
         phone,
-        whatsapp
+        email,
+        specializations, // Array of { name, skillLevel, yearsExperience }
+        certifications, // Array of { title, organization, verificationUrl, documentUrl }
+        serviceRadiusKm,
+        emergencyAvailable,
+        portfolioImages
       } = req.body;
 
       // Validation
-      if (!headline || !bio || !skills || !experienceYears || !city || !governorate || !serviceCategories) {
-        return res.status(400).json({ message: 'All required application fields must be provided' });
+      if (!headline || !bio || !city || !governorate || !phone) {
+        return res.status(400).json({ message: 'Core identity fields are required' });
       }
 
-      if (!phone && !whatsapp) {
-        return res.status(400).json({ message: 'At least one contact method (phone or whatsapp) is required' });
+      if (!Array.isArray(specializations) || specializations.length === 0) {
+        return res.status(400).json({ message: 'At least one specialization is required' });
       }
 
-      if (!Array.isArray(skills) || skills.length === 0) {
-        return res.status(400).json({ message: 'At least one skill is required' });
-      }
-
-      if (!Array.isArray(serviceCategories) || serviceCategories.length === 0) {
-        return res.status(400).json({ message: 'At least one service category is required' });
-      }
+      // Initialize certification statuses to pending
+      const processedCertifications = (certifications || []).map(cert => ({
+        ...cert,
+        verificationStatus: 'pending' // pending, verified, rejected, requires_info
+      }));
 
       const profile = {
         headline,
         bio,
-        skills,
-        experienceYears,
-        experienceStartDate: req.body.experienceStartDate,
-        cvLink: req.body.cvLink,
         city,
         governorate,
-        serviceCategories,
+        latitude: latitude || null,
+        longitude: longitude || null,
         phone,
-        whatsapp,
-        certifications: req.body.certifications || [],
-        preferredContactMethod: req.body.preferredContactMethod || 'phone',
-        serviceRadiusKm: req.body.serviceRadiusKm || 20,
+        email: email || user.email,
+        specializations,
+        certifications: processedCertifications,
+        serviceRadiusKm: serviceRadiusKm || 20,
+        emergencyAvailable: emergencyAvailable || false,
+        portfolioImages: portfolioImages || [],
+        
+        // Reputation initialization
         completedJobs: 0,
         averageRating: 0,
-        availability: {
-          weekdays: true,
-          weekends: false,
-          morning: true,
-          afternoon: true,
-          evening: false,
-          emergencyAvailable: false
-        }
+        reliabilityScore: 100,
+        responseSpeed: 'N/A',
+        verificationLevel: 'Basic',
+        topExpertBadge: false,
+        
+        // Legacy fallbacks
+        skills: specializations.map(s => s.name),
+        experienceYears: Math.max(...specializations.map(s => s.yearsExperience || 0), 0)
       };
 
       await User.updateOne({ id: req.user.id }).set({
@@ -743,6 +746,14 @@ module.exports = {
         details: { 
           headline 
         }
+      });
+
+      // Notify Super Admins
+      await sails.services.notificationservice.notifySuperAdmins({
+        title: 'New Technician Application',
+        message: `${user.name} has applied to become a technician.`,
+        type: 'warning',
+        link: `/admin/technician-applications`
       });
 
       return res.json({ 
@@ -798,12 +809,32 @@ module.exports = {
       const newProfile = { ...currentProfile };
       allowedUpdates.forEach(key => {
         if (req.body[key] !== undefined) {
-          newProfile[key] = req.body[key];
+          if (key === 'certifications' && Array.isArray(req.body[key])) {
+            // Security: Ensure existing verified certs keep their status, 
+            // but NEW ones are forced to 'pending'
+            newProfile.certifications = req.body.certifications.map(newCert => {
+              const existing = (currentProfile.certifications || []).find(c => c.title === newCert.title);
+              if (existing && existing.verificationStatus === 'verified') {
+                return { ...newCert, verificationStatus: 'verified' };
+              }
+              return { ...newCert, verificationStatus: 'pending' };
+            });
+          } else {
+            newProfile[key] = req.body[key];
+          }
         }
       });
 
       await User.updateOne({ id: req.user.id }).set({
         technicianProfile: newProfile
+      });
+
+      // Notify Super Admins if critical info changed
+      await sails.services.notificationservice.notifySuperAdmins({
+        title: 'Technician Profile Updated',
+        message: `${user.name} updated their professional profile.`,
+        type: 'info',
+        link: `/admin/technician-applications`
       });
 
       return res.json({
@@ -839,15 +870,43 @@ module.exports = {
       const targetUser = await User.findOne({ id: req.params.id });
       if (!targetUser) {return res.status(404).json({ message: 'User not found' });}
 
+      const { certificationsStatus, verificationNotes } = req.body;
+
       const profile = targetUser.technicianProfile || {};
       profile.reviewedBy = req.user.id;
       profile.reviewedAt = Date.now();
       profile.rejectionReason = null;
+      profile.verificationNotes = verificationNotes || null;
+
+      // Update specific certification statuses if provided
+      if (certificationsStatus && Array.isArray(profile.certifications)) {
+        profile.certifications = profile.certifications.map(cert => {
+          const update = certificationsStatus.find(c => c.title === cert.title);
+          if (update && update.status) {
+            cert.verificationStatus = update.status;
+          }
+          return cert;
+        });
+      }
+
+      // Calculate Verification Level
+      const verifiedCount = (profile.certifications || []).filter(c => c.verificationStatus === 'verified').length;
+      if (verifiedCount > 2) profile.verificationLevel = 'Expert';
+      else if (verifiedCount > 0) profile.verificationLevel = 'Pro';
+      else profile.verificationLevel = 'Basic';
+
+      // Find Technician Role
+      let roleUpdate = {};
+      const techRole = await Role.findOne({ name: 'technician' });
+      if (techRole) {
+        roleUpdate.role = techRole.id;
+      }
 
       await User.updateOne({ id: req.params.id }).set({
         isTechnician: true,
         technicianStatus: 'approved',
-        technicianProfile: profile
+        technicianProfile: profile,
+        ...roleUpdate
       });
 
       await logAction(req, {
@@ -855,6 +914,14 @@ module.exports = {
         target: targetUser.id,
         targetType: 'User',
         targetLabel: targetUser.name || targetUser.email
+      });
+
+      // Notify the technician
+      await sails.services.notificationservice.notifyUser(targetUser.id, {
+        title: 'Technician Application Approved!',
+        message: 'Congratulations! Your application has been approved. You can now access the Technician Portal.',
+        type: 'success',
+        link: '/technician-portal'
       });
 
       return res.json({ 
@@ -900,6 +967,14 @@ module.exports = {
         details: { rejectionReason }
       });
 
+      // Notify the technician
+      await sails.services.notificationservice.notifyUser(targetUser.id, {
+        title: 'Technician Application Update',
+        message: `Your application was not approved at this time. Reason: ${rejectionReason}`,
+        type: 'error',
+        link: '/profile'
+      });
+
       return res.json({ 
         message: 'Technician application rejected',
         user: { id: targetUser.id, isTechnician: false, technicianStatus: 'rejected' }
@@ -907,45 +982,6 @@ module.exports = {
     } catch (err) {
       sails.log.error('Reject technician error:', err);
       return res.status(500).json({ message: 'Internal server error' });
-    }
-  },
-
-  /**
-   * GET /api/users/technicians/public
-   * Get list of approved technicians for public map/list
-   */
-  getPublicTechnicians: async function (req, res) {
-    sails.log.info('GET /api/public-technicians triggered');
-    try {
-      const technicians = await User.find({
-        where: { technicianStatus: 'approved' },
-        select: ['id', 'name', 'avatar', 'technicianProfile', 'createdAt']
-      });
-
-      sails.log.info(`Found ${technicians.length} approved technicians`);
-
-      const sanitized = technicians.map(tech => ({
-        id: tech.id,
-        name: tech.name,
-        avatar: tech.avatar,
-        headline: tech.technicianProfile?.headline,
-        bio: tech.technicianProfile?.bio,
-        skills: tech.technicianProfile?.skills,
-        experienceYears: tech.technicianProfile?.experienceYears,
-        city: tech.technicianProfile?.city,
-        governorate: tech.technicianProfile?.governorate,
-        latitude: tech.technicianProfile?.latitude,
-        longitude: tech.technicianProfile?.longitude,
-        serviceCategories: tech.technicianProfile?.serviceCategories,
-        averageRating: tech.technicianProfile?.averageRating || 0,
-        completedJobs: tech.technicianProfile?.completedJobs || 0,
-        joinedAt: tech.createdAt
-      }));
-
-      return res.json(sanitized);
-    } catch (err) {
-      sails.log.error('Get public technicians error:', err);
-      return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
   }
 

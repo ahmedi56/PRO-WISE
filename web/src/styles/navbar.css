@@ -5,9 +5,11 @@
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-glass-border);
-    position: sticky;
+    position: fixed;
     top: 0;
-    z-index: 1000;
+    left: 0;
+    right: 0;
+    z-index: 999999 !important;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -117,6 +119,12 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    z-index: 2147483647 !important;
+}
+
+/* Force notifications to the top */
+.pw-card.pw-absolute {
+    z-index: 2147483647 !important;
 }
 
 .dropdown-item {

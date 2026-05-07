@@ -37,7 +37,9 @@ const issueTokens = async (user) => {
       id: user.id, 
       email: user.email, 
       role: roleName,
-      companyId: user.company ? (user.company.id || user.company) : null
+      companyId: user.company ? (user.company.id || user.company) : null,
+      isTechnician: user.isTechnician || false,
+      technicianStatus: user.technicianStatus || 'none'
     },
     secret,
     { expiresIn: sails.config.custom.jwtExpiresIn }
@@ -507,37 +509,155 @@ module.exports = {
    * Get list of approved technicians for public map/list
    */
   getPublicTechnicians: async function (req, res) {
-    sails.log.info('GET /api/experts triggered in AuthController');
     try {
+      const { 
+        specialization, 
+        minRating, 
+        emergencyOnly, 
+        verifiedOnly, 
+        lat, 
+        lng 
+      } = req.query;
+
       const technicians = await User.find({
         where: { technicianStatus: 'approved' },
         select: ['id', 'name', 'avatar', 'technicianProfile', 'createdAt']
       });
 
-      sails.log.info(`Found ${technicians.length} approved technicians`);
+      let sanitized = technicians.map(tech => {
+        const profile = tech.technicianProfile || {};
+        return {
+          id: tech.id,
+          name: tech.name,
+          avatar: tech.avatar,
+          headline: profile.headline,
+          bio: profile.bio,
+          specializations: profile.specializations || [],
+          certifications: profile.certifications || [],
+          city: profile.city,
+          governorate: profile.governorate,
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+          averageRating: profile.averageRating || 0,
+          completedJobs: profile.completedJobs || 0,
+          reliabilityScore: profile.reliabilityScore || 100,
+          verificationLevel: profile.verificationLevel || 'Basic',
+          topExpertBadge: profile.topExpertBadge || false,
+          emergencyAvailable: profile.emergencyAvailable || false,
+          joinedAt: tech.createdAt,
+          // Legacy mappings for backwards compatibility
+          skills: profile.skills || [],
+          experienceYears: profile.experienceYears || 0,
+          serviceCategories: profile.serviceCategories || []
+        };
+      });
 
-      const sanitized = technicians.map(tech => ({
-        id: tech.id,
-        name: tech.name,
-        avatar: tech.avatar,
-        headline: tech.technicianProfile?.headline,
-        bio: tech.technicianProfile?.bio,
-        skills: tech.technicianProfile?.skills,
-        experienceYears: tech.technicianProfile?.experienceYears,
-        city: tech.technicianProfile?.city,
-        governorate: tech.technicianProfile?.governorate,
-        latitude: tech.technicianProfile?.latitude,
-        longitude: tech.technicianProfile?.longitude,
-        serviceCategories: tech.technicianProfile?.serviceCategories,
-        averageRating: tech.technicianProfile?.averageRating || 0,
-        completedJobs: tech.technicianProfile?.completedJobs || 0,
-        joinedAt: tech.createdAt
-      }));
+      // Filtering
+      if (specialization) {
+        const specLower = specialization.toLowerCase();
+        sanitized = sanitized.filter(t => 
+          t.specializations.some(s => s.name.toLowerCase().includes(specLower)) ||
+          t.skills.some(s => s.toLowerCase().includes(specLower))
+        );
+      }
+      if (minRating) {
+        sanitized = sanitized.filter(t => t.averageRating >= parseFloat(minRating));
+      }
+      if (emergencyOnly === 'true') {
+        sanitized = sanitized.filter(t => t.emergencyAvailable === true);
+      }
+      if (verifiedOnly === 'true') {
+        sanitized = sanitized.filter(t => t.verificationLevel === 'Expert' || t.verificationLevel === 'Pro');
+      }
+
+      // Distance calculation and sorting
+      if (lat && lng) {
+        const userLat = parseFloat(lat);
+        const userLng = parseFloat(lng);
+        
+        const deg2rad = (deg) => deg * (Math.PI / 180);
+        const getDistance = (lat1, lon1, lat2, lon2) => {
+          const R = 6371; // km
+          const dLat = deg2rad(lat2 - lat1);
+          const dLon = deg2rad(lon2 - lon1); 
+          const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+            Math.sin(dLon / 2) * Math.sin(dLon / 2); 
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+          return R * c;
+        };
+
+        sanitized.forEach(t => {
+          if (t.latitude && t.longitude) {
+            t.distanceKm = getDistance(userLat, userLng, parseFloat(t.latitude), parseFloat(t.longitude));
+          } else {
+            t.distanceKm = Infinity; // Push to bottom if no location
+          }
+        });
+
+        sanitized.sort((a, b) => a.distanceKm - b.distanceKm);
+      } else {
+        // Default sort by reputation (badges first, then rating, then jobs)
+        sanitized.sort((a, b) => {
+          if (a.topExpertBadge !== b.topExpertBadge) return a.topExpertBadge ? -1 : 1;
+          if (b.averageRating !== a.averageRating) return b.averageRating - a.averageRating;
+          return b.completedJobs - a.completedJobs;
+        });
+      }
 
       return res.json(sanitized);
     } catch (err) {
-      sails.log.error('Get public technicians error in AuthController:', err);
+      sails.log.error('Get public experts error:', err);
       return res.status(500).json({ message: 'Internal server error', error: err.message });
+    }
+  },
+
+  /**
+   * GET /api/experts/:id
+   * Get a single public technician profile
+   */
+  getPublicTechnician: async function (req, res) {
+    try {
+      const expert = await User.findOne({ 
+        id: req.params.id,
+        technicianStatus: 'approved'
+      });
+
+      if (!expert) {
+        return res.status(404).json({ message: 'Expert not found or profile not public' });
+      }
+
+      const profile = expert.technicianProfile || {};
+      const sanitized = {
+        id: expert.id,
+        name: expert.name,
+        avatar: expert.avatar,
+        createdAt: expert.createdAt,
+        technicianStatus: expert.technicianStatus,
+        technicianProfile: {
+          headline: profile.headline,
+          bio: profile.bio,
+          city: profile.city,
+          governorate: profile.governorate,
+          latitude: profile.latitude,
+          longitude: profile.longitude,
+          specializations: profile.specializations || [],
+          certifications: (profile.certifications || []).filter(c => c.verificationStatus === 'verified' || c.verificationStatus === 'pending'),
+          completedJobs: profile.completedJobs || 0,
+          averageRating: profile.averageRating || 0,
+          verificationLevel: profile.verificationLevel || 'Basic',
+          topExpertBadge: profile.topExpertBadge || false,
+          emergencyAvailable: profile.emergencyAvailable || false,
+          serviceRadiusKm: profile.serviceRadiusKm || 20,
+          availability: profile.availability || {}
+        }
+      };
+
+      return res.json(sanitized);
+    } catch (err) {
+      sails.log.error('Get public technician error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
     }
   }
 

@@ -334,6 +334,12 @@ module.exports = {
       const supportPDFs = await SupportPDF.find({ product: req.params.id })
         .populate('createdBy');
 
+      // 1.6 Fetch Unified Content System Records
+      const approvedContent = await Content.find({
+        product: req.params.id,
+        status: 'approved'
+      }).populate('createdBy');
+
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
@@ -416,6 +422,20 @@ module.exports = {
           title: p.title,
           fileUrl: p.fileUrl,
           author: p.createdBy ? p.createdBy.name : 'Unknown'
+        })),
+        approvedContent: approvedContent.map(c => ({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          type: c.type,
+          difficulty: c.difficulty,
+          estimatedTime: c.estimatedTime,
+          answer: c.answer,
+          videoId: c.videoId,
+          fileUrl: c.fileUrl,
+          steps: c.steps,
+          media: c.media,
+          author: c.createdBy ? c.createdBy.name : 'Unknown'
         }))
       });
 

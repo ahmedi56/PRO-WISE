@@ -9,9 +9,9 @@ module.exports = {
   // admin company creates content -> status = draft
   create: async function (req, res) {
     try {
-      const { title, description, type, steps, media, videoId, fileUrl } = req.body;
-      if (!title || !description) {
-        return res.badRequest({ error: 'Missing data: title and description are required' });
+      const { title, description, type, steps, media, videoId, fileUrl, difficulty, estimatedTime, answer, product } = req.body;
+      if (!title || !description || !product) {
+        return res.badRequest({ error: 'Missing data: title, description, and product are required' });
       }
 
       const companyId = req.user.companyId || req.user.company || null;
@@ -23,6 +23,10 @@ module.exports = {
         media: media || [],
         videoId: videoId || null,
         fileUrl: fileUrl || null,
+        difficulty: difficulty || 'medium',
+        estimatedTime: estimatedTime || null,
+        answer: answer || null,
+        product: product,
         status: 'draft',
         company: companyId,
         createdBy: req.user.id
@@ -54,19 +58,22 @@ module.exports = {
         return res.forbidden({ error: 'Unauthorized access: You do not own this content' });
       }
 
-      // Can edit only draft/rejected
-      if (content.status !== 'draft' && content.status !== 'rejected') {
-        return res.badRequest({ error: 'Invalid status change: You can only edit draft or rejected content' });
-      }
+      // If approved, reset to draft to require re-approval
+      const newStatus = content.status === 'approved' ? 'draft' : content.status;
 
       const updated = await Content.updateOne({ id: contentId }).set({
+        status: newStatus,
         title: req.body.title || content.title,
         description: req.body.description || content.description,
         type: req.body.type || content.type,
         steps: req.body.steps || content.steps,
         media: req.body.media || content.media,
+        difficulty: req.body.difficulty || content.difficulty,
+        estimatedTime: req.body.estimatedTime || content.estimatedTime,
+        answer: req.body.answer || content.answer,
         videoId: req.body.videoId !== undefined ? req.body.videoId : content.videoId,
-        fileUrl: req.body.fileUrl !== undefined ? req.body.fileUrl : content.fileUrl
+        fileUrl: req.body.fileUrl !== undefined ? req.body.fileUrl : content.fileUrl,
+        product: req.body.product || content.product
       });
 
       await logAction(req, {
@@ -75,9 +82,24 @@ module.exports = {
         targetType: 'Content',
         targetLabel: updated.title,
         details: { 
-          changedFields: Object.keys(req.body)
+          changedFields: Object.keys(req.body),
+          statusReset: content.status === 'approved'
         }
       });
+
+      if (content.status === 'approved') {
+        try {
+          await Notification.create({
+            user: req.user.id,
+            title: 'Content Status Reset',
+            message: `"${updated.title}" has been reset to Draft status because it was modified. Please submit it for approval again.`,
+            type: 'warning',
+            link: `/admin/support/${updated.id}/edit`
+          });
+        } catch (nErr) {
+          sails.log.error('Failed to create status reset notification:', nErr);
+        }
+      }
 
       return res.ok(updated);
     } catch (e) {
@@ -394,6 +416,47 @@ module.exports = {
 
       return res.ok(content);
     } catch (e) {
+      return res.serverError(e);
+    }
+  },
+
+  /**
+   * DELETE /api/content/:id
+   * Delete content (Owner or Super Admin only)
+   */
+  delete: async function (req, res) {
+    try {
+      const contentId = req.params.id;
+      const content = await Content.findOne({ id: contentId });
+
+      if (!content) {
+        return res.notFound({ error: 'Content not found' });
+      }
+
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
+      const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
+
+      if (!isSuperAdmin && !isOwner) {
+        return res.forbidden({ error: 'Unauthorized: You do not have permission to delete this content' });
+      }
+
+      // Owners can delete their own content regardless of status
+      // (Used to be restricted for non-super admins if approved)
+
+      await Content.destroyOne({ id: contentId });
+
+      await logAction(req, {
+        action: 'content.deleted',
+        target: content.id,
+        targetType: 'Content',
+        targetLabel: content.title,
+        severity: 'warning'
+      });
+
+      return res.ok({ message: 'Content deleted successfully' });
+    } catch (e) {
+      sails.log.error('Delete content error:', e);
       return res.serverError(e);
     }
   }

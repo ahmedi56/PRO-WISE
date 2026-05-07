@@ -234,6 +234,66 @@ body {
   background: var(--color-text-muted);
 }
 
+/* — €— € Global UI Components — €— € */
+.pw-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.pw-input, .pw-textarea {
+    width: 100%;
+    padding: 1rem 1.25rem;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--color-text-strong);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+[data-theme='light'] .pw-input, 
+[data-theme='light'] .pw-textarea {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.pw-input:focus, .pw-textarea:focus {
+    border-color: var(--color-primary);
+    background: rgba(99, 102, 241, 0.05);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+.pw-textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.pw-border-error {
+    border-color: var(--color-error) !important;
+}
+
+/* Fix for map covering dropdowns */
+.leaflet-container {
+    z-index: 1 !important;
+}
+.leaflet-pane {
+    z-index: 1 !important;
+}
+.leaflet-top, .leaflet-bottom {
+    z-index: 1 !important;
+}
+.leaflet-control {
+    z-index: 1 !important;
+}
+
 /* ── Breadcrumbs ── */
 .breadcrumb {
     display: flex;
@@ -286,6 +346,7 @@ body {
     border-color: var(--color-primary);
     transform: translateY(-2px);
     background: var(--color-bg);
+    z-index: 5;
 }
 
 .category-card-icon {

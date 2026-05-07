@@ -19,7 +19,8 @@ module.exports.policies = {
     'register': true,
     'refresh': true,
     'google': true,
-    'getPublicTechnicians': true
+    'getPublicTechnicians': true,
+    'getPublicTechnician': true
   },
 
   // ─── User routes ────────────────────────────────────────
@@ -40,7 +41,6 @@ module.exports.policies = {
     'getTechnicianApplications': ['isAuthenticated', 'isSuperAdmin'],
     'approveTechnician': ['isAuthenticated', 'isSuperAdmin'],
     'rejectTechnician': ['isAuthenticated', 'isSuperAdmin'],
-    'getPublicTechnicians': true,
   },
 
   // ─── Role routes ────────────────────────────────────────

@@ -47,12 +47,13 @@ export const NotificationDropdown: React.FC = () => {
 
             {isOpen && (
                 <div 
-                    className="pw-card pw-absolute pw-top-full pw-right-0 pw-z-100 pw-mt-2 pw-fade-in" 
+                    className="pw-card pw-absolute pw-top-full pw-right-0 pw-mt-2 pw-fade-in" 
                     style={{ 
                         width: '320px', 
                         maxWidth: 'calc(100vw - 40px)', 
                         boxShadow: 'var(--shadow-lg)',
-                        right: 0
+                        right: 0,
+                        zIndex: 100001
                     }}
                 >
                     <div className="pw-p-4" style={{ borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

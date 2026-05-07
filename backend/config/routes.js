@@ -17,6 +17,7 @@ module.exports.routes = {
   'POST /api/auth/google': 'AuthController.google',
   'GET /api/auth/me': 'AuthController.me',
   'GET /api/experts': 'AuthController.getPublicTechnicians',
+  'GET /api/experts/:id': 'AuthController.getPublicTechnician',
 
   'POST /api/users/bulk-delete': 'UserController.bulkDelete',
   'GET /api/users': 'UserController.getAll',
@@ -159,6 +160,7 @@ module.exports.routes = {
   'PUT /api/content/:id/submit': 'ContentController.submit',
   'PUT /api/content/:id/approve': 'ContentController.approve',
   'PUT /api/content/:id/reject': 'ContentController.reject',
+  'DELETE /api/content/:id': 'ContentController.delete',
 
   // ─── Notifications ──────────────────────────────────────
   'GET /api/notifications': 'NotificationController.find',

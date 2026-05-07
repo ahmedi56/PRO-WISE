@@ -34,16 +34,24 @@ export const authService = {
         const { data } = await axios.get(`${API_URL}/users/technician/applications`);
         return data;
     },
-    approveTechnician: async (userId: string) => {
-        const { data } = await axios.put(`${API_URL}/users/${userId}/technician/approve`);
+    approveTechnician: async (userId: string, payload?: any) => {
+        const { data } = await axios.put(`${API_URL}/users/${userId}/technician/approve`, payload || {});
         return data;
     },
     rejectTechnician: async (userId: string, rejectionReason: string) => {
         const { data } = await axios.put(`${API_URL}/users/${userId}/technician/reject`, { rejectionReason });
         return data;
     },
-    getPublicTechnicians: async () => {
-        const { data } = await axios.get(`${API_URL}/homepage`);
-        return data.technicians || [];
+    getPublicTechnicians: async (params?: any) => {
+        const { data } = await axios.get(`${API_URL}/experts`, { params });
+        return data;
+    },
+    getOne: async (id: string) => {
+        const { data } = await axios.get(`${API_URL}/users/${id}`);
+        return data;
+    },
+    getExpertProfile: async (id: string) => {
+        const { data } = await axios.get(`${API_URL}/experts/${id}`);
+        return data;
     }
 };

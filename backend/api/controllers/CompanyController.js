@@ -341,26 +341,60 @@ module.exports = {
      */
   delete: async function (req, res) {
     try {
-      const company = await Company.findOne({ id: req.params.id });
+      const companyId = req.params.id;
+      const company = await Company.findOne({ id: companyId });
+      
       if (!company) {
         return res.status(404).json({ message: 'Company not found' });
       }
 
-      const products = await Product.count({ company: req.params.id });
+      // 1. Check for Products
+      const products = await Product.count({ company: companyId });
       if (products > 0) {
         return res.status(400).json({
-          message: `Cannot delete company: ${products} product(s) are still associated`
+          message: `Cannot delete company: ${products} product(s) are still associated. Please delete or reassign them first.`
         });
       }
 
-      const users = await User.count({ company: req.params.id });
+      // 2. Check for Users
+      const users = await User.count({ company: companyId });
       if (users > 0) {
         return res.status(400).json({
-          message: `Cannot delete company: ${users} user account(s) are still associated`
+          message: `Cannot delete company: ${users} user account(s) are still associated. Please delete or reassign users first.`
         });
       }
 
-      await Company.destroyOne({ id: req.params.id });
+      // 3. Check for Feedback (Strict constraint)
+      if (typeof Feedback !== 'undefined') {
+        const feedbackCount = await Feedback.count({ company: companyId });
+        if (feedbackCount > 0) {
+          return res.status(400).json({
+            message: `Cannot delete company: ${feedbackCount} feedback entry(ies) exist. Deleting this company would orphan these records.`
+          });
+        }
+      }
+
+      // 4. Check for Content
+      if (typeof Content !== 'undefined') {
+        const contentCount = await Content.count({ company: companyId });
+        if (contentCount > 0) {
+          return res.status(400).json({
+            message: `Cannot delete company: ${contentCount} content submission(s) are still linked to this company.`
+          });
+        }
+      }
+
+      // 5. Check for Maintenance Requests
+      if (typeof MaintenanceRequest !== 'undefined') {
+        const mRequests = await MaintenanceRequest.count({ company: companyId });
+        if (mRequests > 0) {
+          return res.status(400).json({
+            message: `Cannot delete company: ${mRequests} active maintenance request(s) are associated with this company.`
+          });
+        }
+      }
+
+      await Company.destroyOne({ id: companyId });
 
       await logAction(req, {
         action: 'company.deleted',
@@ -375,7 +409,7 @@ module.exports = {
 
     } catch (err) {
       sails.log.error('Delete company error:', err);
-      return res.status(500).json({ message: 'Internal server error' });
+      return res.status(500).json({ message: 'Internal server error: A database constraint may have blocked the deletion.' });
     }
   }
 

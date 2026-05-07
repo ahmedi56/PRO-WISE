@@ -38,6 +38,10 @@ module.exports = {
       model: 'company',
       required: false
     },
+    product: {
+      model: 'product',
+      required: true
+    },
     createdBy: {
       model: 'user',
       required: true
@@ -91,6 +95,12 @@ module.exports = {
       type: 'string',
       allowNull: true,
       description: 'PDF document URL for articles/guides'
+    },
+    answer: {
+      type: 'string',
+      columnType: 'text',
+      allowNull: true,
+      description: 'Definitive answer for FAQ entries'
     }
   }
 };

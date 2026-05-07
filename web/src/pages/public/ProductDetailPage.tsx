@@ -19,9 +19,11 @@ function getYoutubeId(urlOrId: string) {
     return (match && match[2].length === 11) ? match[2] : urlOrId;
 }
 
-function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = []) {
+function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = [], approvedContent: any[] = []) {
     const videos: any[] = [];
     const pdfs: any[] = [];
+    const faqs: any[] = [];
+    const stepsFromContent: any[] = [];
 
     guides.forEach((guide) => {
         (guide.steps || []).forEach((step: any) => {
@@ -62,7 +64,38 @@ function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], suppor
         });
     });
 
-    return { videos, pdfs };
+    approvedContent.forEach((item) => {
+        const context = { guideTitle: item.type.toUpperCase(), stepTitle: 'Verified Resource' };
+        
+        if (item.type === 'faq') {
+            faqs.push(item);
+        } else if (item.type === 'guide' || item.type === 'tutorial') {
+            if (item.steps && item.steps.length > 0) {
+                stepsFromContent.push(item);
+            }
+            if (item.videoId) {
+                videos.push({
+                    id: item.id,
+                    videoId: item.videoId,
+                    title: item.title,
+                    author: item.author || 'System Verified',
+                    _ctx: context
+                });
+            }
+        } else if (item.type === 'article') {
+            if (item.fileUrl) {
+                pdfs.push({
+                    id: item.id,
+                    title: item.title,
+                    url: item.fileUrl,
+                    author: item.author || 'System Verified',
+                    _ctx: context
+                });
+            }
+        }
+    });
+
+    return { videos, pdfs, faqs, stepsFromContent };
 }
 
 function buildComponentSelection(component: any, index: number) {
@@ -111,9 +144,10 @@ const canManageProduct = (user: any, product: Product | null) => {
 };
 
 const SUPPORT_TABS = [
+    { key: 'steps', label: 'Steps' },
     { key: 'videos', label: 'Videos' },
     { key: 'pdfs', label: 'PDFs' },
-    { key: 'steps', label: 'Steps' },
+    { key: 'faqs', label: 'FAQs' },
 ] as const;
 
 type SupportTabKey = typeof SUPPORT_TABS[number]['key'];
@@ -157,13 +191,14 @@ export const ProductDetailPage: React.FC = () => {
         }
     }, [id, token]);
 
-    const { videos, pdfs } = useMemo(() => classifyMedia(product?.guides, product?.supportVideos, product?.supportPDFs), [product]);
+    const { videos, pdfs, faqs, stepsFromContent } = useMemo(() => classifyMedia(product?.guides, product?.supportVideos, product?.supportPDFs, product?.approvedContent), [product]);
     
     const supportTabCounts = useMemo(() => ({
         videos: videos.length,
         pdfs: pdfs.length,
-        steps: (product?.guides || []).reduce((count: number, guide: any) => count + (guide.steps?.length || 0), 0),
-    }), [videos, pdfs, product]);
+        steps: (product?.guides || []).reduce((count: number, guide: any) => count + (guide.steps?.length || 0), 0) + stepsFromContent.length,
+        faqs: faqs.length,
+    }), [videos, pdfs, faqs, stepsFromContent, product]);
 
     const toggleComponentSelection = (component: any, index: number) => {
         const nextSelection = buildComponentSelection(component, index);
@@ -493,34 +528,99 @@ export const ProductDetailPage: React.FC = () => {
                                 )}
 
                                 {supportTab === 'steps' && (
+                                     <div>
+                                         {(product.guides && product.guides.length > 0) || stepsFromContent.length > 0 ? (
+                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                                 {/* Legacy Guides */}
+                                                 {product.guides?.map((guide: any) => (
+                                                     <div key={guide.id} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '2rem', border: '1px solid var(--color-border)' }}>
+                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                                             <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.2rem' }}>{guide.title}</h4>
+                                                             <Badge tone={guide.difficulty === 'hard' ? 'danger' : 'success'} size="lg">{guide.difficulty}</Badge>
+                                                         </div>
+                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
+                                                             <div style={{ position: 'absolute', left: '19px', top: '24px', bottom: '24px', width: '2px', background: 'var(--color-border)' }} />
+                                                             {guide.steps?.map((step: any, idx: number) => (
+                                                                 <div key={step.id} style={{ display: 'flex', gap: '1.5rem', position: 'relative', zIndex: 1 }}>
+                                                                     <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-surface)', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 800, flexShrink: 0, fontSize: '1.1rem' }}>
+                                                                         {idx+1}
+                                                                     </div>
+                                                                     <div style={{ paddingTop: '0.25rem', paddingBottom: '1rem', flex: 1 }}>
+                                                                         <h5 style={{ margin: '0 0 0.5rem 0', fontWeight: 700, fontSize: '1.1rem' }}>{step.title}</h5>
+                                                                         <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text)', lineHeight: 1.6 }}>{step.description}</p>
+                                                                         
+                                                                         {step.media && step.media.length > 0 && (
+                                                                             <div style={{ marginTop: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                                                                 <img 
+                                                                                     src={step.media[0].url || step.media[0].fileUrl} 
+                                                                                     alt={step.title} 
+                                                                                     style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} 
+                                                                                 />
+                                                                             </div>
+                                                                         )}
+                                                                     </div>
+                                                                 </div>
+                                                             ))}
+                                                         </div>
+                                                     </div>
+                                                 ))}
+
+                                                 {/* Unified Content Steps */}
+                                                 {stepsFromContent.map((item: any) => (
+                                                     <div key={item.id} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '2rem', border: '1px solid var(--color-border)' }}>
+                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                                             <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.2rem' }}>{item.title}</h4>
+                                                             <Badge tone="info" size="lg">VERIFIED</Badge>
+                                                         </div>
+                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
+                                                             <div style={{ position: 'absolute', left: '19px', top: '24px', bottom: '24px', width: '2px', background: 'var(--color-border)' }} />
+                                                             {item.steps?.map((step: any, idx: number) => (
+                                                                 <div key={idx} style={{ display: 'flex', gap: '1.5rem', position: 'relative', zIndex: 1 }}>
+                                                                     <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-surface)', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 800, flexShrink: 0, fontSize: '1.1rem' }}>
+                                                                         {idx+1}
+                                                                     </div>
+                                                                     <div style={{ paddingTop: '0.25rem', paddingBottom: '1rem', flex: 1 }}>
+                                                                         <h5 style={{ margin: '0 0 0.5rem 0', fontWeight: 700, fontSize: '1.1rem' }}>{step.title}</h5>
+                                                                         <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text)', lineHeight: 1.6, marginBottom: step.image ? '1rem' : 0 }}>{step.description}</p>
+                                                                         
+                                                                         {step.image && (
+                                                                             <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                                                                                 <img 
+                                                                                     src={step.image} 
+                                                                                     alt={step.title} 
+                                                                                     style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} 
+                                                                                 />
+                                                                             </div>
+                                                                         )}
+                                                                     </div>
+                                                                 </div>
+                                                             ))}
+                                                         </div>
+                                                     </div>
+                                                 ))}
+                                             </div>
+                                         ) : (
+                                             <EmptyState icon="list-outline" title="No Steps" description="No step-by-step guides available yet." />
+                                         )}
+                                     </div>
+                                )}
+
+                                {supportTab === 'faqs' && (
                                     <div>
-                                        {product.guides && product.guides.length > 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                                {product.guides?.map((guide: any) => (
-                                                    <div key={guide.id} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '2rem', border: '1px solid var(--color-border)' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                                            <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.2rem' }}>{guide.title}</h4>
-                                                            <Badge tone={guide.difficulty === 'hard' ? 'danger' : 'success'} size="lg">{guide.difficulty}</Badge>
-                                                        </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
-                                                            <div style={{ position: 'absolute', left: '19px', top: '24px', bottom: '24px', width: '2px', background: 'var(--color-border)' }} />
-                                                            {guide.steps?.map((step: any, idx: number) => (
-                                                                <div key={step.id} style={{ display: 'flex', gap: '1.5rem', position: 'relative', zIndex: 1 }}>
-                                                                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--color-surface)', border: '2px solid var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-primary)', fontWeight: 800, flexShrink: 0, fontSize: '1.1rem' }}>
-                                                                        {idx+1}
-                                                                    </div>
-                                                                    <div style={{ paddingTop: '0.25rem', paddingBottom: '1rem' }}>
-                                                                        <h5 style={{ margin: '0 0 0.5rem 0', fontWeight: 700, fontSize: '1.1rem' }}>{step.title}</h5>
-                                                                        <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text)', lineHeight: 1.6 }}>{step.description}</p>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                        {faqs.length > 0 ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                {faqs.map((faq: any, idx: number) => (
+                                                    <div key={idx} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--color-border)', marginBottom: '1rem' }}>
+                                                        <h5 style={{ margin: '0 0 0.75rem 0', fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-text-strong)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <IonIcon name="help-circle-outline" style={{ color: 'var(--color-primary)' }} />
+                                                            {faq.title}
+                                                        </h5>
+                                                        <p style={{ margin: 0, color: 'var(--color-text)', lineHeight: 1.6 }}>{faq.answer || faq.description}</p>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : (
-                                            <EmptyState icon="list-outline" title="No Steps" description="No step-by-step guides available yet." />
+                                            <EmptyState icon="help-circle-outline" title="No FAQs" description="No frequently asked questions available for this product." />
                                         )}
                                     </div>
                                 )}
