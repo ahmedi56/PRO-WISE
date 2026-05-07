@@ -35,7 +35,7 @@ module.exports = {
    * Used for robust admin inputs.
    */
   extractVideoId: function (urlOrId) {
-    if (!urlOrId) return '';
+    if (!urlOrId) {return '';}
     
     // Regex for various YouTube URL formats
     const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;

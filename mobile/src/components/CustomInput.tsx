@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, Text, StyleSheet, TextInputProps, TouchableOpacity, Animated } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, radius, typography } from '../theme';
+const AnimatedView = Animated.View as any;
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
+import { useTheme } from '../theme';
 
 interface CustomInputProps extends TextInputProps {
     label?: string;
@@ -9,30 +11,22 @@ interface CustomInputProps extends TextInputProps {
     error?: string;
 }
 
-const CustomInput: React.FC<CustomInputProps> = ({ label, icon, error, secureTextEntry, ...props }) => {
+const CustomInput: React.FC<CustomInputProps> = ({ label, icon, error, secureTextEntry, style, ...props }) => {
+    const theme = useTheme();
+    const { colors, spacing, radius, typography } = theme;
     const [isFocused, setIsFocused] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const [focusAnim] = useState(new Animated.Value(0));
+    const focusAnim = useRef(new Animated.Value(0)).current;
 
     const isSecure = secureTextEntry && !isPasswordVisible;
 
-    const handleFocus = () => {
-        setIsFocused(true);
+    useEffect(() => {
         Animated.timing(focusAnim, {
-            toValue: 1,
+            toValue: isFocused ? 1 : 0,
             duration: 250,
             useNativeDriver: false
         }).start();
-    };
-
-    const handleBlur = () => {
-        setIsFocused(false);
-        Animated.timing(focusAnim, {
-            toValue: 0,
-            duration: 250,
-            useNativeDriver: false
-        }).start();
-    };
+    }, [isFocused]);
 
     const borderColor = focusAnim.interpolate({
         inputRange: [0, 1],
@@ -41,22 +35,31 @@ const CustomInput: React.FC<CustomInputProps> = ({ label, icon, error, secureTex
 
     const backgroundColor = focusAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [colors.surface, 'rgba(165, 200, 255, 0.05)']
+        outputRange: [colors.surface, `${colors.primary}0D`]
     });
 
     return (
         <View style={styles.container}>
             {label && (
-                <Text style={[styles.label, isFocused && styles.labelFocused]}>
+                <Text style={[
+                    styles.label, 
+                    { color: colors.textMuted },
+                    isFocused && { color: colors.primary }
+                ]}>
                     {label}
                 </Text>
             )}
-            <Animated.View 
+            <AnimatedView 
                 style={[
                     styles.inputContainer, 
-                    { borderColor, backgroundColor },
-                    isFocused && styles.inputContainerFocused,
-                    error ? styles.inputContainerError : null
+                    { borderColor, backgroundColor, borderRadius: radius.md },
+                    isFocused && {
+                        shadowColor: colors.primary,
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 10,
+                        elevation: 2,
+                    }
                 ]}
             >
                 {icon && (
@@ -68,10 +71,10 @@ const CustomInput: React.FC<CustomInputProps> = ({ label, icon, error, secureTex
                     />
                 )}
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: colors.textStrong, ...typography.body }]}
                     placeholderTextColor={colors.textMuted}
-                    onFocus={handleFocus}
-                    onBlur={handleBlur}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                     secureTextEntry={isSecure}
                     {...props}
                 />
@@ -84,76 +87,54 @@ const CustomInput: React.FC<CustomInputProps> = ({ label, icon, error, secureTex
                         />
                     </TouchableOpacity>
                 )}
-            </Animated.View>
-            <AnimatePresence>
-                {error && (
-                    <View style={styles.errorContainer}>
-                        <Ionicons name="alert-circle-outline" size={12} color={colors.error} />
-                        <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                )}
-            </AnimatePresence>
+            </AnimatedView>
+            {error && (
+                <View style={styles.errorContainer}>
+                    <Ionicons name="alert-circle-outline" size={12} color={colors.error} />
+                    <Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+                </View>
+            )}
         </View>
     );
 };
 
-// Simple AnimatePresence-like wrapper for local usage if needed, 
-// but for standard RN we'll just use conditional rendering or LayoutAnimation.
-const AnimatePresence: React.FC<{ children: React.ReactNode }> = ({ children }) => <>{children}</>;
-
 const styles = StyleSheet.create({
     container: {
-        marginBottom: spacing.lg,
+        marginBottom: 20,
+        width: '100%',
     },
     label: {
-        ...typography.smBold,
-        color: colors.textMuted,
-        marginBottom: spacing.xs,
+        fontSize: 10,
+        fontWeight: '700',
+        marginBottom: 6,
         textTransform: 'uppercase',
-        letterSpacing: 0.5,
-        fontSize: 11,
-    },
-    labelFocused: {
-        color: colors.primary,
+        letterSpacing: 1,
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: radius.md,
-        paddingHorizontal: spacing.md,
+        paddingHorizontal: 16,
         height: 56,
         borderWidth: 1.5,
     },
-    inputContainerFocused: {
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 3,
-    },
-    inputContainerError: {
-        borderColor: colors.error,
-    },
     icon: {
-        marginRight: spacing.sm,
+        marginRight: 12,
     },
     input: {
-        ...typography.body,
         flex: 1,
-        color: colors.textStrong,
         height: '100%',
+        paddingVertical: 0,
     },
     eyeIcon: {
-        padding: spacing.xs,
+        padding: 8,
     },
     errorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 6,
-        gap: 4,
+        gap: 6,
     },
     errorText: {
-        color: colors.error,
         fontSize: 12,
         fontWeight: '600',
     },

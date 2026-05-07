@@ -390,7 +390,7 @@ module.exports = {
         return {
           score: 40,
           kind: 'brand_model',
-          reason: `Same brand and close model`,
+          reason: 'Same brand and close model',
         };
       }
 
@@ -406,7 +406,7 @@ module.exports = {
         return {
           score: 18,
           kind: 'brand',
-          reason: `Same component brand`,
+          reason: 'Same component brand',
         };
       }
 

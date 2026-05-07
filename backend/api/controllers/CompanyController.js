@@ -63,23 +63,23 @@ module.exports = {
       const skip = (parseInt(page) - 1) * parseInt(limit);
 
       let augmentedCompanies = await Company.find(where)
-                .populate('products')
-                .sort('name ASC')
-                .skip(skip)
-                .limit(parseInt(limit));
+        .populate('products')
+        .sort('name ASC')
+        .skip(skip)
+        .limit(parseInt(limit));
 
       const feedbackStats = await Feedback.find({ company: { in: augmentedCompanies.map(c => c.id) }, isHidden: false });
       
       const results = augmentedCompanies.map(c => {
-          const companyFeedbacks = feedbackStats.filter(f => f.company === c.id);
-          const sum = companyFeedbacks.reduce((acc, curr) => acc + curr.rating, 0);
-          const avg = companyFeedbacks.length > 0 ? (sum / companyFeedbacks.length).toFixed(1) : 0;
-          return {
-              ...c,
-              averageRating: parseFloat(avg),
-              ratingCount: companyFeedbacks.length,
-              productCount: c.products ? c.products.length : 0
-          };
+        const companyFeedbacks = feedbackStats.filter(f => f.company === c.id);
+        const sum = companyFeedbacks.reduce((acc, curr) => acc + curr.rating, 0);
+        const avg = companyFeedbacks.length > 0 ? (sum / companyFeedbacks.length).toFixed(1) : 0;
+        return {
+          ...c,
+          averageRating: parseFloat(avg),
+          ratingCount: companyFeedbacks.length,
+          productCount: c.products ? c.products.length : 0
+        };
       });
 
       return res.json({
@@ -105,7 +105,7 @@ module.exports = {
   getOne: async function (req, res) {
     try {
       const company = await Company.findOne({ id: req.params.id })
-                .populate('products');
+        .populate('products');
 
       if (!company) {
         return res.status(404).json({ message: 'Company not found' });

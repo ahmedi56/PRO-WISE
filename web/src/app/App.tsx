@@ -15,14 +15,15 @@ import {
 // Public Pages
 import { 
     HomePage, CategoryPage, CategoryProductsPage, 
-    ProductDetailPage, SearchPage, VideoPlayerPage 
+    ProductDetailPage, SearchPage, VideoPlayerPage,
+    TechniciansPage
 } from '../pages/public';
 
 // Auth Pages
 import { LoginPage, RegisterPage, PendingApprovalPage } from '../pages/auth';
 
 // User Pages
-import { ProfilePage, TechnicianProfilePage, ServiceRequestPage } from '../pages/user';
+import { ProfilePage, TechnicianProfilePage, ServiceRequestPage, TechnicianApplicationPage, TechnicianPortalPage } from '../pages/user';
 
 // Admin Pages
 import { 
@@ -34,7 +35,7 @@ import {
 // Super Admin Pages
 import { 
     SuperDashboardPage, CategoriesPage, CategoryFormPage, CompaniesPage, 
-    UsersPage, AuditLogPage 
+    UsersPage, AuditLogPage, TechnicianApplicationsPage 
 } from '../pages/super-admin';
 
 const AdminIndexRedirect: React.FC = () => {
@@ -84,15 +85,26 @@ const App: React.FC = () => {
                         <Route path="/products/:id" element={<ProductDetailPage />} />
                         <Route path="/search" element={<SearchPage />} />
                         <Route path="/video/:videoId" element={<VideoPlayerPage />} />
+                        <Route path="/technicians" element={<TechniciansPage />} />
 
                         <Route path="/profile" element={
                             <ProtectedRoute>
                                 <ProfilePage />
                             </ProtectedRoute>
                         } />
-                        <Route path="/technician-portal" element={
+                        <Route path="/technician/apply" element={
+                            <ProtectedRoute>
+                                <TechnicianApplicationPage />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/technician/profile" element={
                             <ProtectedRoute>
                                 <TechnicianProfilePage />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/technician-portal" element={
+                            <ProtectedRoute>
+                                <TechnicianPortalPage />
                             </ProtectedRoute>
                         } />
                         <Route path="/service-request" element={
@@ -113,6 +125,7 @@ const App: React.FC = () => {
                         {/* Super Admin Restricted */}
                         <Route path="super-dashboard" element={<SuperAdminRoute><SuperDashboardPage /></SuperAdminRoute>} />
                         <Route path="users" element={<SuperAdminRoute><UsersPage /></SuperAdminRoute>} />
+                        <Route path="technician-applications" element={<SuperAdminRoute><TechnicianApplicationsPage /></SuperAdminRoute>} />
                         <Route path="categories" element={<SuperAdminRoute><CategoriesPage /></SuperAdminRoute>} />
                         <Route path="categories/new" element={<SuperAdminRoute><CategoryFormPage /></SuperAdminRoute>} />
                         <Route path="categories/:id/edit" element={<SuperAdminRoute><CategoryFormPage /></SuperAdminRoute>} />

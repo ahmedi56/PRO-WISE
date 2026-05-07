@@ -1,22 +1,25 @@
-import React, { useEffect } from 'react';
-import { StyleSheet, View, Text, Platform } from 'react-native';
+import React, { useEffect, useMemo } from 'react';
+import { StyleSheet, View, Text, Platform, Dimensions, TouchableOpacity, useColorScheme } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
     useSharedValue, 
     useAnimatedStyle, 
     withSpring, 
-    withRepeat, 
-    withSequence, 
     withTiming,
-    interpolate,
 } from 'react-native-reanimated';
+
+const AnimatedView = Animated.View as any;
+const { width } = Dimensions.get('window');
 
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ShopStackNavigator from './ShopStackNavigator';
-import { colors, radius, typography, spacing } from '../theme';
+import { useTheme } from '../theme';
+
 import { MainTabParamList } from './types';
 import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
 
@@ -24,164 +27,159 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 const TabNavigator = Tab.Navigator as any;
 
 const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
-    Home: 'home-outline',
-    Shop: 'layers-outline',
-    Scan: 'qr-code-outline',
-    Profile: 'person-outline',
+    Home: 'hardware-chip-outline',
+    Shop: 'cube-outline',
+    Scan: 'aperture-outline',
+    Profile: 'shield-checkmark-outline',
 };
 
-interface AnimatedTabIconProps {
-    name: keyof typeof Ionicons.glyphMap;
-    focused: boolean;
+const TAB_WIDTH = (width - 40) / 4;
+
+interface TabIndicatorProps {
+    index: number;
     color: string;
-    size: number;
 }
 
-const AnimatedTabIcon: React.FC<AnimatedTabIconProps> = ({ name, focused, color, size }) => {
-    const scale = useSharedValue(1);
+const TabIndicator: React.FC<TabIndicatorProps> = ({ index, color }) => {
+    const translateX = useSharedValue(index * TAB_WIDTH);
 
     useEffect(() => {
-        scale.value = withSpring(focused ? 1.15 : 1, {
-            damping: 10,
-            stiffness: 90,
+        translateX.value = withSpring(index * TAB_WIDTH, {
+            damping: 18,
+            stiffness: 150,
+            mass: 0.8,
         });
-    }, [focused]);
+    }, [index]);
 
     const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
+        transform: [{ translateX: translateX.value }],
     }));
 
     return (
-        <Animated.View style={animatedStyle}>
-            <Ionicons name={name} size={size + 2} color={color} />
+        <Animated.View style={[styles.indicatorWrapper, animatedStyle]}>
+            <LinearGradient
+                colors={[`${color}66`, `${color}1A`]}
+                style={styles.indicator}
+            />
+        </Animated.View>
+    );
+};
+
+const AnimatedTabIcon: React.FC<{ name: any; focused: boolean; color: string; size: number; activeColor: string }> = ({ name, focused, color, size, activeColor }) => {
+    const scale = useSharedValue(1);
+    const translateY = useSharedValue(0);
+    const opacity = useSharedValue(0.5);
+
+    useEffect(() => {
+        scale.value = withSpring(focused ? 1.3 : 1, { damping: 12, stiffness: 200 });
+        translateY.value = withSpring(focused ? -4 : 0, { damping: 15, stiffness: 150 });
+        opacity.value = withTiming(focused ? 1 : 0.5, { duration: 300 });
+    }, [focused]);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: scale.value },
+            { translateY: translateY.value }
+        ] as any,
+        opacity: opacity.value,
+    }));
+
+
+    return (
+        <Animated.View style={[styles.iconContainer, animatedStyle]}>
+            <Ionicons name={name} size={size + 2} color={focused ? activeColor : color} />
             {focused && (
-                <View style={[styles.tabIndicator, { backgroundColor: color }]} />
+                <View style={[styles.activeGlow, { backgroundColor: activeColor }]} />
             )}
         </Animated.View>
     );
 };
 
-const AnimatedScanButton: React.FC<{ focused: boolean; size: number }> = ({ focused, size }) => {
-    const scale = useSharedValue(1);
-    const pulse = useSharedValue(1);
-    const ring1Scale = useSharedValue(1);
-
-    useEffect(() => {
-        pulse.value = withRepeat(
-            withTiming(1.2, { duration: 2000 }),
-            -1,
-            true
-        );
-        ring1Scale.value = withRepeat(
-            withTiming(1.6, { duration: 2000 }),
-            -1,
-            false
-        );
-    }, []);
-
-    useEffect(() => {
-        scale.value = withSpring(focused ? 1.1 : 1, { damping: 12, stiffness: 120 });
-    }, [focused]);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: scale.value }],
-    }));
-
-    const ringStyle = useAnimatedStyle(() => ({
-        transform: [{ scale: ring1Scale.value }],
-        opacity: interpolate(ring1Scale.value, [1, 1.6], [0.6, 0]),
-    }));
-
-    return (
-        <Animated.View style={[styles.scanButtonOuter, animatedStyle]}>
-            <Animated.View style={[styles.scanRing, ringStyle]} />
-            <View style={styles.scanButtonInner}>
-                <Ionicons name="qr-code" size={size + 6} color="#0F131C" />
-            </View>
-        </Animated.View>
-    );
-};
-
-const BrandedHeader: React.FC<{ title: string }> = ({ title }) => (
+const BrandedHeader: React.FC<{ title: string; colors: any; typography: any; spacing: any; radius: any }> = ({ title, colors, typography, spacing, radius }) => (
     <View style={styles.headerContainer}>
-        <View style={styles.headerLogo}>
-            <ProWiseLogoSvg width={22} height={22} />
+        <View style={[styles.headerLogoMount, { backgroundColor: colors.surfaceContainer, borderColor: colors.border }]}>
+            <ProWiseLogoSvg width={20} height={20} />
         </View>
-        <Text style={styles.headerTitleText}>{title.toUpperCase()}</Text>
+        <Text style={[styles.headerTitleText, { color: colors.textStrong }]}>{title.toUpperCase()}</Text>
+        <View style={[styles.headerStatus, { backgroundColor: `${colors.success}1A` }]}>
+            <View style={[styles.statusPulse, { backgroundColor: colors.success }]} />
+            <Text style={[styles.statusText, { color: colors.success }]}>CORE ONLINE</Text>
+        </View>
     </View>
 );
 
-const MainTabNavigator: React.FC = () => {
+const CustomTabBar = ({ state, descriptors, navigation, theme }: any) => {
+    const { colors, shadows } = theme;
     return (
-        <TabNavigator
-            screenOptions={({ route }) => ({
-                tabBarBackground: () => (
-                    Platform.OS === 'ios' ? (
-                        <BlurView 
-                            tint="dark" 
-                            intensity={80} 
-                            style={StyleSheet.absoluteFill} 
-                        />
-                    ) : (
-                        <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(15, 19, 28, 0.98)' }]} />
-                    )
-                ),
-                tabBarStyle: {
-                    position: 'absolute',
-                    bottom: 24,
-                    left: 20,
-                    right: 20,
-                    height: 72,
-                    borderRadius: radius.xl,
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.12)',
-                    paddingBottom: 0,
-                    ...Platform.select({
-                        ios: { 
-                            shadowColor: colors.primary, 
-                            shadowOffset: { width: 0, height: 10 }, 
-                            shadowOpacity: 0.15, 
-                            shadowRadius: 20 
-                        },
-                        android: { elevation: 12 }
-                    }),
-                    overflow: 'hidden',
-                },
-                tabBarActiveTintColor: colors.primary,
-                tabBarInactiveTintColor: colors.textMuted,
-                tabBarShowLabel: false,
-                tabBarIcon: ({ focused, color, size }) => {
+        <View style={[styles.tabBarWrapper, { borderColor: `${colors.primary}33`, ...shadows.lg }]}>
+            <BlurView tint={theme.isDark ? "dark" : "light"} intensity={95} style={StyleSheet.absoluteFill}>
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: `${colors.surface}D9` }]} />
+            </BlurView>
+            
+            <TabIndicator index={state.index} color={colors.primary} />
+
+            <View style={styles.tabItemsContainer}>
+                {state.routes.map((route: any, index: number) => {
+                    const { options } = descriptors[route.key];
+                    const isFocused = state.index === index;
+
+                    const onPress = () => {
+                        const event = navigation.emit({
+                            type: 'tabPress',
+                            target: route.key,
+                            canPreventDefault: true,
+                        });
+
+                        if (!isFocused && !event.defaultPrevented) {
+                            navigation.navigate(route.name);
+                        }
+                    };
+
                     const iconName = ICONS[route.name] || 'square-outline';
-                    
-                    if (route.name === 'Scan') {
-                        return (
-                            <View style={{ top: -12 }}>
-                                <AnimatedScanButton focused={focused} size={size} />
-                            </View>
-                        );
-                    }
+                    const color = isFocused ? colors.primary : colors.textMuted;
 
                     return (
-                        <AnimatedTabIcon 
-                            name={focused ? (iconName.replace('-outline', '') as any) : iconName} 
-                            focused={focused} 
-                            color={color} 
-                            size={size} 
-                        />
+                        <TouchableOpacity
+                            key={route.key}
+                            onPress={onPress}
+                            style={styles.tabItem}
+                            activeOpacity={0.7}
+                        >
+                            <AnimatedTabIcon 
+                                name={isFocused ? ((iconName as string).replace('-outline', '') as any) : iconName} 
+                                focused={isFocused} 
+                                color={color} 
+                                size={24} 
+                                activeColor={colors.primary}
+                            />
+                        </TouchableOpacity>
                     );
-                },
+                })}
+            </View>
+        </View>
+    );
+};
+
+
+const MainTabNavigator: React.FC = () => {
+    const theme = useTheme();
+    const { colors, typography, spacing, radius } = theme;
+
+    return (
+        <Tab.Navigator
+            tabBar={(props: any) => <CustomTabBar {...props} theme={theme} />}
+            screenOptions={({ route }: any) => ({
                 headerStyle: {
                     backgroundColor: colors.bg,
                     borderBottomWidth: 1,
                     borderBottomColor: colors.border,
-                    height: Platform.OS === 'ios' ? 100 : 80,
+                    height: Platform.OS === 'ios' ? 110 : 90,
                 },
-                headerTitle: ({ children }) => <BrandedHeader title={children} />,
+                headerTitle: ({ children }: any) => <BrandedHeader title={children} colors={colors} typography={typography} spacing={spacing} radius={radius} />,
                 headerTitleAlign: 'left',
                 headerTintColor: colors.textStrong,
                 headerBackground: () => (
-                    <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+                    <BlurView intensity={80} tint={theme.isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
                 )
             })}
         >
@@ -197,71 +195,102 @@ const MainTabNavigator: React.FC = () => {
                 options={{ title: 'Optical Scan' }} 
             />
             <Tab.Screen name="Profile" component={ProfileScreen as any} options={{ title: 'Operator' }} />
-        </TabNavigator>
+        </Tab.Navigator>
     );
 };
 
 const styles = StyleSheet.create({
-    scanButtonOuter: {
-        width: 64,
-        height: 64,
+    tabBarWrapper: {
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 34 : 24,
+        left: 20,
+        right: 20,
+        height: 70,
+        borderRadius: 35,
+        overflow: 'hidden',
+        borderWidth: 1.5,
+        elevation: 20,
+    },
+    tabItemsContainer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+    },
+    tabItem: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100%',
+    },
+    iconContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: 50,
+        height: 50,
+    },
+    activeGlow: {
+        position: 'absolute',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        opacity: 0.15,
+        zIndex: -1,
+    },
+    indicatorWrapper: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: TAB_WIDTH,
+        height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    scanRing: {
-        position: 'absolute',
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        borderWidth: 1,
-        borderColor: colors.primary,
-    },
-    scanButtonInner: {
-        width: 56,
-        height: 56,
-        borderRadius: 28,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 3,
-        borderColor: colors.bg,
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.8,
-        shadowRadius: 10,
-        elevation: 10,
-    },
-    tabIndicator: {
-        width: 12,
-        height: 2,
-        borderRadius: 1,
-        alignSelf: 'center',
-        marginTop: 4,
-        position: 'absolute',
-        bottom: -8,
-        shadowColor: colors.primary,
-        shadowOpacity: 0.8,
-        shadowRadius: 4,
+    indicator: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
     },
     headerContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingLeft: spacing.sm,
+        flex: 1,
+        paddingHorizontal: 16,
     },
-    headerLogo: {
-        marginRight: spacing.sm,
-        padding: 4,
-        backgroundColor: colors.surface,
-        borderRadius: radius.md,
+    headerLogoMount: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
         borderWidth: 1,
-        borderColor: colors.border,
+        marginRight: 16,
     },
     headerTitleText: {
-        fontSize: 16,
-        color: colors.textStrong,
-        fontWeight: '900',
+        fontSize: 18,
+        fontWeight: '600',
         letterSpacing: 2,
+        flex: 1,
+    },
+    headerStatus: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        gap: 6,
+    },
+    statusPulse: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+    },
+    statusText: {
+        fontSize: 8,
+        fontWeight: '900',
+        letterSpacing: 1,
     },
 });
 
 export default MainTabNavigator;
+

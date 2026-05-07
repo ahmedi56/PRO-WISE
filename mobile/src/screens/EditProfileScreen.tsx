@@ -16,7 +16,8 @@ import { updateUser, resetSuccess } from '../store/slices/authSlice';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import { RootState, AppDispatch } from '../store';
 import { RootStackNavigationProp } from '../navigation/types';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
 

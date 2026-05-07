@@ -9,7 +9,8 @@ import {
     Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import { BlurView } from 'expo-blur';
 
 import API_URL from '../constants/config';

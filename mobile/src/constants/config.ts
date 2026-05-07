@@ -2,9 +2,9 @@ import { Platform } from 'react-native';
 
 const getLocalHost = (): string => {
     return Platform.select({
-        android: '192.168.1.15',
-        ios: '192.168.1.15',
-        default: '192.168.1.15'
+        android: '192.168.100.252',
+        ios: '192.168.100.252',
+        default: '192.168.100.252'
     });
 };
 

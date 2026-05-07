@@ -5,12 +5,12 @@
  * Optimized for reliability, security, and token efficiency.
  */
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Configuration from environment
 const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
-const DEFAULT_GEN_MODEL = "gemini-2.5-flash";
-const EMBEDDING_MODEL = "gemini-embedding-001";
+const DEFAULT_GEN_MODEL = 'gemini-2.5-flash';
+const EMBEDDING_MODEL = 'gemini-embedding-001';
 
 // Initialize the API only once (Singleton pattern)
 let genAI = null;

@@ -9,8 +9,9 @@ export type RootStackParamList = {
     EditProfile: undefined;
     QRScanner: undefined;
     ProductDetail: { id: string; product?: import('../types/product').Product };
-    ProductForm: { id?: string; categoryId?: string };
     PendingApproval: undefined;
+    TechnicianApplication: undefined;
+    TechnicianPortal: undefined;
 };
 
 export type MainTabParamList = {

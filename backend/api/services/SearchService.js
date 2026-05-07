@@ -5,7 +5,7 @@
  * Optimized for Google AI Studio (Gemini).
  */
 
-const AI_PROVIDER = (process.env.AI_PROVIDER || 'google').toLowerCase();
+const _AI_PROVIDER = (process.env.AI_PROVIDER || 'google').toLowerCase();
 
 module.exports = {
 
@@ -16,7 +16,7 @@ module.exports = {
    * @param {Object[]} candidates - List of {id, text, embedding, modelNumber, manufacturer}
    * @returns {Promise<Object>} - {exact: [], similar: [], related: []}
    */
-  rankCandidates: async function(queryOrEmbedding, candidates, options = {}) {
+  rankCandidates: async function(queryOrEmbedding, candidates, _options = {}) {
     if (!queryOrEmbedding || !candidates || candidates.length === 0) {
       return { exact: [], similar: [], related: [] };
     }
@@ -83,7 +83,7 @@ module.exports = {
     // Skip checking and use Gemini directly
     try {
       if (!sails.services.geminiservice.isAvailable()) {
-         throw new Error('Gemini service is not available. Please check GOOGLE_AI_API_KEY.');
+        throw new Error('Gemini service is not available. Please check GOOGLE_AI_API_KEY.');
       }
 
       sails.log.info(`SearchService: Generating ${mode} embedding via Google AI...`);

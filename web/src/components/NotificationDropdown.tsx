@@ -32,10 +32,10 @@ export const NotificationDropdown: React.FC = () => {
         <div className="pw-relative">
             <button 
                 onClick={() => setIsOpen(!isOpen)}
-                className="pw-btn pw-btn-ghost pw-relative"
-                style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-full)', padding: 0 }}
+                className="nav-icon-btn pw-relative"
+                style={{ padding: 0 }}
             >
-                <IonIcon name="notifications-outline" style={{ fontSize: '24px' }} />
+                <IonIcon name="notifications-outline" style={{ fontSize: '20px' }} />
                 {unreadCount > 0 && (
                     <div className="pw-absolute" style={{ top: '4px', right: '4px' }}>
                         <Badge tone="error" className="pw-text-xs">

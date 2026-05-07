@@ -62,10 +62,10 @@ sails.load({
         const success = await sails.services.productembeddingservice.updateEmbedding(product.id);
         if (success) {
           successCount++;
-          console.log(`[✓]`);
+          console.log('[✓]');
         } else {
           failCount++;
-          console.log(`[✗]`);
+          console.log('[✗]');
         }
       } catch (err) {
         failCount++;

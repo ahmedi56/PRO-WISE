@@ -16,6 +16,7 @@ module.exports.routes = {
   'POST /api/auth/refresh': 'AuthController.refresh',
   'POST /api/auth/google': 'AuthController.google',
   'GET /api/auth/me': 'AuthController.me',
+  'GET /api/experts': 'AuthController.getPublicTechnicians',
 
   'POST /api/users/bulk-delete': 'UserController.bulkDelete',
   'GET /api/users': 'UserController.getAll',
@@ -28,8 +29,13 @@ module.exports.routes = {
   'PUT /api/users/:id/activate': 'UserController.activateUser',
   'PUT /api/users/:id': 'UserController.updateUser',
   'DELETE /api/users/:id': 'UserController.deleteUser',
-  // Technician upgrade request handler
-  'POST /api/tech-upgrade': 'UserController.requestTechnicianUpgrade',
+  // Technician management
+  'POST /api/users/technician/request': 'UserController.requestTechnicianUpgrade',
+  'GET /api/users/technician/me': 'UserController.getTechnicianMe',
+  'PUT /api/users/technician/profile': 'UserController.updateTechnicianProfile',
+  'GET /api/users/technician/applications': 'UserController.getTechnicianApplications',
+  'PUT /api/users/:id/technician/approve': 'UserController.approveTechnician',
+  'PUT /api/users/:id/technician/reject': 'UserController.rejectTechnician',
 
   // ─── Roles ───────────────────────────────────────────────
   'GET /api/roles': 'RoleController.getAll',
@@ -83,7 +89,6 @@ module.exports.routes = {
   'POST /api/guidetypes': 'GuideTypeController.create',
 
   // ─── Admin Restricted Routes ─────────────────────────────
-  'POST /api/guides': { controller: 'GuideController', action: 'create', requiredPermission: 'guides.manage' },
   'PUT /api/guides/:id': { controller: 'GuideController', action: 'update', requiredPermission: 'guides.update' },
   'DELETE /api/guides/:id': { controller: 'GuideController', action: 'delete', requiredPermission: 'guides.manage' },
   'PUT /api/guides/:id/publish': { controller: 'GuideController', action: 'publish', requiredPermission: 'guides.manage' },
@@ -166,5 +171,4 @@ module.exports.routes = {
   'GET /api/maintenance/requests/user': 'MaintenanceController.listByUser',
   'GET /api/maintenance/requests/technician': 'MaintenanceController.listByTechnician',
   'PATCH /api/maintenance/requests/:id/status': 'MaintenanceController.updateStatus',
-
 };

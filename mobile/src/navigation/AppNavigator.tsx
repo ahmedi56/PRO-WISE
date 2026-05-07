@@ -58,9 +58,14 @@ const AppNavigator: React.FC = () => {
                             component={require('../screens/ProductDetailScreen').default} 
                         />
                         <Stack.Screen 
-                            name="ProductForm" 
-                            component={require('../screens/ProductFormScreen').default} 
-                            options={({ route }) => ({ title: route.params?.id ? 'Edit Product' : 'Add Product' })} 
+                            name="TechnicianApplication" 
+                            component={require('../screens/TechnicianApplicationScreen').default} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name="TechnicianPortal" 
+                            component={require('../screens/TechnicianPortalScreen').default} 
+                            options={{ headerShown: false }}
                         />
                         <Stack.Screen name="Register" component={RegisterScreen as any} />
                     </>

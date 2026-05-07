@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, TouchableOpacityProps, View, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, radius, typography, spacing } from '../theme';
+import { useTheme } from '../theme';
 
 interface CustomButtonProps extends TouchableOpacityProps {
     title: string;
@@ -11,6 +11,7 @@ interface CustomButtonProps extends TouchableOpacityProps {
     size?: 'small' | 'medium' | 'large';
     fullWidth?: boolean;
     textStyle?: any;
+    containerStyle?: any;
 }
 
 const CustomButton: React.FC<CustomButtonProps> = ({ 
@@ -23,13 +24,17 @@ const CustomButton: React.FC<CustomButtonProps> = ({
     disabled, 
     fullWidth = true,
     textStyle,
+    containerStyle,
     ...props 
 }) => {
+    const theme = useTheme();
+    const { colors, radius, typography, shadows } = theme;
     
     const isPrimary = variant === 'primary';
     const isGhost = variant === 'ghost';
     const isOutline = variant === 'outline';
     const isDanger = variant === 'danger';
+    const isSecondary = variant === 'secondary';
     
     const renderContent = () => (
         <View style={styles.content}>
@@ -41,11 +46,12 @@ const CustomButton: React.FC<CustomButtonProps> = ({
                     <Text 
                         style={[
                             styles.text, 
-                            size === 'small' && styles.textSm,
-                            size === 'large' && styles.textLg,
-                            (isOutline || isGhost) && styles.textAccent,
-                            isDanger && styles.textDanger,
-                            disabled && styles.textDisabled,
+                            { color: isPrimary ? '#FFFFFF' : colors.textStrong },
+                            size === 'small' && { fontSize: 14 },
+                            size === 'large' && { fontSize: 18 },
+                            (isOutline || isGhost) && { color: colors.primary },
+                            isDanger && { color: colors.error },
+                            disabled && { color: colors.textMuted },
                             textStyle
                         ]}
                     >
@@ -58,32 +64,32 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 
     const buttonStyles = [
         styles.base,
-        size === 'small' && styles.btnSm,
-        size === 'large' && styles.btnLg,
-        !fullWidth && styles.btnInline,
-        variant === 'secondary' && styles.btnSecondary,
-        variant === 'outline' && styles.btnOutline,
-        variant === 'ghost' && styles.btnGhost,
-        variant === 'danger' && styles.btnDanger,
-        disabled && styles.btnDisabled,
+        { borderRadius: radius.md },
+        size === 'small' && { height: 44, paddingHorizontal: 16 },
+        size === 'large' && { height: 64, paddingHorizontal: 32 },
+        !fullWidth && { alignSelf: 'flex-start' },
+        isSecondary && { backgroundColor: colors.surfaceContainer, borderWidth: 1, borderColor: colors.border },
+        isOutline && { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.border },
+        isGhost && { backgroundColor: 'transparent' },
+        isDanger && { backgroundColor: `${colors.error}1A`, borderWidth: 1, borderColor: `${colors.error}33` },
+        disabled && { opacity: 0.5, backgroundColor: colors.surfaceContainer },
         style
     ];
 
     if (isPrimary && !disabled && !loading) {
         return (
             <TouchableOpacity
-                style={[styles.primaryContainer, buttonStyles]}
+                style={[buttonStyles, containerStyle]}
                 disabled={disabled || loading}
                 activeOpacity={0.85}
                 {...props}
             >
                 <LinearGradient
-                    colors={[colors.primary, colors.primaryContainer]}
+                    colors={[colors.primary, colors.primaryHover]}
                     start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={StyleSheet.absoluteFill}
+                    end={{ x: 1, y: 1 }}
+                    style={[StyleSheet.absoluteFill, { borderRadius: radius.md }]}
                 />
-                <View style={styles.glowOverlay} />
                 {renderContent()}
             </TouchableOpacity>
         );
@@ -91,7 +97,7 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 
     return (
         <TouchableOpacity
-            style={buttonStyles}
+            style={[buttonStyles, containerStyle]}
             disabled={disabled || loading}
             activeOpacity={0.7}
             {...props}
@@ -103,63 +109,12 @@ const CustomButton: React.FC<CustomButtonProps> = ({
 
 const styles = StyleSheet.create({
     base: {
-        height: 54,
-        borderRadius: radius.md,
+        height: 56,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingHorizontal: spacing.lg,
+        paddingHorizontal: 24,
         flexDirection: 'row',
         overflow: 'hidden',
-    },
-    primaryContainer: {
-        ...Platform.select({
-            ios: {
-                shadowColor: colors.primary,
-                shadowOffset: { width: 0, height: 8 },
-                shadowOpacity: 0.35,
-                shadowRadius: 12,
-            },
-            android: {
-                elevation: 8,
-            },
-        }),
-    },
-    btnSm: {
-        height: 40,
-        paddingHorizontal: spacing.md,
-        borderRadius: radius.sm,
-    },
-    btnLg: {
-        height: 64,
-        paddingHorizontal: spacing.xl,
-        borderRadius: radius.lg,
-    },
-    btnInline: {
-        alignSelf: 'flex-start',
-    },
-    btnSecondary: {
-        backgroundColor: colors.surfaceRaised,
-    },
-    btnOutline: {
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        borderColor: colors.primaryGlow,
-    },
-    btnGhost: {
-        backgroundColor: 'transparent',
-    },
-    btnDanger: {
-        backgroundColor: 'rgba(239, 68, 68, 0.1)',
-        borderWidth: 1,
-        borderColor: 'rgba(239, 68, 68, 0.3)',
-    },
-    btnDisabled: {
-        opacity: 0.4,
-        backgroundColor: colors.surface,
-    },
-    glowOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
     },
     content: {
         flexDirection: 'row',
@@ -167,28 +122,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     iconContainer: {
-        marginRight: spacing.sm,
+        marginRight: 12,
     },
     text: {
-        ...typography.bodyBold,
-        color: colors.textInverse,
-        fontSize: 15,
+        fontWeight: '700',
+        fontSize: 16,
         letterSpacing: -0.2,
-    },
-    textSm: {
-        fontSize: 13,
-    },
-    textLg: {
-        fontSize: 17,
-    },
-    textAccent: {
-        color: colors.primary,
-    },
-    textDanger: {
-        color: '#ef4444',
-    },
-    textDisabled: {
-        color: colors.textMuted,
     },
 });
 

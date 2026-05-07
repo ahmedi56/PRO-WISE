@@ -22,7 +22,7 @@ module.exports.bootstrap = async function () {
   const Company = sails.models.company;
   const Product = sails.models.product;
   const GuideType = sails.models.guidetype;
-  const Guide = sails.models.guide;
+  const _Guide = sails.models.guide;
 
   sails.log.info('BOOTSTRAP: Synchronizing system roles and permissions...');
   const defaultRoles = sails.config.custom.defaultRoles || [];
@@ -81,7 +81,7 @@ module.exports.bootstrap = async function () {
         role: superAdminRole.id,
         status: 'active'
       });
-      sails.log.info(`Seeded default Super Admin`);
+      sails.log.info('Seeded default Super Admin');
     }
   }
 
@@ -176,7 +176,7 @@ module.exports.bootstrap = async function () {
         // Seed hierarchy for Phone
         if (cat.name === 'Phone') {
           // Samsung
-          const samsung = await Category.create({
+          const _samsung = await Category.create({
             name: 'Samsung',
             slug: 'samsung',
             icon: 'logo-samsung',
@@ -188,7 +188,7 @@ module.exports.bootstrap = async function () {
           sails.log.info('Seeded subcategory: Samsung');
 
           // Apple
-          const apple = await Category.create({
+          const _apple = await Category.create({
             name: 'Apple',
             slug: 'apple',
             icon: 'logo-apple',
@@ -200,7 +200,7 @@ module.exports.bootstrap = async function () {
           sails.log.info('Seeded subcategory: Apple');
 
           // Google
-          const google = await Category.create({
+          const _google = await Category.create({
             name: 'Google',
             slug: 'google',
             icon: 'logo-google',
@@ -498,7 +498,7 @@ module.exports.bootstrap = async function () {
           try {
             await sails.services.productembeddingservice.updateEmbedding(currentProduct.id);
             sails.log.info(`Generated embedding for: ${p.name}`);
-          } catch (e) {
+          } catch (_e) {
             sails.log.debug(`Could not generate embedding for: ${p.name}`);
           }
         }
@@ -511,8 +511,8 @@ module.exports.bootstrap = async function () {
   if (!sails.config.custom.contentApprovalInterval) {
     sails.config.custom.contentApprovalInterval = setInterval(() => {
       if (sails.services.contentapprovalservice) {
-        sails.services.contentapprovalservice.runAutoApproval().catch(err => {
-          sails.log.error('Auto-approval error:', err);
+        sails.services.contentapprovalservice.runAutoApproval().catch(_err => {
+          sails.log.error('Auto-approval error:', _err);
         });
       }
     }, 60 * 60 * 1000); // Check every hour

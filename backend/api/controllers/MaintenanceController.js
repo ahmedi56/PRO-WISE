@@ -55,8 +55,8 @@ module.exports = {
    */
   listByTechnician: async function (req, res) {
     try {
-      if (req.user.role !== 'technician') {
-        return res.status(403).json({ message: 'Only technicians can view assigned tasks' });
+      if (!req.user.isTechnician || req.user.technicianStatus !== 'approved') {
+        return res.status(403).json({ message: 'Only approved technicians can access the request pool' });
       }
 
       const requests = await MaintenanceRequest.find({ 
@@ -65,8 +65,8 @@ module.exports = {
           { status: 'pending' } // Allow technicians to see unassigned tasks
         ]
       })
-      .populate('user')
-      .sort('createdAt DESC');
+        .populate('user')
+        .sort('createdAt DESC');
       
       return res.json(requests);
     } catch (err) {
@@ -83,6 +83,14 @@ module.exports = {
       const { status } = req.body;
       const { id } = req.params;
 
+      const isApprovedTech = req.user.isTechnician && req.user.technicianStatus === 'approved';
+      const roleName = (req.user.role && req.user.role.name ? req.user.role.name : '').toLowerCase();
+      const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
+
+      if (!isApprovedTech && !isAdmin) {
+        return res.status(403).json({ message: 'Only approved technicians or administrators can update request status' });
+      }
+
       if (!['assigned', 'in_progress', 'completed', 'cancelled'].includes(status)) {
         return res.status(400).json({ message: 'Invalid status' });
       }
@@ -92,9 +100,16 @@ module.exports = {
         return res.status(404).json({ message: 'Request not found' });
       }
 
+      // If technician, ensure they are assigned to it or it's pending (to accept it)
+      if (isApprovedTech && !isAdmin) {
+        if (request.technician && request.technician !== req.user.id) {
+          return res.status(403).json({ message: 'You are not assigned to this request' });
+        }
+      }
+
       const updateData = { status };
       
-      // If assigning, set the technician
+      // If assigning or tech taking a pending job, set the technician
       if (status === 'assigned' || (request.status === 'pending' && status === 'in_progress')) {
         updateData.technician = req.user.id;
       }

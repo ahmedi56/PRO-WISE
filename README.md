@@ -11,7 +11,8 @@ Monorepo for the PRO-WISE Product Assistance Platform containing Web, Mobile, an
 
 ## Prerequisites
 - Node.js (v18+)
-- MongoDB (running locally or provide `MONGODB_URI`)
+- MongoDB (running locally or provide `MONGODB_URL`)
+- GOOGLE_AI_API_KEY (for semantic search)
 - npm
 
 ## Setup
@@ -25,7 +26,8 @@ Monorepo for the PRO-WISE Product Assistance Platform containing Web, Mobile, an
    ```env
    PORT=1337
    JWT_SECRET=your_secret_key
-   MONGODB_URI=mongodb://localhost:27017/prowise
+   MONGODB_URL=mongodb://localhost:27017/prowise
+   GOOGLE_AI_API_KEY=your_gemini_api_key
    ```
 
 ## Running the Project
@@ -56,11 +58,10 @@ Scan the QR code with Expo Go.
 - **Web App**: Uses `import.meta.env.VITE_API_URL` (defaults to `http://localhost:1337/api`). Configure via `.env` files in the `web` directory.
 - **Mobile App**: Uses `process.env.EXPO_PUBLIC_API_URL` (defaults to `http://10.0.2.2:1337/api` for Android and `http://localhost:1337/api` for iOS). Configure via `.env` in the `mobile` directory.
 
-## Default Admin Account
+## Default Accounts
 On first start, the backend seeds:
-- **Email**: `admin@prowise.com`
-- **Password**: `Admin123!`
-- **Role**: Administrator
+- **Super Admin**: `superadmin@prowise.com` / `Admin123!`
+- **Company Admin**: `admin@prowise.com` / `Admin123!`
 
 ## API Endpoints
 
@@ -70,6 +71,7 @@ On first start, the backend seeds:
 | POST | `/api/auth/register` | No | Register new user |
 | POST | `/api/auth/login` | No | Login → access + refresh tokens |
 | POST | `/api/auth/refresh` | No | Refresh access token |
+| POST | `/api/auth/logout` | Yes | Invalidate refresh token |
 | GET | `/api/auth/me` | Yes | Get current user profile |
 
 ### Users
@@ -114,61 +116,30 @@ On first start, the backend seeds:
 The application implements strict Role-Based Access Control (RBAC):
 
 1.  **Super Admin (`super_admin`)**: Unrestricted access, platform management.
-2.  **Company Admin (`administrator`)**: Company-level oversight, manages their own tenant's data.
-3.  **Client (`client`)**: End-users who view devices and guides.
+2.  **Company Admin (`company_admin`)**: Company-level oversight, manages their own tenant's data.
+3.  **Technician (`technician`)**: Field users who perform repairs and updates.
+4.  **User (`user`)**: Standard end-users who view devices and guides.
 
-## Search & Embedding Service
+## Semantic Search & AI
 
-PRO-WISE uses a local Python Flask service for semantic embeddings. This powers semantic search, product recommendations, and component-to-product discovery.
+PRO-WISE utilizes Google Gemini for semantic embeddings and search ranking. This powers semantic search, product recommendations, and component-to-product discovery.
 
-### Embedding Model: `BAAI/bge-small-en-v1.5`
+### Requirements
+- **GOOGLE_AI_API_KEY**: Must be provided in the backend `.env` file.
+- **Model**: `gemini-embedding-001` for embeddings, `gemini-2.0-flash` for ranking.
 
-| Property | Value |
-|----------|-------|
-| **Model** | `BAAI/bge-small-en-v1.5` |
-| **Parameters** | ~33M |
-| **Embedding Dimension** | 384 |
-| **Disk Size** | ~130 MB |
-| **RAM Usage** | ~300 MB |
-| **Hardware Target** | Intel i5 vPro, 16 GB RAM, no GPU |
-
-**Why this model:**
-- Significantly better retrieval quality than `all-MiniLM-L6-v2` (+24% on MTEB benchmarks)
-- Same 384-dimensional output — drop-in compatible with existing data
-- Lightweight enough for CPU-only inference (~20-40ms per query)
-- No external API keys required — fully local and private
-
-### Running the Search Service
-
-The search service starts automatically with the backend:
-```bash
-cd backend
-npm run dev          # Starts both Sails.js + Flask search service
-```
-
-Or run standalone:
-```bash
-python backend/search_service/app.py    # Runs on port 5001
-```
+### How it works:
+1.  **Embeddings**: Product descriptions are converted into dense vectors via `GeminiService`.
+2.  **Similarity**: The `SearchService` calculates cosine similarity between the query vector and product vectors.
+3.  **Ranking**: Results are categorized as Exact, Similar, or Related based on similarity scores.
 
 ### Regenerating Embeddings
 
-After model changes or data migration, regenerate all product embeddings:
+After data migration or model changes, regenerate all product embeddings:
 ```bash
 cd backend
 node scripts/backfill-embeddings.js --force
 ```
-
-> **Important:** Embeddings from different models are not comparable. Always run `--force` backfill after changing the embedding model.
-
-### Model Role
-
-The embedding model is a **retrieval support system**, not a text generator:
-- ✅ Encodes product information into dense vectors for similarity search
-- ✅ Powers product-to-product recommendations via cosine similarity
-- ✅ Supports component-to-product discovery (reverse lookup)
-- ❌ Does NOT generate text, invent products, or act as a chatbot
-- ❌ All results come from real database records
 
 ## Architecture
 ```
@@ -177,13 +148,19 @@ PRO-WISE/
 │   ├── api/
 │   │   ├── controllers/
 │   │   ├── models/
+│   │   ├── services/  # GeminiService, SearchService
 │   │   └── policies/
 │   ├── config/
-│   └── search_service/  # Python Flask embedding service
-│       └── app.py       # BAAI/bge-small-en-v1.5 model
+│   └── scripts/
 ├── web/              # React + Vite web client
 │   └── src/
 ├── mobile/           # React Native + Expo mobile client
 │   └── src/
 └── package.json      # Monorepo workspaces
 ```
+
+## License
+ISC
+
+---
+Built with ❤️ by the PRO-WISE Team.

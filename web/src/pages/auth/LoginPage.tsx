@@ -45,7 +45,10 @@ export const LoginPage: React.FC = () => {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
+                <Link to="/" style={{ display: 'inline-block', marginBottom: '1.5rem' }}>
+                    <img src="/pro-wise.svg" alt="PRO-WISE Logo" style={{ height: '80px', width: 'auto' }} />
+                </Link>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-strong)', marginBottom: '0.5rem' }}>Welcome Back</h2>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9375rem' }}>Sign in to access your dashboard</p>
             </div>
@@ -95,7 +98,7 @@ export const LoginPage: React.FC = () => {
                     </Link>
                 </div>
                 
-                <Button type="submit" fullWidth loading={loading} style={{ height: '48px', fontSize: '1rem', fontWeight: 600 }}>
+                <Button type="submit" fullWidth loading={loading} style={{ height: '52px', fontSize: '1rem', fontWeight: 600, borderRadius: 'var(--radius-lg)' }}>
                     Sign In
                 </Button>
             </form>
@@ -116,7 +119,7 @@ export const LoginPage: React.FC = () => {
                 fullWidth 
                 onClick={() => handleGoogleLogin()}
                 loading={loading}
-                style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem' }}
+                style={{ height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', borderRadius: 'var(--radius-lg)' }}
             >
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '20px', height: '20px' }} />
                 <span style={{ fontWeight: 500 }}>Continue with Google</span>

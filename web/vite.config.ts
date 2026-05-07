@@ -11,4 +11,16 @@ export default defineConfig({
             '@': path.resolve(__dirname, './src'),
         },
     },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+                    'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
+                    'ui-vendor': ['framer-motion', 'lucide-react', 'recharts'],
+                    'spline-vendor': ['@splinetool/react-spline', '@splinetool/runtime'],
+                }
+            }
+        }
+    }
 });

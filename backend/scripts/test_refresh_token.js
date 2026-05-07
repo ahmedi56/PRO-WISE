@@ -14,7 +14,7 @@ async function runTest() {
       body: JSON.stringify({ email: 'superadmin@prowise.com', password: 'Admin123!' })
     });
     const superAuth = await superLoginRes.json();
-    if (!superLoginRes.ok) throw new Error(`Super Admin login failed: ${JSON.stringify(superAuth)}`);
+    if (!superLoginRes.ok) {throw new Error(`Super Admin login failed: ${JSON.stringify(superAuth)}`);}
     const superToken = superAuth.token;
 
     // 2. Create a test company
@@ -24,8 +24,8 @@ async function runTest() {
     let companyId = companies.length > 0 ? companies[0].id : null;
     
     if (!companyId) {
-        // This shouldn't happen with seeded data, but for robustness:
-        throw new Error('No company found to associate with test user.');
+      // This shouldn't happen with seeded data, but for robustness:
+      throw new Error('No company found to associate with test user.');
     }
     console.log(`   Using company ID: ${companyId}`);
 
@@ -44,7 +44,7 @@ async function runTest() {
       })
     });
     const registerData = await registerRes.json();
-    if (!registerRes.ok) throw new Error(`Registration failed: ${JSON.stringify(registerData)}`);
+    if (!registerRes.ok) {throw new Error(`Registration failed: ${JSON.stringify(registerData)}`);}
     const userId = registerData.userId;
 
     // 4. Activate the new user (since company admins are pending by default)
@@ -57,7 +57,7 @@ async function runTest() {
       },
       body: JSON.stringify({ status: 'active' })
     });
-    if (!activateRes.ok) throw new Error(`Activation failed: ${await activateRes.text()}`);
+    if (!activateRes.ok) {throw new Error(`Activation failed: ${await activateRes.text()}`);}
 
     // 5. Login as the new Company Admin
     console.log(`\n5. Logging in as ${testEmail}...`);
@@ -67,7 +67,7 @@ async function runTest() {
       body: JSON.stringify({ email: testEmail, password: 'TestPassword123!' })
     });
     const loginAuth = await loginRes.json();
-    if (!loginRes.ok) throw new Error(`Login failed: ${JSON.stringify(loginAuth)}`);
+    if (!loginRes.ok) {throw new Error(`Login failed: ${JSON.stringify(loginAuth)}`);}
     const { token, refreshToken } = loginAuth;
     
     const decodedLogin = jwt.decode(token);
@@ -84,7 +84,7 @@ async function runTest() {
       body: JSON.stringify({ refreshToken })
     });
     const refreshData = await refreshRes.json();
-    if (!refreshRes.ok) throw new Error(`Refresh failed: ${JSON.stringify(refreshData)}`);
+    if (!refreshRes.ok) {throw new Error(`Refresh failed: ${JSON.stringify(refreshData)}`);}
     const { token: newToken } = refreshData;
     
     const decodedRefresh = jwt.decode(newToken);

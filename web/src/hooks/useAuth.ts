@@ -6,7 +6,7 @@ export const useAuth = () => {
     
     const roleName = user?.role 
         ? (typeof user.role === 'string' ? user.role : user.role.name)?.toLowerCase()
-        : 'customer';
+        : 'user';
 
     return {
         user,
@@ -16,7 +16,7 @@ export const useAuth = () => {
         roleName,
         isSuperAdmin: roleName === 'super_admin',
         isCompanyAdmin: roleName === 'company_admin',
-        isCustomer: roleName === 'customer',
+        isUser: roleName === 'user',
         isTechnician: roleName === 'technician'
     };
 };

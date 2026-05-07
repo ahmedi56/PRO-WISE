@@ -22,7 +22,7 @@ module.exports = {
 
     // 2. Technical Composition (Critical for hybrid matching and semantic alignment)
     if (product.components && Array.isArray(product.components) && product.components.length > 0) {
-      doc += `\nTechnical Specifications & Components:\n`;
+      doc += '\nTechnical Specifications & Components:\n';
       const normalizedComponents = componentMatching
         ? componentMatching.getNormalizedProductComponents(product)
         : product.components;

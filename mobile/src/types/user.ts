@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'company_admin' | 'customer' | 'user';
+export type UserRole = 'super_admin' | 'company_admin' | 'technician' | 'user';
 export interface RoleObject {
   id?: string;
   name: string;
@@ -13,8 +13,13 @@ export interface User {
   firstName?: string;
   lastName?: string;
   role: Role;
+  phone?: string;
+  avatar?: string;
   company?: any; // Company ID or object
-  status: 'active' | 'deactivated';
+  status: 'active' | 'deactivated' | 'pending';
+  isTechnician?: boolean;
+  technicianStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  technicianProfile?: any;
   createdAt: string;
 }
 

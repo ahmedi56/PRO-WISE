@@ -21,6 +21,8 @@ export const AdminLayout: React.FC = () => {
     const adminNavItems = isSuperAdmin ? [
         { to: "/admin/super-dashboard", icon: "stats-chart-outline", label: "Overview" },
         { to: "/admin/companies", icon: "business-outline", label: "Companies" },
+        { to: "/admin/technician-applications", icon: "briefcase-outline", label: "Technicians" },
+        { to: "/admin/support/pending", icon: "checkmark-circle-outline", label: "Content Approval" },
         { to: "/admin/categories", icon: "grid-outline", label: "Categories" },
         { to: "/admin/users", icon: "people-outline", label: "Users" },
         { to: "/admin/audit-logs", icon: "time-outline", label: "Audit Logs" },

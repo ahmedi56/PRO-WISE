@@ -43,9 +43,14 @@ export const CategoryPage: React.FC = () => {
                 <EmptyState icon="folder-open-outline" title="No Categories" description="We couldn't find any hardware categories at this time." />
             ) : (
                 <div className="category-grid">
-                    {categories.map(cat => (
-                        <CategoryCard key={cat.id} category={cat} onClick={(id) => navigate(`/home/category/${id}`)} />
-                    ))}
+                    {categories
+                        .filter(cat => {
+                            const parentId = typeof cat.parent === 'object' ? (cat.parent as any)?.id : cat.parent;
+                            return !parentId;
+                        })
+                        .map(cat => (
+                            <CategoryCard key={cat.id} category={cat} onClick={(id) => navigate(`/home/category/${id}`)} />
+                        ))}
                 </div>
             )}
         </PageWrapper>

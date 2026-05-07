@@ -23,7 +23,7 @@ config.resolver.extraNodeModules = {
 };
 
 // 4. Stop Metro from escaping the monorepo completely to avoid SHA errors on Windows
-const blacklist = require('metro-config/src/defaults/exclusionList');
+const blacklist = require('metro-config/private/defaults/exclusionList').default;
 config.resolver.blockList = blacklist([
   // Block any node_modules outside the workspace to prevent resolution leaks
   /C:\\Users\\[^\\]+\\node_modules\\.*/

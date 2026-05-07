@@ -30,8 +30,8 @@ module.exports = {
     const EmbeddingService = (sails.services && sails.services.productembeddingservice) ? sails.services.productembeddingservice : null;
 
     if (!ProductModel) {
-       sails.log.error('CRITICAL: Product model is not loaded. Try running this script while the app is stopped.');
-       return;
+      sails.log.error('CRITICAL: Product model is not loaded. Try running this script while the app is stopped.');
+      return;
     }
     
     const products = await ProductModel.find({}).populate('category').populate('company');
@@ -49,10 +49,10 @@ module.exports = {
         const success = await sails.services.productembeddingservice.updateEmbedding(product.id);
         if (success) {
           successCount++;
-          sails.log.info(`  [✓] Success`);
+          sails.log.info('  [✓] Success');
         } else {
           failCount++;
-          sails.log.error(`  [✗] Service returned false (check Gemini API key/limits)`);
+          sails.log.error('  [✗] Service returned false (check Gemini API key/limits)');
         }
       } catch (err) {
         failCount++;

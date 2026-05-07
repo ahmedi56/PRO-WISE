@@ -54,7 +54,7 @@ module.exports = {
         temperature: 0.1
       });
 
-      if (!result.success) throw new Error(result.message);
+      if (!result.success) {throw new Error(result.message);}
 
       setCache(cacheKey, result.data);
       return result.data;
@@ -96,7 +96,7 @@ module.exports = {
         temperature: 0.1
       });
 
-      if (!result.success) throw new Error(result.message);
+      if (!result.success) {throw new Error(result.message);}
 
       const ranking = result.data;
       const rankedResults = ranking.map(r => {

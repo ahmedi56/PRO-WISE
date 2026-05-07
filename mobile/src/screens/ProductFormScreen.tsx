@@ -330,7 +330,7 @@ const ProductFormScreen: React.FC<ProductFormScreenProps> = ({ navigation, route
                     <Text style={[styles.label, { marginBottom: 0 }]}>Product Components</Text>
                     <TouchableOpacity 
                         onPress={handleAddComponent} 
-                        style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceHover, borderRadius: 5 }}
+                        style={{ paddingHorizontal: 10, paddingVertical: 5, backgroundColor: colors.surfaceContainerHigh, borderRadius: 5 }}
                     >
                         <Text style={{ color: colors.primary, fontWeight: 'bold' }}>+ Add</Text>
                     </TouchableOpacity>

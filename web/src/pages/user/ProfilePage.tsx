@@ -3,7 +3,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
-import { PageHeader, Button, PageWrapper, Section } from '../../components/index';
+import { PageHeader, Button, PageWrapper, Section, IonIcon } from '../../components/index';
 import { InputField } from '../../components/ui/InputField';
 import { getInitials, formatDate } from '../../utils/helpers';
 import { authService } from '../../services/authService';
@@ -43,36 +43,12 @@ export const ProfilePage: React.FC = () => {
         }
     };
 
-    const handleBecomeTechnician = async () => {
-        try {
-            setLoading(true);
-            const roleName = (user.role && (user.role as any).name ? (user.role as any).name : '').toLowerCase();
-      
-            if (roleName === 'technician') {
-                setMessage('You are already a technician');
-                return;
-            }
 
-            if (roleName === 'administrator' || roleName === 'company_admin' || roleName === 'super_admin') {
-                setMessage('Administrators cannot become technicians');
-                return;
-            }
-
-            const response = await authService.requestTechnicianUpgrade();
-            setMessage(response.message || 'Upgrade request submitted!');
-            // Reload user data or update local state if needed
-            window.location.reload(); // Simple way to refresh user status
-        } catch (err: any) {
-            setMessage(err.response?.data?.message || 'Failed to request upgrade.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const roleName = (typeof user?.role === 'object' ? (user?.role as any)?.name : user?.role)?.toLowerCase() || '';
-    const isCustomer = roleName === 'customer' || roleName === 'user' || roleName === 'client';
+    const role = user?.role || (user as any)?.Role;
+    const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
     const isPending = user.status === 'pending';
-    const isSpecializedRole = roleName === 'technician' || roleName === 'administrator' || roleName === 'company_admin' || roleName === 'super_admin';
+    const isSpecializedRole = ['technician', 'administrator', 'company_admin', 'super_admin'].includes(roleName);
+    const canApply = (user.technicianStatus === 'none' || !user.technicianStatus) && !isSpecializedRole;
 
     return (
         <PageWrapper maxWidth="800px">
@@ -101,7 +77,10 @@ export const ProfilePage: React.FC = () => {
                             Joined {formatDate(user.createdAt)}
                             <span style={{ margin: '0 8px' }}>•</span>
                             <span style={{ textTransform: 'capitalize', fontWeight: 500, color: 'var(--color-primary)' }}>
-                                {isPending ? 'Pending Approval' : (roleName?.replace('_', ' ') || 'Customer')}
+                                {user.technicianStatus === 'approved' ? 'Approved Technician' : 
+                                 user.technicianStatus === 'pending' ? 'Technician Application Pending' : 
+                                 user.technicianStatus === 'rejected' ? 'Technician Application Rejected' : 
+                                 (isPending ? 'Account Pending Approval' : (roleName?.replace('_', ' ') || 'User'))}
                             </span>
                         </div>
                     </div>
@@ -178,16 +157,71 @@ export const ProfilePage: React.FC = () => {
                             <div style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Bio</div>
                             <p style={{ color: 'var(--color-text)', lineHeight: 1.6 }}>{(user as any)?.bio || 'No bio provided.'}</p>
                         </div>
+
+                        {user.technicianStatus === 'approved' && user.technicianProfile && (
+                            <div style={{ 
+                                marginTop: '1rem', padding: '1.5rem', 
+                                background: 'var(--color-surface-variant)', 
+                                borderRadius: 'var(--radius-lg)',
+                                border: '1px solid var(--color-border)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                                    <div className="icon-box" style={{ width: '40px', height: '40px', fontSize: '18px' }}>
+                                        <IonIcon name="ribbon-outline" />
+                                    </div>
+                                    <div>
+                                        <h4 style={{ color: 'var(--color-text-strong)', fontWeight: 700 }}>{user.technicianProfile.headline || 'Hardware Expert'}</h4>
+                                        <p style={{ fontSize: '0.85rem', color: 'var(--color-primary)', fontWeight: 500 }}>
+                                            {user.technicianProfile.experienceYears || 0} Years Professional Experience • {user.technicianProfile.city}, {user.technicianProfile.governorate}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem' }}>Technical Skills</div>
+                                    <div className="chip-selection" style={{ gap: '0.5rem' }}>
+                                        {user.technicianProfile.skills?.map((skill: string) => (
+                                            <span key={skill} className="chip active" style={{ cursor: 'default' }}>{skill}</span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '0.75rem' }}>Service Categories</div>
+                                    <div className="chip-selection" style={{ gap: '0.5rem' }}>
+                                        {user.technicianProfile.serviceCategories?.map((cat: string) => (
+                                            <span key={cat} className="chip active-secondary" style={{ cursor: 'default' }}>{cat}</span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         
                         <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
                             <Button variant="outline" onClick={() => navigate('/service-request')}>Request Service</Button>
                             
-                            {isCustomer && !isPending && !isSpecializedRole && (
-                                <Button variant="secondary" onClick={handleBecomeTechnician} loading={loading}>Become a Technician</Button>
+                            {canApply && (
+                                <Button variant="secondary" onClick={() => navigate('/technician/apply')}>Become a Technician</Button>
                             )}
                             
-                            {isPending && (
-                                <Button variant="secondary" disabled style={{ opacity: 0.7 }}>Upgrade Pending...</Button>
+                            {user.technicianStatus === 'pending' && (
+                                <Button variant="secondary" disabled style={{ opacity: 0.7 }}>Application Pending Review...</Button>
+                            )}
+
+                            {user.technicianStatus === 'rejected' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+                                    <div style={{ padding: '0.75rem', backgroundColor: 'var(--color-error-light)', borderRadius: '8px', color: 'var(--color-error)', fontSize: '0.875rem' }}>
+                                        <strong>Rejection Reason:</strong> {user.technicianProfile?.rejectionReason || 'No reason provided'}
+                                    </div>
+                                    <Button variant="secondary" onClick={() => navigate('/technician/apply')}>Resubmit Application</Button>
+                                </div>
+                            )}
+
+                            {user.technicianStatus === 'approved' && (
+                                <>
+                                    <Button variant="secondary" onClick={() => navigate('/technician-portal')}>Technician Portal</Button>
+                                    <Button variant="outline" onClick={() => navigate('/technician/profile')}>Edit Technician Profile</Button>
+                                </>
                             )}
                             
                             <Button variant="outline" onClick={() => setIsEditing(true)}>Edit Profile</Button>

@@ -16,9 +16,9 @@ interface AuthState {
 const normalizeRoleName = (role: any): string => {
     if (!role) return 'user';
     const name = (typeof role === 'string' ? role : (role.name || '')).toLowerCase().trim();
-    if (['superadmin', 'super-admin'].includes(name)) return 'super_admin';
-    if (name === 'administrator') return 'company_admin';
-    if (name === 'client') return 'user';
+    if (['superadmin', 'super-admin', 'super_admin'].includes(name)) return 'super_admin';
+    if (['administrator', 'company_admin'].includes(name)) return 'company_admin';
+    if (['client', 'user'].includes(name)) return 'user';
     return name || 'user';
 };
 
@@ -43,10 +43,10 @@ export const loginUser = createAsyncThunk(
                 return rejectWithValue(data.message || 'Login failed');
             }
 
-            // Role Check: Mobile is for End Users and Company Admins
+            // Role Check: Mobile is for Customers only
             const roleName = normalizeRoleName(data.user?.role);
-            if (roleName !== 'user' && roleName !== 'company_admin') {
-                return rejectWithValue('Access denied: Mobile app is for standard users and business administrators only');
+            if (roleName !== 'user') {
+                return rejectWithValue('Access denied: This app is for customers only. Admins should use the web portal.');
             }
 
             await AsyncStorage.setItem('userToken', data.token);
@@ -80,6 +80,43 @@ export const registerUser = createAsyncThunk(
                 return rejectWithValue(data.message || 'Registration failed');
             }
 
+            return data;
+        } catch (error) {
+            return rejectWithValue('Network request failed');
+        }
+    }
+);
+
+export const googleLogin = createAsyncThunk(
+    'auth/googleLogin',
+    async (accessToken: string, { rejectWithValue }) => {
+        try {
+            const response = await fetch(`${API_URL}/auth/google`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ idToken: accessToken }),
+            });
+
+            const data = await response.json();
+            if (!response.ok) {
+                return rejectWithValue(data.message || 'Google login failed');
+            }
+
+            // Role Check: Mobile is for Customers only
+            const roleName = normalizeRoleName(data.user?.role);
+            if (roleName !== 'user') {
+                return rejectWithValue('Access denied: This app is for customers only. Admins should use the web portal.');
+            }
+
+            await AsyncStorage.setItem('userToken', data.token);
+            if (data.refreshToken) {
+                await AsyncStorage.setItem('refreshToken', data.refreshToken);
+            }
+            if (data.user) {
+                await AsyncStorage.setItem('userData', JSON.stringify(data.user));
+            }
             return data;
         } catch (error) {
             return rejectWithValue('Network request failed');
@@ -187,6 +224,22 @@ const authSlice = createSlice({
                 state.success = true;
             })
             .addCase(registerUser.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            .addCase(googleLogin.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(googleLogin.fulfilled, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.token = action.payload.token;
+                state.user = action.payload.user;
+                if (state.user && state.user.role) {
+                    state.user.role = { name: normalizeRoleName(state.user.role) };
+                }
+            })
+            .addCase(googleLogin.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload as string;
             })

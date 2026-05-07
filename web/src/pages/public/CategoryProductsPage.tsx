@@ -102,37 +102,43 @@ export const CategoryProductsPage: React.FC = () => {
                                     All Categories
                                 </Link>
                             </li>
-                            {categories.map(cat => {
-                                // Match by slug or id
-                                const isActive = categoryName === cat.slug || categoryName === cat.id;
-                                return (
-                                    <li key={cat.id}>
-                                        <Link 
-                                            to={`/home/category/${cat.slug || cat.id}`}
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: '0.75rem',
-                                                padding: '0.75rem 1rem',
-                                                borderRadius: 'var(--radius-md)',
-                                                color: isActive ? 'white' : 'var(--color-text)',
-                                                backgroundColor: isActive ? 'var(--color-primary)' : 'transparent',
-                                                textDecoration: 'none',
-                                                fontWeight: isActive ? 600 : 400,
-                                                transition: 'all 0.2s',
-                                                boxShadow: isActive ? '0 4px 12px var(--color-primary-glow)' : 'none'
-                                            }}
-                                            className={!isActive ? "hover-bg-surface" : ""}
-                                        >
-                                            <IonIcon 
-                                                name={(CATEGORY_ICON_MAP as any)[cat.name?.toLowerCase()] || cat.icon || 'cube-outline'} 
-                                                style={{ fontSize: '18px', opacity: isActive ? 1 : 0.7 }}
-                                            />
-                                            {cat.name}
-                                        </Link>
-                                    </li>
-                                );
-                            })}
+                            {categories
+                                .filter(cat => {
+                                    // Only show top-level categories in the directory sidebar
+                                    const parentId = typeof cat.parent === 'object' ? (cat.parent as any)?.id : cat.parent;
+                                    return !parentId;
+                                })
+                                .map(cat => {
+                                    // Match by slug or id
+                                    const isActive = categoryName === cat.slug || categoryName === cat.id;
+                                    return (
+                                        <li key={cat.id}>
+                                            <Link 
+                                                to={`/home/category/${cat.slug || cat.id}`}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '0.75rem',
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: 'var(--radius-md)',
+                                                    color: isActive ? 'white' : 'var(--color-text)',
+                                                    backgroundColor: isActive ? 'var(--color-primary)' : 'transparent',
+                                                    textDecoration: 'none',
+                                                    fontWeight: isActive ? 600 : 400,
+                                                    transition: 'all 0.2s',
+                                                    boxShadow: isActive ? '0 4px 12px var(--color-primary-glow)' : 'none'
+                                                }}
+                                                className={!isActive ? "hover-bg-surface" : ""}
+                                            >
+                                                <IonIcon 
+                                                    name={(CATEGORY_ICON_MAP as any)[cat.name?.toLowerCase()] || cat.icon || 'cube-outline'} 
+                                                    style={{ fontSize: '18px', opacity: isActive ? 1 : 0.7 }}
+                                                />
+                                                {cat.name}
+                                            </Link>
+                                        </li>
+                                    );
+                                })}
                         </ul>
                     </div>
                 </aside>

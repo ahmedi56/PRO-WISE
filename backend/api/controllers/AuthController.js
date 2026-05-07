@@ -12,9 +12,9 @@ const sanitizeUser = (user) => _.omit(user, ['password']);
 
 const normalizeRoleName = (roleName) => {
   const normalized = String(roleName || '').toLowerCase().trim();
-  if (['superadmin', 'super-admin'].includes(normalized)) return 'super_admin';
-  if (normalized === 'administrator') return 'company_admin';
-  if (normalized === 'client') return 'user';
+  if (['superadmin', 'super-admin'].includes(normalized)) {return 'super_admin';}
+  if (normalized === 'administrator') {return 'company_admin';}
+  if (normalized === 'client') {return 'user';}
   return normalized || 'user';
 };
 
@@ -23,6 +23,41 @@ const logAction = async (req, options) => {
     // Note: for login/register, req might be a custom object or the actual req
     await sails.services.auditservice.log(req, options);
   }
+};
+
+/**
+ * Helper to generate and store tokens
+ */
+const issueTokens = async (user) => {
+  const secret = sails.config.custom.jwtSecret;
+  const roleName = normalizeRoleName(user.role.name || user.role);
+  
+  const token = jwt.sign(
+    { 
+      id: user.id, 
+      email: user.email, 
+      role: roleName,
+      companyId: user.company ? (user.company.id || user.company) : null
+    },
+    secret,
+    { expiresIn: sails.config.custom.jwtExpiresIn }
+  );
+
+  const refreshToken = jwt.sign(
+    { id: user.id, type: 'refresh', jti: Math.random().toString(36).substring(7) },
+    secret,
+    { expiresIn: sails.config.custom.refreshTokenExpiresIn }
+  );
+
+  // Save refresh token to DB
+  const decoded = jwt.decode(refreshToken);
+  await RefreshToken.create({
+    token: refreshToken,
+    user: user.id,
+    expiresAt: decoded.exp * 1000
+  });
+
+  return { token, refreshToken };
 };
 
 module.exports = {
@@ -63,7 +98,7 @@ module.exports = {
 
       let normalizedRole = normalizeRoleName(roleName);
 
-      if (!['user', 'company_admin', 'super_admin', 'technician'].includes(normalizedRole)) {
+      if (!['user', 'company_admin', 'super_admin'].includes(normalizedRole)) {
         return res.status(400).json({ message: 'Invalid role selection.' });
       }
 
@@ -201,8 +236,8 @@ module.exports = {
           { username: normalizedEmail } // allows "callsig" login
         ]
       })
-                .populate('role')
-                .populate('company');
+        .populate('role')
+        .populate('company');
 
       if (!user) {
         return res.status(401).json({ message: 'Invalid credentials' });
@@ -239,24 +274,7 @@ module.exports = {
       }
       // ------------------------------------------------------------------------
 
-      const secret = sails.config.custom.jwtSecret;
-      const roleName = normalizeRoleName(user.role.name);
-      
-      const token = jwt.sign(
-                { 
-                  id: user.id, 
-                  email: user.email, 
-                  role: roleName,
-                  companyId: user.company ? (user.company.id || user.company) : null
-                },
-                secret,
-                { expiresIn: sails.config.custom.jwtExpiresIn }
-      );
-      const refreshToken = jwt.sign(
-                { id: user.id, type: 'refresh' },
-                secret,
-                { expiresIn: sails.config.custom.refreshTokenExpiresIn }
-      );
+      const { token, refreshToken } = await issueTokens(user);
 
       await logAction(req, {
         action: 'auth.login',
@@ -265,7 +283,7 @@ module.exports = {
         targetLabel: user.name || user.email,
         details: {
           email: user.email,
-          role: roleName
+          role: normalizeRoleName(user.role.name)
         }
       });
 
@@ -306,11 +324,18 @@ module.exports = {
         return res.status(400).json({ message: 'Refresh token is required' });
       }
 
+      // Check if token exists in DB
+      const dbToken = await RefreshToken.findOne({ token: refreshToken });
+      if (!dbToken) {
+        return res.status(401).json({ message: 'Invalid refresh token' });
+      }
+
       const secret = sails.config.custom.jwtSecret;
       let decoded;
       try {
         decoded = jwt.verify(refreshToken, secret);
       } catch (err) {
+        await RefreshToken.destroy({ token: refreshToken });
         return res.status(401).json({ message: 'Invalid or expired refresh token' });
       }
 
@@ -319,33 +344,36 @@ module.exports = {
       }
 
       const user = await User.findOne({ id: decoded.id }).populate('role').populate('company');
-      if (!user) {
-        return res.status(401).json({ message: 'User not found' });
-      }
-      if (user.status === 'deactivated') {
-        return res.status(403).json({ message: 'Your account is deactivated. Contact support.' });
+      if (!user || user.status === 'deactivated') {
+        await RefreshToken.destroy({ token: refreshToken });
+        return res.status(401).json({ message: 'User not found or deactivated' });
       }
 
-      const newToken = jwt.sign(
-                { 
-                  id: user.id, 
-                  email: user.email, 
-                  role: normalizeRoleName(user.role.name),
-                  companyId: user.company ? (user.company.id || user.company) : null
-                },
-                secret,
-                { expiresIn: sails.config.custom.jwtExpiresIn }
-      );
-      const newRefreshToken = jwt.sign(
-                { id: user.id, type: 'refresh' },
-                secret,
-                { expiresIn: sails.config.custom.refreshTokenExpiresIn }
-      );
+      // Rotate token: delete old, issue new
+      await RefreshToken.destroy({ token: refreshToken });
+      const { token: newToken, refreshToken: newRefreshToken } = await issueTokens(user);
 
       return res.json({ token: newToken, refreshToken: newRefreshToken });
 
     } catch (err) {
       sails.log.error('Refresh error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * POST /api/auth/logout
+   * Logout user by invalidating the refresh token
+   */
+  logout: async function (req, res) {
+    try {
+      const { refreshToken } = req.body;
+      if (refreshToken) {
+        await RefreshToken.destroy({ token: refreshToken });
+      }
+      return res.json({ message: 'Logged out successfully' });
+    } catch (err) {
+      sails.log.error('Logout error:', err);
       return res.status(500).json({ message: 'Internal server error' });
     }
   },
@@ -357,8 +385,8 @@ module.exports = {
   me: async function (req, res) {
     try {
       const user = await User.findOne({ id: req.user.id })
-                .populate('role')
-                .populate('company');
+        .populate('role')
+        .populate('company');
 
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -435,25 +463,7 @@ module.exports = {
         return res.status(403).json({ message: 'Your account is deactivated. Contact support.' });
       }
 
-      const secret = sails.config.custom.jwtSecret;
-      const roleName = normalizeRoleName(user.role.name);
-      
-      const token = jwt.sign(
-        { 
-          id: user.id, 
-          email: user.email, 
-          role: roleName,
-          companyId: user.company ? (user.company.id || user.company) : null
-        },
-        secret,
-        { expiresIn: sails.config.custom.jwtExpiresIn }
-      );
-
-      const refreshToken = jwt.sign(
-        { id: user.id, type: 'refresh' },
-        secret,
-        { expiresIn: sails.config.custom.refreshTokenExpiresIn }
-      );
+      const { token, refreshToken } = await issueTokens(user);
 
       await logAction(req, {
         action: 'auth.login',
@@ -462,7 +472,7 @@ module.exports = {
         targetLabel: user.name || user.email,
         details: {
           email: user.email,
-          role: roleName,
+          role: normalizeRoleName(user.role.name),
           provider: 'google'
         }
       });
@@ -489,6 +499,45 @@ module.exports = {
     } catch (err) {
       sails.log.error('Google Auth error:', err.response?.data || err.message);
       return res.status(500).json({ message: 'Google authentication failed' });
+    }
+  },
+
+  /**
+   * GET /api/experts
+   * Get list of approved technicians for public map/list
+   */
+  getPublicTechnicians: async function (req, res) {
+    sails.log.info('GET /api/experts triggered in AuthController');
+    try {
+      const technicians = await User.find({
+        where: { technicianStatus: 'approved' },
+        select: ['id', 'name', 'avatar', 'technicianProfile', 'createdAt']
+      });
+
+      sails.log.info(`Found ${technicians.length} approved technicians`);
+
+      const sanitized = technicians.map(tech => ({
+        id: tech.id,
+        name: tech.name,
+        avatar: tech.avatar,
+        headline: tech.technicianProfile?.headline,
+        bio: tech.technicianProfile?.bio,
+        skills: tech.technicianProfile?.skills,
+        experienceYears: tech.technicianProfile?.experienceYears,
+        city: tech.technicianProfile?.city,
+        governorate: tech.technicianProfile?.governorate,
+        latitude: tech.technicianProfile?.latitude,
+        longitude: tech.technicianProfile?.longitude,
+        serviceCategories: tech.technicianProfile?.serviceCategories,
+        averageRating: tech.technicianProfile?.averageRating || 0,
+        completedJobs: tech.technicianProfile?.completedJobs || 0,
+        joinedAt: tech.createdAt
+      }));
+
+      return res.json(sanitized);
+    } catch (err) {
+      sails.log.error('Get public technicians error in AuthController:', err);
+      return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
   }
 

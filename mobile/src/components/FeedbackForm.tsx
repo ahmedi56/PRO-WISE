@@ -15,7 +15,8 @@ import {
     Alert,
     Switch
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import API_URL from '../constants/config';
 import { apiFetch } from '../utils/api';

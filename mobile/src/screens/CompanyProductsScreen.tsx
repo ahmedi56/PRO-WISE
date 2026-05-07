@@ -9,7 +9,8 @@ import {
     Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import { logout } from '../store/slices/authSlice';
 import API_URL from '../constants/config';
 import { readJson } from '../utils/apiSettings';

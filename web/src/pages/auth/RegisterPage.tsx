@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
-import { registerUser, clearError } from '../../store/slices/authSlice';
+import { useGoogleLogin } from '@react-oauth/google';
+import { registerUser, googleLogin, clearError } from '../../store/slices/authSlice';
 import { RootState, AppDispatch } from '../../store';
 import { Button, IonIcon } from '../../components/index';
 import { InputField } from '../../components/ui/InputField';
@@ -47,7 +48,6 @@ export const RegisterPage: React.FC = () => {
         e.preventDefault();
         dispatch(clearError());
         
-        // Finalize company registration data
         const submissionData = { ...formData };
         if (formData.roleName === 'company_admin') {
             submissionData.companyId = 'new_request';
@@ -55,7 +55,6 @@ export const RegisterPage: React.FC = () => {
         
         const resultAction = await dispatch(registerUser(submissionData));
         if (registerUser.fulfilled.match(resultAction)) {
-            // If it's a company admin, they might be pending approval
             if (formData.roleName === 'company_admin') {
                 navigate('/pending-approval');
             } else {
@@ -64,11 +63,24 @@ export const RegisterPage: React.FC = () => {
         }
     };
 
+    const handleGoogleRegister = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            const resultAction = await dispatch(googleLogin(tokenResponse.access_token));
+            if (googleLogin.fulfilled.match(resultAction)) {
+                navigate('/home', { replace: true });
+            }
+        },
+        onError: () => console.error('Google Registration Failed')
+    });
+
     const isCompanyAdmin = formData.roleName === 'company_admin';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.25rem' }}>
+                <Link to="/" style={{ display: 'inline-block', marginBottom: '1.25rem' }}>
+                    <img src="/pro-wise.svg" alt="PRO-WISE Logo" style={{ height: '70px', width: 'auto' }} />
+                </Link>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-text-strong)', marginBottom: '0.5rem' }}>Create Account</h2>
                 <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9375rem' }}>Join the PRO-WISE community</p>
             </div>
@@ -139,34 +151,46 @@ export const RegisterPage: React.FC = () => {
                 />
                 
                 <div className="input-group">
-                    <label className="label" htmlFor="roleName">Account Type</label>
-                    <div style={{ position: 'relative' }}>
-                        <IonIcon 
-                            name="briefcase-outline" 
-                            style={{ 
-                                position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', 
-                                color: 'var(--color-text-muted)', fontSize: '1.1rem', zIndex: 1 
-                            }} 
-                        />
-                        <select 
-                            id="roleName"
-                            name="roleName" 
-                            value={formData.roleName} 
-                            onChange={handleChange}
-                            className="input"
-                            style={{ paddingLeft: '38px', height: '48px', appearance: 'none' }}
+                    <label className="label pw-mb-3" style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem' }}>Account Type</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div 
+                            onClick={() => setFormData(prev => ({ ...prev, roleName: 'client' }))}
+                            style={{
+                                padding: '1rem',
+                                borderRadius: 'var(--radius-lg)',
+                                border: `2px solid ${formData.roleName === 'client' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                background: formData.roleName === 'client' ? 'rgba(var(--color-primary-rgb), 0.1)' : 'transparent',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                textAlign: 'center'
+                            }}
                         >
-                            <option value="client">Customer</option>
-                            <option value="technician">Technician</option>
-                            <option value="company_admin">Company Admin</option>
-                        </select>
-                        <IonIcon 
-                            name="chevron-down-outline" 
-                            style={{ 
-                                position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', 
-                                color: 'var(--color-text-muted)', pointerEvents: 'none' 
-                            }} 
-                        />
+                            <IonIcon name="person-outline" style={{ fontSize: '1.5rem', color: formData.roleName === 'client' ? 'var(--color-primary)' : 'var(--color-text-muted)' }} />
+                            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: formData.roleName === 'client' ? 'var(--color-text-strong)' : 'var(--color-text-muted)' }}>Customer</span>
+                        </div>
+                        <div 
+                            onClick={() => setFormData(prev => ({ ...prev, roleName: 'company_admin' }))}
+                            style={{
+                                padding: '1rem',
+                                borderRadius: 'var(--radius-lg)',
+                                border: `2px solid ${formData.roleName === 'company_admin' ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                                background: formData.roleName === 'company_admin' ? 'rgba(var(--color-primary-rgb), 0.1)' : 'transparent',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                textAlign: 'center'
+                            }}
+                        >
+                            <IonIcon name="business-outline" style={{ fontSize: '1.5rem', color: formData.roleName === 'company_admin' ? 'var(--color-primary)' : 'var(--color-text-muted)' }} />
+                            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: formData.roleName === 'company_admin' ? 'var(--color-text-strong)' : 'var(--color-text-muted)' }}>Company Admin</span>
+                        </div>
                     </div>
                 </div>
 
@@ -234,10 +258,32 @@ export const RegisterPage: React.FC = () => {
                     </div>
                 )}
                 
-                <Button type="submit" fullWidth loading={loading} style={{ height: '48px', fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem' }}>
+                <Button type="submit" fullWidth loading={loading} style={{ height: '52px', fontSize: '1rem', fontWeight: 600, marginTop: '0.5rem', borderRadius: 'var(--radius-lg)' }}>
                     {isCompanyAdmin ? 'Request Administrator Access' : 'Create Account'}
                 </Button>
             </form>
+
+            <div style={{ position: 'relative', margin: '0.5rem 0' }}>
+                <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: '1px', backgroundColor: 'var(--color-border)' }} />
+                <span style={{ 
+                    position: 'relative', display: 'block', width: 'max-content', margin: '0 auto', 
+                    padding: '0 1rem', backgroundColor: 'var(--color-surface)', 
+                    color: 'var(--color-text-muted)', fontSize: '0.8125rem', fontWeight: 500
+                }}>
+                    OR
+                </span>
+            </div>
+
+            <Button 
+                variant="outline" 
+                fullWidth 
+                onClick={() => handleGoogleRegister()}
+                loading={loading}
+                style={{ height: '52px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', borderRadius: 'var(--radius-lg)' }}
+            >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{ width: '20px', height: '20px' }} />
+                <span style={{ fontWeight: 500 }}>Sign up with Google</span>
+            </Button>
 
             <p style={{ textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-muted)', marginTop: '0.5rem' }}>
                 Already have an account? <Link to="/login" style={{ color: 'var(--color-primary)', fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>

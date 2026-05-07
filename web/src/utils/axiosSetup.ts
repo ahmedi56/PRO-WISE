@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig, AxiosHeaders } from 'axios';
 import { API_URL } from '../config';
 import store from '../store';
 import { logout } from '../store/slices/authSlice';
@@ -12,8 +12,11 @@ interface AuthResponse {
 axios.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = localStorage.getItem('token');
-        if (token && !config.headers.Authorization) {
-            config.headers.Authorization = `Bearer ${token}`;
+        if (token) {
+            config.headers = config.headers || new AxiosHeaders();
+            if (!config.headers.Authorization) {
+                config.headers.Authorization = `Bearer ${token}`;
+            }
         }
         return config;
     },
@@ -52,6 +55,7 @@ axios.interceptors.response.use(
                     }
                     
                     // Update the failed request with the new token and retry
+                    originalRequest.headers = originalRequest.headers || new AxiosHeaders();
                     originalRequest.headers.Authorization = `Bearer ${data.token}`;
                     return axios(originalRequest);
                 }

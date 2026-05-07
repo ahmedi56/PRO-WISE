@@ -48,6 +48,18 @@ module.exports = {
       type: 'string',
       isIn: ['active', 'deactivated', 'pending'],
       defaultsTo: 'active'
+    },
+    isTechnician: {
+      type: 'boolean',
+      defaultsTo: false
+    },
+    technicianStatus: {
+      type: 'string',
+      isIn: ['none', 'pending', 'approved', 'rejected'],
+      defaultsTo: 'none'
+    },
+    technicianProfile: {
+      type: 'json'
     }
   },
 
@@ -62,8 +74,8 @@ module.exports = {
     // Auto-generate username from name if not provided
     if (!valuesToSet.username && valuesToSet.name) {
       valuesToSet.username = valuesToSet.name
-                .toLowerCase()
-                .replace(/\s+/g, '.')
+        .toLowerCase()
+        .replace(/\s+/g, '.')
                 + '.' + Date.now().toString(36);
     }
     return proceed();

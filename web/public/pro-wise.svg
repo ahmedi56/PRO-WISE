@@ -1,15 +1,15 @@
 <svg width="130" height="160" viewBox="0 0 130 160" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <!-- Dark/Deep Electric Blue -->
+    <!-- Dark/Deep Electric Blue (Indigo match) -->
     <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3B82F6"/>
-      <stop offset="100%" stop-color="#1D4ED8"/>
+      <stop offset="0%" stop-color="#c3c0ff"/>
+      <stop offset="100%" stop-color="#4f46e5"/>
     </linearGradient>
 
     <!-- Glowing Accent Cyan -->
     <linearGradient id="cyanGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#22D3EE"/>
-      <stop offset="100%" stop-color="#0891B2"/>
+      <stop offset="0%" stop-color="#6cd3f7"/>
+      <stop offset="100%" stop-color="#269dbe"/>
     </linearGradient>
 
     <!-- Super Glow for the Core Insight Node -->
@@ -30,8 +30,8 @@
 
     <!-- Soft Ambient Spot Lighting -->
     <radialGradient id="ambience" cx="65" cy="80" r="90" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#22D3EE" stop-opacity="0.15"/>
-      <stop offset="100%" stop-color="#3B82F6" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#6cd3f7" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#4f46e5" stop-opacity="0"/>
     </radialGradient>
   </defs>
 

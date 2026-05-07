@@ -48,5 +48,32 @@ export const authService = {
         }
         
         return res.json();
+    },
+
+    requestTechnicianUpgrade: async (applicationData: any): Promise<any> => {
+        const res = await apiFetch(`${API_URL}/users/technician/request`, {
+            method: 'POST',
+            body: JSON.stringify(applicationData),
+        });
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || 'Application submission failed');
+        }
+        return res.json();
+    },
+
+    getTechnicianMe: async (): Promise<any> => {
+        const res = await apiFetch(`${API_URL}/users/technician/me`);
+        if (!res.ok) throw new Error('Failed to fetch technician status');
+        return res.json();
+    },
+
+    updateTechnicianProfile: async (profileData: any): Promise<any> => {
+        const res = await apiFetch(`${API_URL}/users/technician/profile`, {
+            method: 'PUT',
+            body: JSON.stringify(profileData),
+        });
+        if (!res.ok) throw new Error('Failed to update technician profile');
+        return res.json();
     }
 };

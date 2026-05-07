@@ -6,6 +6,7 @@ import { RootState, AppDispatch } from '../store';
 import SemanticSearch from '../components/SemanticSearch';
 import { IonIcon } from '../components/ui';
 import { NotificationDropdown } from '../components/NotificationDropdown';
+import '../styles/navbar.css';
 
 export const Navbar: React.FC = () => {
     const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
@@ -17,10 +18,44 @@ export const Navbar: React.FC = () => {
         return localStorage.getItem('prowise-theme') || 'dark';
     });
 
+    const [isHidden, setIsHidden] = useState(false);
+    const [lastScrollY, setLastScrollY] = useState(0);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
+    const [stormEnabled, setStormEnabled] = useState(() => {
+        return localStorage.getItem('prowise-storm') !== 'false';
+    });
+
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('prowise-theme', theme);
     }, [theme]);
+
+    useEffect(() => {
+        if (stormEnabled) {
+            document.body.classList.remove('animations-disabled');
+        } else {
+            document.body.classList.add('animations-disabled');
+        }
+        localStorage.setItem('prowise-storm', stormEnabled.toString());
+    }, [stormEnabled]);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            const currentScrollY = window.scrollY;
+            
+            // Only hide when scrolling down past 60px, show when scrolling up
+            if (currentScrollY > lastScrollY && currentScrollY > 60) {
+                setIsHidden(true);
+            } else if (currentScrollY < lastScrollY) {
+                setIsHidden(false);
+            }
+            
+            setLastScrollY(currentScrollY);
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, [lastScrollY]);
 
     const toggleTheme = () => {
         setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -44,62 +79,22 @@ export const Navbar: React.FC = () => {
     };
 
     return (
-        <nav className="navbar" style={{ 
-            padding: '0 2rem', 
-            height: '72px', 
-            background: 'var(--color-surface)', 
-            borderBottom: '1px solid var(--color-border)', 
-            position: 'sticky', 
-            top: 0, 
-            zIndex: 1000, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between' 
-        }}>
+        <nav className="navbar" style={{ transform: isHidden ? 'translateY(-100%)' : 'translateY(0)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '2.5rem' }}>
-                <Link to="/" className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div className="pw-logo-box" style={{ 
-                        backgroundColor: 'var(--color-primary)', 
-                        width: '32px', 
-                        height: '32px', 
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white'
-                    }}>
-                        <IonIcon name="flash" style={{ fontSize: '20px' }} />
-                    </div>
-                    <span style={{ fontWeight: 800, color: 'var(--color-text-strong)', letterSpacing: '-0.02em' }}>PRO-WISE</span>
+                <Link to="/" className="navbar-brand" style={{ display: 'flex', alignItems: 'center' }}>
+                    <img src="/pro-wise.svg" alt="PRO-WISE Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
                 </Link>
 
-                <div className="desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <Link
-                        to="/categories"
-                        className={`nav-link ${isActive('/categories') ? 'active' : ''}`}
-                        style={{ 
-                            padding: '0.5rem 1rem', 
-                            fontSize: '0.9375rem', 
-                            fontWeight: 600, 
-                            color: isActive('/categories') ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                            textDecoration: 'none'
-                        }}
-                    >
+                <div className="desktop-links" style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Link to="/categories" className={`nav-link ${isActive('/categories') ? 'active' : ''}`}>
                         Directory
+                    </Link>
+                    <Link to="/technicians" className={`nav-link ${isActive('/technicians') ? 'active' : ''}`}>
+                        Find Experts
                     </Link>
 
                     {isAdmin && (
-                        <Link
-                            to="/admin"
-                            className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-                            style={{ 
-                                padding: '0.5rem 1rem', 
-                                fontSize: '0.9375rem', 
-                                fontWeight: 600, 
-                                color: isActive('/admin') ? 'var(--color-primary)' : 'var(--color-text-muted)',
-                                textDecoration: 'none'
-                            }}
-                        >
+                        <Link to="/admin" className={`nav-link ${isActive('/admin') ? 'active' : ''}`}>
                             Operations
                         </Link>
                     )}
@@ -110,23 +105,8 @@ export const Navbar: React.FC = () => {
                 <SemanticSearch />
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <button
-                    onClick={toggleTheme}
-                    className="theme-toggle-btn"
-                    style={{ 
-                        background: 'none', 
-                        cursor: 'pointer', 
-                        color: 'var(--color-text-muted)', 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center', 
-                        width: '36px', 
-                        height: '36px', 
-                        borderRadius: 'var(--radius-md)', 
-                        border: '1px solid var(--color-border)' 
-                    }}
-                >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <button onClick={toggleTheme} className="nav-icon-btn">
                     <IonIcon name={theme === 'dark' ? "sunny-outline" : "moon-outline"} style={{ fontSize: '1.25rem' }} />
                 </button>
 
@@ -135,48 +115,49 @@ export const Navbar: React.FC = () => {
                 </div>
 
                 {isAuthenticated ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingLeft: '1.25rem', borderLeft: '1px solid var(--color-border)' }}>
-                        <Link to="/profile" style={{ textDecoration: 'none' }}>
-                            <div className="nav-avatar" style={{ 
-                                width: '36px', 
-                                height: '36px', 
-                                borderRadius: 'var(--radius-md)', 
-                                background: 'var(--color-primary)', 
-                                color: '#fff', 
-                                display: 'flex', 
-                                alignItems: 'center', 
-                                justifyContent: 'center', 
-                                fontWeight: 800, 
-                                fontSize: '0.875rem' 
-                            }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', paddingLeft: '1.25rem', borderLeft: '1px solid var(--color-border)', position: 'relative' }}>
+                        <div className="nav-user-pill" onClick={() => setUserMenuOpen(!userMenuOpen)}>
+                            <div className="nav-avatar">
                                 {initial}
                             </div>
-                        </Link>
-                        <button 
-                            onClick={handleLogout} 
-                            style={{ 
-                                background: 'none', 
-                                border: 'none', 
-                                cursor: 'pointer', 
-                                color: 'var(--color-text-muted)',
-                                fontWeight: 700, 
-                                fontSize: '0.8125rem' 
-                            }}
-                        >
-                            Sign Out
-                        </button>
+                            <IonIcon name={userMenuOpen ? "chevron-up-outline" : "chevron-down-outline"} style={{ fontSize: '14px', color: 'var(--color-text-muted)' }} />
+                        </div>
+
+                        {userMenuOpen && (
+                            <div className="user-dropdown pw-card pw-absolute pw-top-full pw-right-0 pw-z-100 pw-mt-2 pw-fade-in" style={{ width: '220px', padding: '0.5rem', boxShadow: 'var(--shadow-lg)' }}>
+                                <Link to="/profile" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                    <IonIcon name="person-outline" /> Profile
+                                </Link>
+
+                                {user?.technicianStatus === 'none' && !isAdmin && (
+                                    <Link to="/technician/apply" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                        <IonIcon name="construct-outline" /> Become a Technician
+                                    </Link>
+                                )}
+
+                                {user?.technicianStatus === 'approved' && (
+                                    <Link to="/technician-portal" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                        <IonIcon name="hammer-outline" /> Technician Portal
+                                    </Link>
+                                )}
+
+                                <button className="dropdown-item" onClick={() => setStormEnabled(!stormEnabled)}>
+                                    <IonIcon name={stormEnabled ? "flash-outline" : "flash-off-outline"} /> 
+                                    {stormEnabled ? 'Disable Storm' : 'Enable Storm'}
+                                </button>
+                                <div style={{ height: '1px', background: 'var(--color-border)', margin: '0.5rem 0' }} />
+                                <button className="dropdown-item logout" onClick={handleLogout}>
+                                    <IonIcon name="log-out-outline" /> Sign Out
+                                </button>
+                            </div>
+                        )}
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', paddingLeft: '1.25rem', borderLeft: '1px solid var(--color-border)' }}>
-                        <Link to="/login" style={{ textDecoration: 'none', color: 'var(--color-text-strong)', fontWeight: 600, fontSize: '0.9375rem' }}>Sign In</Link>
-                        <Link to="/register" style={{ 
-                            textDecoration: 'none', 
-                            color: '#fff', 
-                            background: 'var(--color-primary)', 
-                            padding: '0.5rem 1rem', 
-                            borderRadius: 'var(--radius-md)', 
-                            fontWeight: 600, 
-                            fontSize: '0.9375rem' 
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', paddingLeft: '1.25rem', borderLeft: '1px solid var(--color-border)' }}>
+                        <Link to="/login" style={{ textDecoration: 'none', color: 'var(--color-text-strong)', fontWeight: 700, fontSize: '0.9rem' }}>Sign In</Link>
+                        <Link to="/register" className="btn-get-started" style={{ 
+                            textDecoration: 'none', color: '#fff', background: 'var(--color-primary)', 
+                            padding: '0.625rem 1.25rem', borderRadius: 'var(--radius-md)', fontWeight: 700, fontSize: '0.9rem' 
                         }}>
                             Get Started
                         </Link>

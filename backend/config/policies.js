@@ -18,7 +18,8 @@ module.exports.policies = {
     'login': true,
     'register': true,
     'refresh': true,
-    'google': true
+    'google': true,
+    'getPublicTechnicians': true
   },
 
   // ─── User routes ────────────────────────────────────────
@@ -34,7 +35,12 @@ module.exports.policies = {
     'updateUser': ['isAuthenticated', 'isSuperAdmin'],
     'bulkDelete': ['isAuthenticated', 'isSuperAdmin'],
     'requestTechnicianUpgrade': 'isAuthenticated',
+    'getTechnicianMe': 'isAuthenticated',
+    'updateTechnicianProfile': 'isAuthenticated',
+    'getTechnicianApplications': ['isAuthenticated', 'isSuperAdmin'],
     'approveTechnician': ['isAuthenticated', 'isSuperAdmin'],
+    'rejectTechnician': ['isAuthenticated', 'isSuperAdmin'],
+    'getPublicTechnicians': true,
   },
 
   // ─── Role routes ────────────────────────────────────────

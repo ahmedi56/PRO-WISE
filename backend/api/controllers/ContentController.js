@@ -47,7 +47,7 @@ module.exports = {
       const contentId = req.params.id;
       const content = await Content.findOne({ id: contentId });
       
-      if (!content) return res.notFound({ error: 'Content not found' });
+      if (!content) {return res.notFound({ error: 'Content not found' });}
       
       const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
       if (!req.user || !isOwner) {
@@ -91,7 +91,7 @@ module.exports = {
       const contentId = req.params.id;
       const content = await Content.findOne({ id: contentId });
 
-      if (!content) return res.notFound({ error: 'Content not found' });
+      if (!content) {return res.notFound({ error: 'Content not found' });}
 
       const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
       if (!req.user || !isOwner) {
@@ -142,7 +142,7 @@ module.exports = {
               title: 'New Content Submission',
               message: `"${content.title}" has been submitted for approval.`,
               type: 'approval_request',
-              link: `/admin/content/pending`
+              link: '/admin/content/pending'
             });
           }
         }
@@ -247,7 +247,7 @@ module.exports = {
         }
       }
 
-      if (!item) return res.notFound({ error: 'Item not found in any supported models' });
+      if (!item) {return res.notFound({ error: 'Item not found in any supported models' });}
 
       if (item.status !== 'pending') {
         return res.badRequest({ error: `Invalid status: Cannot approve item with status ${item.status}` });
@@ -275,7 +275,7 @@ module.exports = {
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} Approved`,
           message: `Your ${type} "${label}" has been approved and is now active.`,
           type: 'success',
-          link: type === 'content' ? `/admin/support` : `/${type}s/${approved.id}`
+          link: type === 'content' ? '/admin/support' : `/${type}s/${approved.id}`
         });
       } catch (err) {
         sails.log.error('Failed to create notification on approve:', err);
@@ -319,7 +319,7 @@ module.exports = {
         }
       }
 
-      if (!item) return res.notFound({ error: 'Item not found' });
+      if (!item) {return res.notFound({ error: 'Item not found' });}
 
       if (item.status !== 'pending') {
         return res.badRequest({ error: `Invalid status: Cannot reject item with status ${item.status}` });
@@ -382,14 +382,14 @@ module.exports = {
   findOne: async function (req, res) {
     try {
       const content = await Content.findOne({ id: req.params.id });
-      if (!content) return res.notFound({ error: 'Content not found' });
+      if (!content) {return res.notFound({ error: 'Content not found' });}
 
       // Check visibility rules
-      if (content.status === 'approved') return res.ok(content);
+      if (content.status === 'approved') {return res.ok(content);}
 
       const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
       if (!req.user || !isOwner) {
-         return res.forbidden({ error: 'Unauthorized access: This content is not public' });
+        return res.forbidden({ error: 'Unauthorized access: This content is not public' });
       }
 
       return res.ok(content);

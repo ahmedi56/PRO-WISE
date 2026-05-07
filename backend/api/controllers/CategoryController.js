@@ -77,8 +77,8 @@ module.exports = {
 
       // Fetch all categories to build the tree if requested
       const categories = await Category.find(criteria)
-                .sort('sortOrder ASC')
-                .sort('name ASC');
+        .sort('sortOrder ASC')
+        .sort('name ASC');
 
       if (tree === 'true') {
         // Build a proper recursive tree
@@ -129,8 +129,8 @@ module.exports = {
   getOne: async function (req, res) {
     try {
       const category = await Category.findOne({ id: req.params.id })
-                .populate('children')
-                .populate('parent');
+        .populate('children')
+        .populate('parent');
 
       if (!category) {
         return res.status(404).json({ message: 'Category not found' });

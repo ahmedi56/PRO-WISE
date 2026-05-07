@@ -6,7 +6,7 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "lint": "eslint . --ext js,jsx --max-warnings 0",
+        "lint": "npx --yes cross-env ESLINT_USE_FLAT_CONFIG=false eslint . --ext js,jsx --ignore-path ../.eslintignore --no-error-on-unmatched-pattern --max-warnings 0",
         "preview": "vite preview"
     },
     "dependencies": {
@@ -25,8 +25,7 @@
         "react-dom": "19.1.0",
         "react-redux": "^9.2.0",
         "react-router-dom": "^6.30.3",
-        "recharts": "^3.8.1",
-        "sails-mongo": "^1.2.0"
+        "recharts": "^3.8.1"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4.2.4",

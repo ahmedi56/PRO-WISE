@@ -28,10 +28,10 @@ module.exports = {
 
       // 1. Fetch Repair Guide
       const guide = await RepairGuide.findOne(criteria)
-      .populate('createdBy')
-      .populate('steps', {
-        sort: 'stepNumber ASC'
-      });
+        .populate('createdBy')
+        .populate('steps', {
+          sort: 'stepNumber ASC'
+        });
 
       // 2. Fetch Videos
       const videos = await SupportVideo.find({ product: productId }).populate('createdBy');

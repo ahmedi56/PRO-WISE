@@ -204,7 +204,7 @@ module.exports = {
           // Embedding failed but we have a text query — fall through to
           // text-based candidate scoring below instead of returning empty.
           diagnostics.fallback = 'text';
-          sails.log.warn(`Similarity helper: using text fallback for query`);
+          sails.log.warn('Similarity helper: using text fallback for query');
         } else if (currentProduct && boostCategoryId) {
           const isComponentFallback = !!(sourceComponents && sourceComponents.length);
           const fallbackCriteria = {
@@ -361,7 +361,7 @@ module.exports = {
         // Compound bonus: same brand AND category = highly relevant
         if (sameCategory && sameBrand) {
           rawScore += 25;
-          recommendationReason = recommendationReason || `Same brand & category`;
+          recommendationReason = recommendationReason || 'Same brand & category';
         }
 
         // ── Name overlap scoring ──
@@ -412,7 +412,7 @@ module.exports = {
 
         if (!recommendationReason) {
           if (sameCategory && sameBrand) {
-            recommendationReason = `Same brand & category`;
+            recommendationReason = 'Same brand & category';
           } else if (sameBrand) {
             recommendationReason = `Same brand: ${candidate.manufacturer}`;
           } else if (sameCategory) {

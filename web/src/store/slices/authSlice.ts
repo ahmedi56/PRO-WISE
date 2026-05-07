@@ -16,12 +16,12 @@ interface AuthState {
 }
 
 const normalizeRoleName = (role: any): string => {
-    if (!role) return 'customer';
+    if (!role) return 'user';
     const name = (typeof role === 'string' ? role : (role.name || '')).toLowerCase().trim();
     if (['superadmin', 'super-admin'].includes(name)) return 'super_admin';
     if (name === 'administrator') return 'company_admin';
-    if (name === 'client' || name === 'user' || name === 'customer_role') return 'customer';
-    return name || 'customer';
+    if (name === 'client' || name === 'user' || name === 'customer' || name === 'customer_role') return 'user';
+    return name || 'user';
 };
 
 const normalizeUserRole = (user: any): User => {

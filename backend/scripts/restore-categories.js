@@ -65,7 +65,7 @@ async function run() {
             { name: 'Google', slug: 'google', icon: 'logo-google' }
           ];
           for (const sub of subCats) {
-             await Category.insertOne({
+            await Category.insertOne({
               name: sub.name,
               slug: sub.slug,
               icon: sub.icon,

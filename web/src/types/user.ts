@@ -1,4 +1,4 @@
-export type Role = 'super_admin' | 'company_admin' | 'customer';
+export type Role = 'super_admin' | 'company_admin' | 'technician' | 'user';
 export type UserRole = Role; // Alias for consistency
 
 export interface RoleObject {
@@ -20,6 +20,9 @@ export interface User {
   avatar?: string;
   company?: any; // Company ID or object
   status: 'active' | 'deactivated' | 'pending';
+  isTechnician?: boolean;
+  technicianStatus?: 'none' | 'pending' | 'approved' | 'rejected';
+  technicianProfile?: any;
   createdAt: string;
 }
 

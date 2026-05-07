@@ -1,5 +1,9 @@
 {
   "expo": {
+    "scheme": "prowise",
+    "updates": {
+      "enabled": false
+    },
     "name": "PRO-WISE",
     "slug": "product-assistant-mobile",
     "version": "1.0.0",
@@ -18,6 +22,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.prowise.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/pro-wise.png",
         "backgroundColor": "#161B22"

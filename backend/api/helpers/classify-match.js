@@ -92,7 +92,7 @@ module.exports = {
           confidence = 'medium';
           reasons.push(`Different manufacturer, but same ${candidate.category?.name || 'equipment'} category`);
         } else {
-          reasons.push(`Same hardware category`);
+          reasons.push('Same hardware category');
         }
       }
     }

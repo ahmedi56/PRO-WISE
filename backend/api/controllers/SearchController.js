@@ -130,7 +130,7 @@ module.exports = {
         // Try AI Ranking if available, else skip
         try {
           if (!isFallback && sails.services.aigenerationservice) {
-             products = await sails.services.aigenerationservice.rankWithGemini(q, products);
+            products = await sails.services.aigenerationservice.rankWithGemini(q, products);
           }
         } catch (e) {
           sails.log.warn('SearchController: Ranking failed, using DB order.');

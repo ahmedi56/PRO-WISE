@@ -267,22 +267,22 @@ module.exports = {
       }
 
       let products = await Product.find(where)
-                .populate('category')
-                .populate('company')
-                .skip(skip)
-                .limit(parseInt(limit))
-                .sort(dbSort);
+        .populate('category')
+        .populate('company')
+        .skip(skip)
+        .limit(parseInt(limit))
+        .sort(dbSort);
 
       const pIds = products.map(p => p.id);
       if (pIds.length > 0) {
         const feedbacks = await Feedback.find({ product: { in: pIds }, isHidden: false });
         products = products.map(p => {
-            const pFeedbacks = feedbacks.filter(f => String(f.product) === String(p.id));
-            const sum = pFeedbacks.reduce((a, b) => a + b.rating, 0);
-            p.averageRating = pFeedbacks.length ? parseFloat((sum / pFeedbacks.length).toFixed(1)) : 0;
-            return p;
+          const pFeedbacks = feedbacks.filter(f => String(f.product) === String(p.id));
+          const sum = pFeedbacks.reduce((a, b) => a + b.rating, 0);
+          p.averageRating = pFeedbacks.length ? parseFloat((sum / pFeedbacks.length).toFixed(1)) : 0;
+          return p;
         });
-        if (sort === 'rating DESC' || sort === 'rating') products.sort((a,b) => b.averageRating - a.averageRating);
+        if (sort === 'rating DESC' || sort === 'rating') {products.sort((a,b) => b.averageRating - a.averageRating);}
       }
 
       return res.json({
@@ -308,9 +308,9 @@ module.exports = {
   getOne: async function (req, res) {
     try {
       const product = await Product.findOne({ id: req.params.id })
-                .populate('category')
-                .populate('company')
-                .populate('guides');
+        .populate('category')
+        .populate('company')
+        .populate('guides');
 
       if (product && product.guides) {
         // Deep populate steps and their media for each guide
@@ -563,7 +563,7 @@ module.exports = {
     try {
       const { id } = req.params;
       const product = await Product.findOne({ id }).populate('category').populate('company');
-      if (!product) return res.status(404).json({ message: 'Product not found' });
+      if (!product) {return res.status(404).json({ message: 'Product not found' });}
       
       const recommendations = await sails.helpers.getSimilarityRecommendations.with({
         productId: id,
@@ -946,8 +946,8 @@ module.exports = {
     try {
       const { company, product, limit = 20, skip = 0 } = req.query;
       const criteria = { isHidden: false };
-      if (company) criteria.company = company;
-      if (product) criteria.product = product;
+      if (company) {criteria.company = company;}
+      if (product) {criteria.product = product;}
       
       const total = await Feedback.count(criteria);
       const feedbacks = await Feedback.find(criteria)
@@ -973,7 +973,7 @@ module.exports = {
     try {
       const { companyId } = req.params;
       const feedbacks = await Feedback.find({ company: companyId, isHidden: false });
-      if (!feedbacks.length) return res.json({ averageRating: 0, totalCount: 0 });
+      if (!feedbacks.length) {return res.json({ averageRating: 0, totalCount: 0 });}
       const sum = feedbacks.reduce((acc, curr) => acc + curr.rating, 0);
       return res.json({ averageRating: parseFloat((sum / feedbacks.length).toFixed(1)), totalCount: feedbacks.length });
     } catch (err) {

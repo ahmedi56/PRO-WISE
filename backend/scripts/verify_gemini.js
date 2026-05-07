@@ -11,7 +11,7 @@ const path = require('path');
 // Try to find .env in both root and current directory
 const envPath = fs.existsSync('./.env') ? './.env' : './backend/.env';
 require('dotenv').config({ path: envPath });
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 async function verify() {
   const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
@@ -28,7 +28,7 @@ async function verify() {
     const genAI = new GoogleGenerativeAI(apiKey);
     
     // 1. Test Text Generation
-    const modelName = "gemini-2.5-flash";
+    const modelName = 'gemini-2.5-flash';
     console.log(`\n1. Testing Text Generation (${modelName})...`);
     const model = genAI.getGenerativeModel({ model: modelName });
     const result = await model.generateContent("Respond with exactly: 'Gemini 2.5 is online and verified.'");
@@ -41,8 +41,8 @@ async function verify() {
 
     // 2. Test Embeddings
     console.log('\n2. Testing Embeddings (gemini-embedding-001)...');
-    const embModel = genAI.getGenerativeModel({ model: "gemini-embedding-001" });
-    const embResult = await embModel.embedContent("Test production embedding vector stability");
+    const embModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' });
+    const embResult = await embModel.embedContent('Test production embedding vector stability');
     const embedding = embResult.embedding;
     console.log(`   [✓] Embedding dimension: ${embedding.values.length} (expected 768 or 3072 depending on version)`);
 

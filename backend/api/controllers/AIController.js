@@ -43,7 +43,7 @@ module.exports = {
         return res.status(400).json({ success: false, message: 'Product name is required' });
       }
 
-      const task = `Generate a professional, technical product description for a hardware product.`;
+      const task = 'Generate a professional, technical product description for a hardware product.';
       const context = `Product Name: ${productName}${category ? `\nCategory: ${category}` : ''}`;
       const constraints = [
         'Focus on key technical features and value proposition.',
@@ -82,7 +82,7 @@ module.exports = {
         return res.status(400).json({ success: false, message: 'Guide title is required' });
       }
 
-      const task = `Suggest a logical sequence of troubleshooting or assembly steps.`;
+      const task = 'Suggest a logical sequence of troubleshooting or assembly steps.';
       const context = `Guide Title: ${guideTitle}${productContext ? `\nProduct: ${productContext}` : ''}`;
       const constraints = [
         'Return exactly 5-7 clear, actionable steps.',
@@ -131,8 +131,8 @@ module.exports = {
           
         if (product) {
           contextStr += `Current Product: ${product.name} by ${product.manufacturer}.\n`;
-          if (product.category) contextStr += `Category: ${product.category.name}.\n`;
-          if (product.description) contextStr += `Description: ${product.description.substring(0, 500)}...\n`;
+          if (product.category) {contextStr += `Category: ${product.category.name}.\n`;}
+          if (product.description) {contextStr += `Description: ${product.description.substring(0, 500)}...\n`;}
           if (product.components) {
             contextStr += `Technical Specs: ${product.components.map(c => `${c.type}: ${c.name}`).slice(0, 10).join(', ')}.\n`;
           }
@@ -143,7 +143,7 @@ module.exports = {
         contextStr += `Additional Context: ${extraContext.substring(0, 1000)}\n`;
       }
 
-      const task = `Respond to the user's hardware-related inquiry.`;
+      const task = 'Respond to the user\'s hardware-related inquiry.';
       const constraints = [
         'Be helpful but concise.',
         'If you do not know the answer, advise contacting professional support.',
@@ -178,9 +178,9 @@ module.exports = {
   analyzeFeedback: async function (req, res) {
     try {
       const feedback = await Feedback.findOne({ id: req.params.feedbackId }).populate('product');
-      if (!feedback) return res.status(404).json({ success: false, message: 'Feedback not found' });
+      if (!feedback) {return res.status(404).json({ success: false, message: 'Feedback not found' });}
 
-      const task = `Analyze customer feedback and suggest improvements.`;
+      const task = 'Analyze customer feedback and suggest improvements.';
       const context = `Product: ${feedback.product?.name || 'Unknown'}\nRating: ${feedback.rating}/5\nComment: "${feedback.comment}"`;
       const constraints = [
         'Identify the core issue mentioned.',

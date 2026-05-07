@@ -3,67 +3,52 @@ import { createStackNavigator, StackNavigationOptions } from '@react-navigation/
 import CategoryBrowserScreen from '../screens/CategoryBrowserScreen';
 import CompanyProductsScreen from '../screens/CompanyProductsScreen';
 import { View, StyleSheet, Text } from 'react-native';
-import { colors, typography, spacing } from '../theme';
+import { useTheme } from '../theme';
 import { ShopStackParamList } from './types';
 import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
 
 const Stack = createStackNavigator<ShopStackParamList>();
-const StackNavigator = Stack.Navigator as any;
 
-const BrandedHeader: React.FC<{ title: string }> = ({ title }) => (
+const BrandedHeader: React.FC<{ title: string; colors: any; typography: any }> = ({ title, colors, typography }) => (
     <View style={styles.headerContainer}>
         <View style={styles.headerLogo}>
             <ProWiseLogoSvg width={24} height={24} />
         </View>
-        <Text style={styles.headerTitleText}>{title}</Text>
+        <Text style={[styles.headerTitleText, { color: colors.textStrong }]}>{title}</Text>
     </View>
 );
 
-const screenOptions: StackNavigationOptions = {
-    headerStyle: {
-        backgroundColor: colors.bg,
-        borderBottomColor: colors.border,
-        borderBottomWidth: 1,
-        shadowOpacity: 0,
-        elevation: 0,
-        height: 72,
-    },
-    headerTitle: ({ children }) => <BrandedHeader title={children as string} />,
-    headerTitleAlign: 'left',
-    headerTintColor: colors.textStrong,
-    headerLeftContainerStyle: {
-        paddingLeft: 0,
-    },
-    headerTitleContainerStyle: {
-        marginLeft: 0,
-    },
-    cardStyle: { backgroundColor: colors.bg },
-    headerBackTitleVisible: false,
-};
-
-const styles = StyleSheet.create({
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingLeft: spacing.sm,
-    },
-    headerLogo: {
-        marginRight: spacing.sm,
-    },
-    headerTitleText: {
-        ...typography.h3,
-        color: colors.textStrong,
-        fontWeight: '700',
-    },
-});
-
 const ShopStackNavigator: React.FC = () => {
+    const { colors, typography, spacing } = useTheme();
+
+    const screenOptions: StackNavigationOptions = {
+        headerStyle: {
+            backgroundColor: colors.bg,
+            borderBottomColor: colors.border,
+            borderBottomWidth: 1,
+            shadowOpacity: 0,
+            elevation: 0,
+            height: 72,
+        },
+        headerTitle: ({ children }) => <BrandedHeader title={children as string} colors={colors} typography={typography} />,
+        headerTitleAlign: 'left',
+        headerTintColor: colors.textStrong,
+        headerLeftContainerStyle: {
+            paddingLeft: 0,
+        },
+        headerTitleContainerStyle: {
+            marginLeft: 0,
+        },
+        cardStyle: { backgroundColor: colors.bg },
+        headerBackTitleVisible: false,
+    };
+
     return (
-        <StackNavigator screenOptions={screenOptions}>
+        <Stack.Navigator screenOptions={screenOptions}>
             <Stack.Screen
                 name="Categories"
                 component={CategoryBrowserScreen as any}
-                options={{ title: 'Shop' }}
+                options={{ title: 'Registry' }}
             />
             <Stack.Screen
                 name="SubCategory"
@@ -75,8 +60,23 @@ const ShopStackNavigator: React.FC = () => {
                 component={CompanyProductsScreen as any}
                 options={({ route }) => ({ title: route.params?.companyName || 'Products' })}
             />
-        </StackNavigator>
+        </Stack.Navigator>
     );
 };
+
+const styles = StyleSheet.create({
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingLeft: 12,
+    },
+    headerLogo: {
+        marginRight: 12,
+    },
+    headerTitleText: {
+        fontSize: 18,
+        fontWeight: '700',
+    },
+});
 
 export default ShopStackNavigator;

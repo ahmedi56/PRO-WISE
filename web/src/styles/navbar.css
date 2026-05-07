@@ -1,0 +1,169 @@
+.navbar {
+    padding: 0 var(--space-8);
+    height: 64px;
+    background: var(--color-glass) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--color-glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all var(--duration-base) var(--ease);
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    color: var(--color-text-strong);
+}
+
+.nav-link {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--color-text) !important;
+    padding: var(--space-2) var(--space-4) !important;
+    border-radius: var(--radius-md);
+    transition: all var(--duration-fast) var(--ease);
+}
+
+.nav-link:hover {
+    color: var(--color-text-strong) !important;
+    background: var(--color-primary-subtle);
+}
+
+.nav-link.active {
+    color: var(--color-primary) !important;
+    background: var(--color-primary-subtle);
+}
+
+.nav-icon-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    transition: all var(--duration-fast) var(--ease);
+    cursor: pointer;
+}
+
+.nav-icon-btn:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-strong);
+    border-color: var(--color-border);
+    transform: translateY(-2px);
+}
+
+.nav-user-pill {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-1) var(--space-3) var(--space-1) var(--space-1);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    transition: all var(--duration-fast) var(--ease);
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.nav-user-pill:hover {
+    border-color: var(--color-primary);
+    background: var(--color-surface-raised);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.nav-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-sm);
+}
+
+.nav-signout-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: var(--text-xs);
+    cursor: pointer;
+    transition: color var(--duration-fast);
+    padding: 0;
+}
+
+.nav-user-pill:hover .nav-signout-btn {
+    color: var(--color-error);
+}
+
+/* User Dropdown */
+.user-dropdown {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    background: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--ease);
+    border-radius: var(--radius-md);
+}
+
+.dropdown-item i, .dropdown-item ion-icon {
+    font-size: 1.1rem;
+}
+
+.dropdown-item:hover {
+    background: var(--color-surface-hover);
+    color: var(--color-text-strong);
+}
+
+.dropdown-item.logout {
+    color: var(--color-error);
+}
+
+.dropdown-item.logout:hover {
+    background: var(--color-error-light);
+}
+
+/* Global Animation Control */
+.animations-disabled .bolt,
+.animations-disabled .lightning-effect,
+.animations-disabled .home-container::after,
+.animations-disabled .floating-element {
+    animation: none !important;
+    filter: none !important;
+    transform: none !important;
+}
+
+@media (max-width: 768px) {
+    .navbar { padding: 0 var(--space-4); }
+}

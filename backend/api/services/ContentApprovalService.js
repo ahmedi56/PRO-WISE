@@ -72,8 +72,8 @@ module.exports = {
     score = checks.completeness + checks.structure + checks.quality + checks.media;
     
     let decision = 'manual_review';
-    if (score >= 90) decision = 'approve';
-    if (score < 40) decision = 'reject';
+    if (score >= 90) {decision = 'approve';}
+    if (score < 40) {decision = 'reject';}
 
     return {
       score,
@@ -169,7 +169,7 @@ module.exports = {
 
       const pendingContent = await sails.models.content.find(criteria).limit(targetId ? 1 : 20);
 
-      if (pendingContent.length === 0) return;
+      if (pendingContent.length === 0) {return;}
 
       const AUTO_APPROVAL_MIN_SCORE = process.env.AUTO_APPROVAL_MIN_SCORE ? parseInt(process.env.AUTO_APPROVAL_MIN_SCORE) : 85;
       const AUTO_APPROVAL_REJECT_SCORE = process.env.AUTO_APPROVAL_REJECT_SCORE ? parseInt(process.env.AUTO_APPROVAL_REJECT_SCORE) : 40;
@@ -213,8 +213,8 @@ module.exports = {
           updateData.approvedBy = 'system';
           
           if (finalResult.decision !== 'approve') {
-             finalResult.decision = 'approve';
-             finalResult.reasons.push('Auto-approved after review deadline reached.');
+            finalResult.decision = 'approve';
+            finalResult.reasons.push('Auto-approved after review deadline reached.');
           }
           
           await sails.models.notification.create({

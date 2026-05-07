@@ -126,11 +126,11 @@ module.exports = {
       const skip = (parseInt(page) - 1) * parseInt(limit);
 
       const users = await User.find(where)
-                .populate('role')
-                .populate('company')
-                .sort('createdAt DESC')
-                .skip(skip)
-                .limit(parseInt(limit));
+        .populate('role')
+        .populate('company')
+        .sort('createdAt DESC')
+        .skip(skip)
+        .limit(parseInt(limit));
 
       return res.json({
         data: users.map(sanitizeUser),
@@ -154,8 +154,8 @@ module.exports = {
   getOne: async function (req, res) {
     try {
       const user = await User.findOne({ id: req.params.id })
-                .populate('role')
-                .populate('company');
+        .populate('role')
+        .populate('company');
 
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -361,8 +361,8 @@ module.exports = {
   validateAdmin: async function (req, res) {
     try {
       const user = await User.findOne({ id: req.params.id })
-                .populate('role')
-                .populate('company');
+        .populate('role')
+        .populate('company');
 
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -656,93 +656,296 @@ module.exports = {
   },
 
   /**
-   * POST /api/users/technician/upgrade
-   * Request upgrade to Technician role
+   * POST /api/users/technician/request
+   * Submit technician application
    */
   requestTechnicianUpgrade: async function (req, res) {
-    // Handler for technician upgrade requests
     try {
       const user = await User.findOne({ id: req.user.id }).populate('role');
       if (!user) {return res.status(404).json({ message: 'User not found' });}
 
       const roleName = (user.role && user.role.name ? user.role.name : '').toLowerCase();
       
-      if (roleName === 'technician') {
-        return res.status(400).json({ message: 'You are already a technician' });
+      if (user.technicianStatus === 'approved') {
+        return res.status(400).json({ message: 'You are already an approved technician' });
       }
 
-      if (roleName === 'administrator' || roleName === 'company_admin' || roleName === 'super_admin') {
+      if (['administrator', 'company_admin', 'super_admin'].includes(roleName)) {
         return res.status(403).json({ message: 'Administrators cannot become technicians' });
       }
 
-      // If the user is a customer, we allow them to request an upgrade.
-      // We'll mark them as 'pending' status if they were active, 
-      // or we can add a specific field. For now, let's use status='pending' 
-      // and we'll check for this in the Super Admin UI.
-      
+      const {
+        headline,
+        bio,
+        skills,
+        experienceYears,
+        city,
+        governorate,
+        serviceCategories,
+        phone,
+        whatsapp
+      } = req.body;
+
+      // Validation
+      if (!headline || !bio || !skills || !experienceYears || !city || !governorate || !serviceCategories) {
+        return res.status(400).json({ message: 'All required application fields must be provided' });
+      }
+
+      if (!phone && !whatsapp) {
+        return res.status(400).json({ message: 'At least one contact method (phone or whatsapp) is required' });
+      }
+
+      if (!Array.isArray(skills) || skills.length === 0) {
+        return res.status(400).json({ message: 'At least one skill is required' });
+      }
+
+      if (!Array.isArray(serviceCategories) || serviceCategories.length === 0) {
+        return res.status(400).json({ message: 'At least one service category is required' });
+      }
+
+      const profile = {
+        headline,
+        bio,
+        skills,
+        experienceYears,
+        experienceStartDate: req.body.experienceStartDate,
+        cvLink: req.body.cvLink,
+        city,
+        governorate,
+        serviceCategories,
+        phone,
+        whatsapp,
+        certifications: req.body.certifications || [],
+        preferredContactMethod: req.body.preferredContactMethod || 'phone',
+        serviceRadiusKm: req.body.serviceRadiusKm || 20,
+        completedJobs: 0,
+        averageRating: 0,
+        availability: {
+          weekdays: true,
+          weekends: false,
+          morning: true,
+          afternoon: true,
+          evening: false,
+          emergencyAvailable: false
+        }
+      };
+
       await User.updateOne({ id: req.user.id }).set({
-        status: 'pending'
+        technicianStatus: 'pending',
+        technicianProfile: profile
       });
 
       await logAction(req, {
-        action: 'user.technician_upgrade_requested',
+        action: 'technician.application_submitted',
         target: user.id,
         targetType: 'User',
         targetLabel: user.name || user.email,
         details: { 
-          currentRole: roleName 
+          headline 
         }
       });
 
       return res.json({ 
-        message: 'Your request to become a technician has been submitted. A Super Admin will review your profile shortly.',
+        message: 'Your technician application has been submitted and is pending review.',
         status: 'pending'
       });
     } catch (err) {
-      sails.log.error('Request technician upgrade error:', err);
+      sails.log.error('Request technician application error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * GET /api/users/technician/me
+   * Get own technician status/profile
+   */
+  getTechnicianMe: async function (req, res) {
+    try {
+      const user = await User.findOne({ id: req.user.id });
+      if (!user) {return res.status(404).json({ message: 'User not found' });}
+
+      return res.json({
+        isTechnician: user.isTechnician,
+        technicianStatus: user.technicianStatus,
+        technicianProfile: user.technicianProfile
+      });
+    } catch (err) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * PUT /api/users/technician/profile
+   * Edit full technician profile (Approved only)
+   */
+  updateTechnicianProfile: async function (req, res) {
+    try {
+      const user = await User.findOne({ id: req.user.id });
+      if (!user) {return res.status(404).json({ message: 'User not found' });}
+
+      if (!user.isTechnician || user.technicianStatus !== 'approved') {
+        return res.status(403).json({ message: 'Only approved technicians can edit their profile' });
+      }
+
+      const currentProfile = user.technicianProfile || {};
+      const allowedUpdates = [
+        'headline', 'bio', 'skills', 'serviceCategories', 'experienceYears', 'experienceStartDate',
+        'governorate', 'city', 'address', 'latitude', 'longitude', 'serviceRadiusKm',
+        'phone', 'whatsapp', 'email', 'preferredContactMethod', 'availability',
+        'certifications', 'portfolioImages', 'cvLink'
+      ];
+
+      const newProfile = { ...currentProfile };
+      allowedUpdates.forEach(key => {
+        if (req.body[key] !== undefined) {
+          newProfile[key] = req.body[key];
+        }
+      });
+
+      await User.updateOne({ id: req.user.id }).set({
+        technicianProfile: newProfile
+      });
+
+      return res.json({
+        message: 'Technician profile updated successfully',
+        technicianProfile: newProfile
+      });
+    } catch (err) {
+      sails.log.error('Update technician profile error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * GET /api/users/technician/applications
+   * List pending applications (Super Admin only)
+   */
+  getTechnicianApplications: async function (req, res) {
+    try {
+      const applications = await User.find({ technicianStatus: 'pending' })
+        .sort('updatedAt DESC');
+      return res.json(applications.map(sanitizeUser));
+    } catch (err) {
       return res.status(500).json({ message: 'Internal server error' });
     }
   },
 
   /**
    * PUT /api/users/:id/technician/approve
-   * Approve technician upgrade (Super Admin only)
+   * Approve technician application (Super Admin only)
    */
   approveTechnician: async function (req, res) {
     try {
-      const targetUser = await User.findOne({ id: req.params.id }).populate('role');
+      const targetUser = await User.findOne({ id: req.params.id });
       if (!targetUser) {return res.status(404).json({ message: 'User not found' });}
 
-      let techRole = await Role.findOne({ name: 'technician' });
-      if (!techRole) {
-        techRole = await Role.create({ name: 'technician', permissions: ['products.view', 'guides.view', 'service.manage'] }).fetch();
-      }
-
-      const oldRoleName = (targetUser.role && targetUser.role.name ? targetUser.role.name : 'unknown');
+      const profile = targetUser.technicianProfile || {};
+      profile.reviewedBy = req.user.id;
+      profile.reviewedAt = Date.now();
+      profile.rejectionReason = null;
 
       await User.updateOne({ id: req.params.id }).set({
-        role: techRole.id,
-        status: 'active'
+        isTechnician: true,
+        technicianStatus: 'approved',
+        technicianProfile: profile
       });
 
       await logAction(req, {
-        action: 'user.activated', // Approving upgrade usually activates them too
+        action: 'technician.application_approved',
         target: targetUser.id,
         targetType: 'User',
-        targetLabel: targetUser.name || targetUser.email,
-        details: { 
-          oldRole: oldRoleName,
-          newRole: 'technician'
-        }
+        targetLabel: targetUser.name || targetUser.email
       });
 
       return res.json({ 
-        message: 'Technician upgrade approved successfully',
-        user: { id: targetUser.id, role: 'technician', status: 'active' }
+        message: 'Technician application approved successfully',
+        user: { id: targetUser.id, isTechnician: true, technicianStatus: 'approved' }
       });
     } catch (err) {
       sails.log.error('Approve technician error:', err);
       return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * PUT /api/users/:id/technician/reject
+   * Reject technician application (Super Admin only)
+   */
+  rejectTechnician: async function (req, res) {
+    try {
+      const { rejectionReason } = req.body;
+      if (!rejectionReason) {
+        return res.status(400).json({ message: 'Rejection reason is required' });
+      }
+
+      const targetUser = await User.findOne({ id: req.params.id });
+      if (!targetUser) {return res.status(404).json({ message: 'User not found' });}
+
+      const profile = targetUser.technicianProfile || {};
+      profile.reviewedBy = req.user.id;
+      profile.reviewedAt = Date.now();
+      profile.rejectionReason = rejectionReason;
+
+      await User.updateOne({ id: req.params.id }).set({
+        isTechnician: false,
+        technicianStatus: 'rejected',
+        technicianProfile: profile
+      });
+
+      await logAction(req, {
+        action: 'technician.application_rejected',
+        target: targetUser.id,
+        targetType: 'User',
+        targetLabel: targetUser.name || targetUser.email,
+        details: { rejectionReason }
+      });
+
+      return res.json({ 
+        message: 'Technician application rejected',
+        user: { id: targetUser.id, isTechnician: false, technicianStatus: 'rejected' }
+      });
+    } catch (err) {
+      sails.log.error('Reject technician error:', err);
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+  },
+
+  /**
+   * GET /api/users/technicians/public
+   * Get list of approved technicians for public map/list
+   */
+  getPublicTechnicians: async function (req, res) {
+    sails.log.info('GET /api/public-technicians triggered');
+    try {
+      const technicians = await User.find({
+        where: { technicianStatus: 'approved' },
+        select: ['id', 'name', 'avatar', 'technicianProfile', 'createdAt']
+      });
+
+      sails.log.info(`Found ${technicians.length} approved technicians`);
+
+      const sanitized = technicians.map(tech => ({
+        id: tech.id,
+        name: tech.name,
+        avatar: tech.avatar,
+        headline: tech.technicianProfile?.headline,
+        bio: tech.technicianProfile?.bio,
+        skills: tech.technicianProfile?.skills,
+        experienceYears: tech.technicianProfile?.experienceYears,
+        city: tech.technicianProfile?.city,
+        governorate: tech.technicianProfile?.governorate,
+        latitude: tech.technicianProfile?.latitude,
+        longitude: tech.technicianProfile?.longitude,
+        serviceCategories: tech.technicianProfile?.serviceCategories,
+        averageRating: tech.technicianProfile?.averageRating || 0,
+        completedJobs: tech.technicianProfile?.completedJobs || 0,
+        joinedAt: tech.createdAt
+      }));
+
+      return res.json(sanitized);
+    } catch (err) {
+      sails.log.error('Get public technicians error:', err);
+      return res.status(500).json({ message: 'Internal server error', error: err.message });
     }
   }
 

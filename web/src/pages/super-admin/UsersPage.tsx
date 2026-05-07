@@ -260,7 +260,7 @@ export const UsersPage: React.FC = () => {
                                                         disabled={actionLoading === user.id}
                                                         style={{ backgroundColor: 'var(--color-success)', borderColor: 'var(--color-success)' }}
                                                     >
-                                                        {getRoleName(user) === 'customer' || getRoleName(user) === 'user' ? 'Approve Technician' : 'Validate'}
+                                                        {getRoleName(user) === 'user' ? 'Approve User' : 'Validate'}
                                                     </button>
                                                 )}
                                                 <button

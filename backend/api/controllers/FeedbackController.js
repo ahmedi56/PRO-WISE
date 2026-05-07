@@ -46,11 +46,11 @@ module.exports = {
   getAll: async function (req, res) {
     try {
       const { company, product, limit = 20, skip = 0 } = req.query;
-      sails.log.info(`Feedback.getAll hit. Query:`, { company, product, limit, skip });
+      sails.log.info('Feedback.getAll hit. Query:', { company, product, limit, skip });
 
       const criteria = { isHidden: false };
-      if (company) criteria.company = company;
-      if (product) criteria.product = product;
+      if (company) {criteria.company = company;}
+      if (product) {criteria.product = product;}
 
       // If it's the admin of the company, they can see hidden ones
       if (req.user && ['super_admin', 'administrator', 'company_admin'].includes(req.user.role)) {
@@ -108,10 +108,10 @@ module.exports = {
 
       // Check if feedback exists and belongs to admin's company (tenant isolation)
       const feedback = await Feedback.findOne({ id }).populate('company');
-      if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
+      if (!feedback) {return res.status(404).json({ message: 'Feedback not found' });}
 
       const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(req.user.role);
-      if (!isAdmin) return res.status(403).json({ message: 'Unauthorized' });
+      if (!isAdmin) {return res.status(403).json({ message: 'Unauthorized' });}
 
       // Tenant isolation: standard admins only respond to their own company's feedback
       if (req.user.role !== 'super_admin') {
@@ -140,10 +140,10 @@ module.exports = {
       const { id } = req.params;
 
       const feedback = await Feedback.findOne({ id });
-      if (!feedback) return res.status(404).json({ message: 'Feedback not found' });
+      if (!feedback) {return res.status(404).json({ message: 'Feedback not found' });}
 
       const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(req.user.role);
-      if (!isAdmin) return res.status(403).json({ message: 'Unauthorized' });
+      if (!isAdmin) {return res.status(403).json({ message: 'Unauthorized' });}
 
       if (req.user.role !== 'super_admin') {
         const feedbackCompanyId = feedback.company?.id || feedback.company;

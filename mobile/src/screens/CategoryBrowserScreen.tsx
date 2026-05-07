@@ -11,7 +11,8 @@ import {
     Platform 
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import { BlurView } from 'expo-blur';
 
 import { logout } from '../store/slices/authSlice';
@@ -57,12 +58,8 @@ const getCategoryIcon = (category: any): keyof typeof Ionicons.glyphMap => {
     return CATEGORY_ICONS[normalized] || 'cube-outline';
 };
 
-const getRoleName = (role: any): string => {
-    if (!role) return '';
-    if (typeof role === 'string') return role.toLowerCase();
-    if (typeof role.name === 'string') return role.name.toLowerCase();
-    return '';
-};
+
+
 
 type ScreenNavigationProp = StackNavigationProp<ShopStackParamList, 'Categories' | 'SubCategory'>;
 type ScreenRouteProp = RouteProp<ShopStackParamList, 'Categories' | 'SubCategory'>;
@@ -90,9 +87,7 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
     const { user, token } = useSelector((state: RootState) => state.auth);
     const dispatch = useDispatch<AppDispatch>();
     
-    const role = user?.role || (user as any)?.Role;
-    const roleName = getRoleName(role);
-    const isAdmin = ['company_admin', 'administrator', 'super_admin'].includes(roleName);
+
 
     const handleUnauthorized = () => dispatch(logout());
 
@@ -148,22 +143,7 @@ const CategoryBrowserScreen: React.FC<CategoryBrowserScreenProps> = ({ navigatio
         }
     }, [categoryName, navigation]);
 
-    useEffect(() => {
-        if (isAdmin) {
-            navigation.setOptions({
-                headerRight: () => (
-                    <TouchableOpacity 
-                        onPress={() => (navigation as any).navigate('ProductForm')} 
-                        style={styles.adminAddBtn}
-                    >
-                        <Ionicons name="add" size={28} color={colors.primary} />
-                    </TouchableOpacity>
-                ),
-            });
-        } else {
-            navigation.setOptions({ headerRight: undefined });
-        }
-    }, [isAdmin, navigation]);
+
 
     const handleCategoryPress = (cat: Category) => {
         if (!cat?.id) return;
@@ -317,17 +297,7 @@ const styles = StyleSheet.create({
     list: { padding: spacing.lg, paddingBottom: 120 },
     row: { justifyContent: 'space-between' },
     
-    adminAddBtn: {
-        marginRight: 15,
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: colors.surface,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
+
 
     headerPanel: {
         flexDirection: 'row',

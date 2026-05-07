@@ -9,7 +9,8 @@ import {
     Alert 
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons as BaseIonicons } from '@expo/vector-icons';
+const Ionicons = BaseIonicons as any;
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import { parseQRCodeUrl } from '../utils/qrValidation';
 import { RootStackNavigationProp } from '../navigation/types';
@@ -82,7 +83,7 @@ const QRScannerScreen: React.FC<QRScannerScreenProps> = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <CameraView
-                style={StyleSheet.absoluteFillObject}
+                style={StyleSheet.flatten(StyleSheet.absoluteFillObject)}
                 facing="back"
                 enableTorch={torch}
                 onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
