@@ -124,7 +124,7 @@ export const Navbar: React.FC = () => {
                         </div>
 
                         {userMenuOpen && (
-                            <div className="user-dropdown pw-card pw-absolute pw-top-full pw-right-0 pw-mt-2 pw-fade-in" style={{ width: '220px', padding: '0.5rem', boxShadow: 'var(--shadow-lg)', zIndex: 100001 }}>
+                            <div className="user-dropdown pw-card pw-absolute pw-top-full pw-right-0 pw-mt-2 pw-fade-in" style={{ width: '220px', padding: '0.5rem', boxShadow: 'var(--shadow-lg)', zIndex: 2147483647 }}>
                                 <Link to="/profile" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
                                     <IonIcon name="person-outline" /> Profile
                                 </Link>

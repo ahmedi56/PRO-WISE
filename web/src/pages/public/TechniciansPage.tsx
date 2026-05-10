@@ -110,19 +110,31 @@ export const TechniciansPage: React.FC = () => {
                             iconSize: [24, 24]
                         });
 
-                        const badgeHtml = tech.verificationLevel !== 'Basic' ? `<span style="color: blue; font-size: 12px; font-weight: bold;">✓ ${tech.verificationLevel}</span>` : '';
-                        const topBadgeHtml = tech.topExpertBadge ? `<br/><span style="color: goldenrod; font-weight: bold;">⭐ Top Expert</span>` : '';
+                        const popupContent = `
+                    <div class="map-popup-premium">
+                        <div class="popup-header">
+                            <div class="popup-avatar">${tech.avatar ? `<img src="${tech.avatar}" />` : tech.name[0]}</div>
+                            <div class="popup-title">
+                                <strong>${tech.name}</strong>
+                                <span>${tech.headline || 'Expert Technician'}</span>
+                            </div>
+                        </div>
+                        <div class="popup-stats">
+                            <div class="popup-stat">
+                                <i class="star-icon">⭐</i>
+                                <span>${tech.averageRating.toFixed(1)}</span>
+                            </div>
+                            <div class="popup-stat">
+                                <span>${tech.completedJobs} Jobs</span>
+                            </div>
+                        </div>
+                        <a href="/experts/${tech.id}" class="popup-btn">View Full Profile</a>
+                    </div>
+                `;
 
                         const marker = L.marker([tech.latitude, tech.longitude], { icon: customIcon })
                             .addTo(mapRef.current)
-                            .bindPopup(`
-                                <div class="map-popup">
-                                    <strong style="font-size: 14px;">${tech.name}</strong> ${badgeHtml} ${topBadgeHtml}<br/>
-                                    <span style="font-weight: 600;">${tech.headline || 'Hardware Expert'}</span><br/>
-                                    <small>${tech.city}</small><br/>
-                                    <button onclick="window.location.href='/experts/${tech.id}'" style="margin-top: 8px; width: 100%; padding: 4px; border-radius: 4px; background: #4f46e5; color: white; border: none; cursor: pointer;">View Profile</button>
-                                </div>
-                            `);
+                            .bindPopup(popupContent);
                         markersRef.current.push(marker);
                     }
                 });

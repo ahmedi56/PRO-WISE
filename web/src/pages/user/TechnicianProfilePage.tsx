@@ -27,6 +27,7 @@ export const TechnicianProfilePage: React.FC = () => {
         longitude: null as number | null,
         specializations: [] as any[],
         certifications: [] as any[],
+        portfolioImages: [] as string[],
         serviceRadiusKm: 20,
         availability: {
             weekdays: true,
@@ -40,6 +41,7 @@ export const TechnicianProfilePage: React.FC = () => {
 
     const [currentSpec, setCurrentSpec] = useState({ name: '', skillLevel: 'Intermediate', yearsExperience: 1 });
     const [currentCert, setCurrentCert] = useState({ title: '', organization: '', verificationUrl: '' });
+    const [currentImg, setCurrentImg] = useState('');
 
     useEffect(() => {
         if (user?.technicianProfile) {
@@ -58,6 +60,7 @@ export const TechnicianProfilePage: React.FC = () => {
                 longitude: profile.longitude || null,
                 specializations: profile.specializations || [],
                 certifications: profile.certifications || [],
+                portfolioImages: profile.portfolioImages || [],
                 serviceRadiusKm: profile.serviceRadiusKm || 20,
                 availability: profile.availability || {
                     weekdays: true,
@@ -117,6 +120,22 @@ export const TechnicianProfilePage: React.FC = () => {
         setFormData(prev => ({
             ...prev,
             certifications: prev.certifications.filter((_, i) => i !== index)
+        }));
+    };
+
+    const addPortfolioImg = () => {
+        if (!currentImg) return;
+        setFormData(prev => ({
+            ...prev,
+            portfolioImages: [...(prev.portfolioImages || []), currentImg]
+        }));
+        setCurrentImg('');
+    };
+
+    const removePortfolioImg = (index: number) => {
+        setFormData(prev => ({
+            ...prev,
+            portfolioImages: prev.portfolioImages?.filter((_, i) => i !== index)
         }));
     };
 
@@ -226,6 +245,34 @@ export const TechnicianProfilePage: React.FC = () => {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        </Section>
+
+                        <Section title="Work Portfolio">
+                            <div className="card glass-card">
+                                <div className="portfolio-management">
+                                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                                        <InputField 
+                                            id="new-portfolio-img" 
+                                            label="Add Portfolio Image URL" 
+                                            placeholder="https://example.com/image.jpg"
+                                            value={currentImg} 
+                                            onChange={(e) => setCurrentImg(e.target.value)} 
+                                        />
+                                        <Button type="button" variant="secondary" onClick={addPortfolioImg} style={{ marginTop: '32px' }}>Add</Button>
+                                    </div>
+                                    
+                                    <div className="portfolio-preview-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem' }}>
+                                        {formData.portfolioImages?.map((img: string, i: number) => (
+                                            <div key={i} className="portfolio-preview-item" style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '100px' }}>
+                                                <img src={img} alt="Portfolio" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <button type="button" onClick={() => removePortfolioImg(i)} style={{ position: 'absolute', top: '5px', right: '5px', background: 'rgba(239, 68, 68, 0.8)', color: 'white', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <IonIcon name="close-outline" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </Section>

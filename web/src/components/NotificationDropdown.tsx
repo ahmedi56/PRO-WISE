@@ -53,7 +53,7 @@ export const NotificationDropdown: React.FC = () => {
                         maxWidth: 'calc(100vw - 40px)', 
                         boxShadow: 'var(--shadow-lg)',
                         right: 0,
-                        zIndex: 100001
+                        zIndex: 2147483647
                     }}
                 >
                     <div className="pw-p-4" style={{ borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

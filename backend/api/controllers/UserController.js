@@ -889,14 +889,21 @@ module.exports = {
         });
       }
 
-      // Calculate Verification Level
+      profile.verificationNotes = verificationNotes;
+      profile.approvedBy = req.user.id;
+      profile.approvedAt = Date.now();
+      
+      // Determine overall verification level based on verified certs
       const verifiedCount = (profile.certifications || []).filter(c => c.verificationStatus === 'verified').length;
-      if (verifiedCount > 2) profile.verificationLevel = 'Expert';
-      else if (verifiedCount > 0) profile.verificationLevel = 'Pro';
-      else profile.verificationLevel = 'Basic';
+      if (verifiedCount >= 3) {
+        profile.verificationLevel = 'Expert';
+      } else if (verifiedCount >= 1) {
+        profile.verificationLevel = 'Verified';
+      } else {
+        profile.verificationLevel = 'Basic';
+      }
 
-      // Find Technician Role
-      let roleUpdate = {};
+      const roleUpdate = {};
       const techRole = await Role.findOne({ name: 'technician' });
       if (techRole) {
         roleUpdate.role = techRole.id;
