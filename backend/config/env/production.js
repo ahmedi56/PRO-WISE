@@ -381,6 +381,7 @@ module.exports = {
   custom: {
     baseUrl: process.env.BACKEND_URL || 'https://example.com',
     internalEmailAddress: process.env.SUPPORT_EMAIL || 'support@example.com',
+    jwtSecret: process.env.JWT_SECRET || 'prowise_secure_fallback_jwt_secret_key_2026_prod',
 
     // sendgridSecret: 'SG.fake.3e0Bn0qSQVnwb1E4qNPz9JZP5vLZYqjh7sn8S93oSHU',
     // stripeSecret: 'sk_prod__fake_Nfgh82401348jaDa3lkZ0d9Hm',
