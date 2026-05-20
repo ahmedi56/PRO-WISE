@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     actionItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.surfaceContainerLow,
+        backgroundColor: colors.surfaceContainer,
         borderRadius: radius.lg,
         padding: spacing.md,
         borderWidth: 1,

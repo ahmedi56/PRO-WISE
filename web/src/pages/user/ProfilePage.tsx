@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout } from '../../store/slices/authSlice';
 import { useAuth } from '../../hooks/useAuth';
-import { PageHeader, Button, PageWrapper, Section, IonIcon } from '../../components/index';
+import { PageHeader, Button, PageWrapper, Section, IonIcon, Badge, Spinner } from '../../components/index';
 import { InputField } from '../../components/ui/InputField';
 import { getInitials, formatDate } from '../../utils/helpers';
 import { authService } from '../../services/authService';
+import { maintenanceService } from '../../services/maintenanceService';
 
 export const ProfilePage: React.FC = () => {
     const { user } = useAuth();
@@ -24,6 +25,22 @@ export const ProfilePage: React.FC = () => {
 
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const [requests, setRequests] = useState<any[]>([]);
+    const [requestsLoading, setRequestsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchUserRequests = async () => {
+            try {
+                const data = await maintenanceService.getUserRequests();
+                setRequests(data.data || data || []);
+            } catch (err) {
+                console.error('Failed to load user requests:', err);
+            } finally {
+                setRequestsLoading(false);
+            }
+        };
+        fetchUserRequests();
+    }, []);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -230,6 +247,101 @@ export const ProfilePage: React.FC = () => {
                 )}
             </div>
 
+
+            <Section title="My Service Requests">
+                {requestsLoading ? (
+                    <div className="card" style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}>
+                        <Spinner size="md" />
+                    </div>
+                ) : requests.length === 0 ? (
+                    <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <IonIcon name="construct-outline" style={{ fontSize: '3rem', color: 'var(--color-text-muted)' }} />
+                        </div>
+                        <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-strong)', marginBottom: '0.25rem' }}>No Active Requests</h4>
+                        <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Need hardware support or repairs? Request assistance from a certified expert.</p>
+                        <Button variant="outline" onClick={() => navigate('/service-request')}>Request Service</Button>
+                    </div>
+                ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {requests.map((req) => (
+                            <div key={req.id} className="card" style={{ padding: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+                                    <div>
+                                        <h4 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 700, color: 'var(--color-text-strong)' }}>{req.productName}</h4>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Created on {formatDate(req.createdAt)}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                        <Badge tone={req.urgency === 'high' ? 'danger' : (req.urgency === 'medium' ? 'warning' : 'info')}>
+                                            {req.urgency} priority
+                                        </Badge>
+                                        {req.status === 'pending' && <Badge tone="warning">Pending Match</Badge>}
+                                        {req.status === 'assigned' && <Badge tone="info">Assigned</Badge>}
+                                        {req.status === 'in_progress' && <Badge tone="primary">In Progress</Badge>}
+                                        {req.status === 'completed' && <Badge tone="success">Completed</Badge>}
+                                        {req.status === 'cancelled' && <Badge tone="neutral">Cancelled</Badge>}
+                                    </div>
+                                </div>
+
+                                <p style={{ fontSize: '0.9375rem', color: 'var(--color-text)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                                    {req.issueDescription}
+                                </p>
+
+                                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem', marginTop: '1rem' }}>
+                                    {req.technician ? (
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <div style={{ 
+                                                    width: '40px', height: '40px', borderRadius: '50%', 
+                                                    backgroundColor: 'var(--color-primary-light)', color: 'var(--color-primary)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '16px', fontWeight: 600, overflow: 'hidden'
+                                                }}>
+                                                    {req.technician.avatar ? (
+                                                        <img src={req.technician.avatar} alt={req.technician.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                    ) : (
+                                                        getInitials(req.technician.name)
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontWeight: 600, color: 'var(--color-text-strong)', fontSize: '0.9rem' }}>{req.technician.name}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Assigned Expert Technician</div>
+                                                </div>
+                                            </div>
+                                            {req.technician.phone && (
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="sm" 
+                                                    onClick={() => window.location.href = `tel:${req.technician.phone}`}
+                                                    icon={<IonIcon name="call-outline" />}
+                                                >
+                                                    Call Technician
+                                                </Button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                                            <span className="pulse-dot-amber" style={{
+                                                width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-warning)',
+                                                display: 'inline-block', animation: 'pulse-warn 1.5s infinite'
+                                            }} />
+                                            <span>Platform is matching your case with an expert technician...</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </Section>
+
+            <style>{`
+                @keyframes pulse-warn {
+                    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+                    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+                    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+                }
+            `}</style>
 
             <Section title="Account Settings">
                 <div className="card" style={{ padding: '1.5rem' }}>

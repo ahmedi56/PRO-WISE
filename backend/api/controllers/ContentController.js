@@ -163,7 +163,7 @@ module.exports = {
               user: admin.id,
               title: 'New Content Submission',
               message: `"${content.title}" has been submitted for approval.`,
-              type: 'approval_request',
+              type: 'info',
               link: '/admin/content/pending'
             });
           }

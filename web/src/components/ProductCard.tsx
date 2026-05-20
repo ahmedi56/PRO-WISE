@@ -11,7 +11,7 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
     const navigate = useNavigate();
-    const categoryName = (typeof product.category === 'object' ? (product.category as any)?.name : '').toLowerCase();
+    const categoryName = ((typeof product.category === 'object' && product.category !== null ? (product.category as any)?.name : null) || '').toLowerCase();
     
     return (
         <div 
@@ -48,7 +48,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
                 {/* Brand & Model */}
                 <div className="pw-flex pw-items-center pw-gap-2 pw-mb-2">
                     <span className="pw-text-xs pw-font-extrabold pw-text-primary pw-uppercase pw-tracking-widest">
-                        {typeof product.company === 'object' ? product.company.name : (product.manufacturer || 'Hardware')}
+                        {typeof product.company === 'object' && product.company !== null ? (product.company as any).name : (product.manufacturer || 'Hardware')}
                     </span>
                     {product.modelNumber && (
                         <>

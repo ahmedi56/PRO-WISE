@@ -129,9 +129,9 @@ export const Navbar: React.FC = () => {
                                     <IonIcon name="person-outline" /> Profile
                                 </Link>
 
-                                {user?.technicianStatus === 'none' && !isAdmin && (
+                                {(user?.technicianStatus === 'none' || user?.technicianStatus === 'rejected' || !user?.technicianStatus) && !isAdmin && (
                                     <Link to="/technician/apply" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                                        <IonIcon name="construct-outline" /> Become a Technician
+                                        <IonIcon name="construct-outline" /> {user?.technicianStatus === 'rejected' ? 'Resubmit Application' : 'Become a Technician'}
                                     </Link>
                                 )}
 

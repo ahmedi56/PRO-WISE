@@ -687,7 +687,12 @@ module.exports = {
         certifications, // Array of { title, organization, verificationUrl, documentUrl }
         serviceRadiusKm,
         emergencyAvailable,
-        portfolioImages
+        portfolioImages,
+        
+        // Mobile compatibility fields
+        skills,
+        experienceYears,
+        cvLink
       } = req.body;
 
       // Validation
@@ -695,7 +700,17 @@ module.exports = {
         return res.status(400).json({ message: 'Core identity fields are required' });
       }
 
-      if (!Array.isArray(specializations) || specializations.length === 0) {
+      // Map mobile format (skills array + experienceYears) to specializations if needed
+      let finalSpecializations = specializations;
+      if ((!finalSpecializations || finalSpecializations.length === 0) && Array.isArray(skills)) {
+        finalSpecializations = skills.map(skillName => ({
+          name: skillName,
+          skillLevel: 'Intermediate',
+          yearsExperience: Number(experienceYears) || 1
+        }));
+      }
+
+      if (!Array.isArray(finalSpecializations) || finalSpecializations.length === 0) {
         return res.status(400).json({ message: 'At least one specialization is required' });
       }
 
@@ -714,11 +729,12 @@ module.exports = {
         longitude: longitude || null,
         phone,
         email: email || user.email,
-        specializations,
+        specializations: finalSpecializations,
         certifications: processedCertifications,
         serviceRadiusKm: serviceRadiusKm || 20,
         emergencyAvailable: emergencyAvailable || false,
         portfolioImages: portfolioImages || [],
+        cvLink: cvLink || null,
         
         // Reputation initialization
         completedJobs: 0,
@@ -729,8 +745,8 @@ module.exports = {
         topExpertBadge: false,
         
         // Legacy fallbacks
-        skills: specializations.map(s => s.name),
-        experienceYears: Math.max(...specializations.map(s => s.yearsExperience || 0), 0)
+        skills: finalSpecializations.map(s => s.name),
+        experienceYears: Math.max(...finalSpecializations.map(s => s.yearsExperience || 0), 0)
       };
 
       await User.updateOne({ id: req.user.id }).set({

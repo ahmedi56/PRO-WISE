@@ -67,6 +67,10 @@ const AppNavigator: React.FC = () => {
                             component={require('../screens/TechnicianPortalScreen').default} 
                             options={{ headerShown: false }}
                         />
+                        <Stack.Screen 
+                            name="ProductForm" 
+                            component={require('../screens/ProductFormScreen').default} 
+                        />
                         <Stack.Screen name="Register" component={RegisterScreen as any} />
                     </>
                 ) : (

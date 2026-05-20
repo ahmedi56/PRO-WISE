@@ -110,14 +110,40 @@ module.exports = {
     if (matchedComponents.length > 0 && matchType !== 'exact_component' && matchType !== 'exact_model') {
       matchType = 'similar_features';
       confidence = 'medium';
-      
-      const componentNames = matchedComponents
-        .map(c => c.matched || c.name)
-        .filter(Boolean)
-        .slice(0, 2);
-      
-      const componentList = componentNames.length > 0 ? `: ${componentNames.join(', ')}` : '';
-      reasons.push(`Alternative model sharing ${matchedComponents.length} internal components${componentList}`);
+
+      const cpuMatch = matchedComponents.find(c => c.type === 'cpu' || c.type === 'processor');
+      const gpuMatch = matchedComponents.find(c => c.type === 'gpu' || c.type === 'graphics_card' || c.type === 'video_card');
+
+      if (cpuMatch && (cpuMatch.matchType === 'exact_signature' || cpuMatch.matchType === 'exact_type_model' || cpuMatch.matchType === 'exact_model')) {
+        reasons.push(`Shares the same processor (${cpuMatch.matched})`);
+      } else if (cpuMatch) {
+        reasons.push(`Alternative processor model (${cpuMatch.source} vs ${cpuMatch.matched})`);
+      }
+
+      if (gpuMatch && (gpuMatch.matchType === 'exact_signature' || gpuMatch.matchType === 'exact_type_model' || gpuMatch.matchType === 'exact_model')) {
+        reasons.push(`Shares the same graphics card (${gpuMatch.matched})`);
+      } else if (gpuMatch) {
+        reasons.push(`Alternative graphics card model (${gpuMatch.source} vs ${gpuMatch.matched})`);
+      }
+
+      const otherComps = matchedComponents.filter(c => c !== cpuMatch && c !== gpuMatch);
+      if (otherComps.length > 0) {
+        const componentNames = otherComps
+          .map(c => c.matched || c.name)
+          .filter(Boolean)
+          .slice(0, 2);
+        const componentList = componentNames.length > 0 ? `: ${componentNames.join(', ')}` : '';
+        reasons.push(`Shares ${otherComps.length} other internal components${componentList}`);
+      }
+
+      if (reasons.length === 0) {
+        const componentNames = matchedComponents
+          .map(c => c.matched || c.name)
+          .filter(Boolean)
+          .slice(0, 2);
+        const componentList = componentNames.length > 0 ? `: ${componentNames.join(', ')}` : '';
+        reasons.push(`Alternative model sharing ${matchedComponents.length} internal components${componentList}`);
+      }
     }
 
     // Final fallback/cleanup

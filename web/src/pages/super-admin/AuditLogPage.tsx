@@ -12,6 +12,7 @@ export const AuditLogPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
   // Filters
   const [filters, setFilters] = useState<AuditLogFilters>({
@@ -139,67 +140,99 @@ export const AuditLogPage: React.FC = () => {
       />
 
       {/* Modern Search & Filter Toolbar */}
-      <div className="pw-card pw-p-6">
-        <div className="pw-grid pw-grid-cols-1 md:pw-grid-cols-4 pw-gap-4">
-          <div className="md:pw-col-span-2">
-            <InputField 
-              id="filter-q"
-              label="Global Search"
-              placeholder="Search action, label, IP, or agent..."
-              value={filters.q}
-              onChange={(e) => setFilters(prev => ({ ...prev, q: e.target.value }))}
-            />
-          </div>
-          <SelectField 
-            id="filter-target-type"
-            label="Target Type"
-            value={filters.targetType}
-            onChange={(e) => setFilters(prev => ({ ...prev, targetType: e.target.value }))}
-            options={[
-              { label: 'All Types', value: '' },
-              { label: 'User', value: 'User' },
-              { label: 'Company', value: 'Company' },
-              { label: 'Product', value: 'Product' },
-              { label: 'Category', value: 'Category' },
-              { label: 'Guide', value: 'Guide' },
-              { label: 'Content', value: 'Content' },
-              { label: 'Support', value: 'Support' }
-            ]}
-          />
-          <SelectField 
-            id="filter-severity"
-            label="Severity"
-            value={filters.severity}
-            onChange={(e) => setFilters(prev => ({ ...prev, severity: e.target.value }))}
-            options={[
-              { label: 'All Severities', value: '' },
-              { label: 'Info', value: 'info' },
-              { label: 'Warning', value: 'warning' },
-              { label: 'Critical', value: 'critical' }
-            ]}
-          />
-          <InputField 
-            id="filter-date-from"
-            label="From Date"
-            type="date"
-            value={filters.dateFrom}
-            onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
-          />
-          <InputField 
-            id="filter-date-to"
-            label="To Date"
-            type="date"
-            value={filters.dateTo}
-            onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
-          />
-          <div className="md:pw-col-span-2 pw-flex pw-items-end pw-gap-2">
-            <button className="pw-btn pw-btn-primary pw-flex-1" onClick={handleApplyFilters} disabled={loading || refreshing}>
-              <IonIcon name="search-outline" /> Apply Filters
+      <div className="pw-card pw-p-4">
+        <div className="pw-flex pw-flex-col pw-gap-3">
+          {/* Main Bar */}
+          <div className="pw-flex pw-gap-3 pw-items-center">
+            <div style={{ flex: 1 }}>
+              <InputField 
+                id="filter-q"
+                placeholder="Search action, label, IP, or agent..."
+                value={filters.q}
+                onChange={(e) => setFilters(prev => ({ ...prev, q: e.target.value }))}
+              />
+            </div>
+            <button 
+              className={`pw-btn pw-btn-outline pw-flex pw-items-center pw-gap-1 ${showAdvanced ? 'pw-bg-alt' : ''}`}
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              style={{ padding: '0.75rem 1rem' }}
+            >
+              <IonIcon name="funnel-outline" />
+              <span>Filters</span>
             </button>
-            <button className="pw-btn pw-btn-outline" onClick={handleClearFilters} title="Clear all filters">
-              Clear
+            <button className="pw-btn pw-btn-primary pw-flex pw-items-center pw-gap-1" onClick={handleApplyFilters} disabled={loading || refreshing} style={{ padding: '0.75rem 1.25rem' }}>
+              <IonIcon name="search-outline" /> Apply
             </button>
           </div>
+
+          {/* Advanced Filters Expandable Section */}
+          {showAdvanced && (
+            <div 
+              className="pw-grid pw-grid-cols-1 sm:pw-grid-cols-2 md:pw-grid-cols-4 pw-gap-4 pw-pt-4"
+              style={{ borderTop: '1px solid var(--color-border)' }}
+            >
+              <div>
+                <SelectField 
+                  id="filter-target-type"
+                  label="Target Type"
+                  value={filters.targetType}
+                  onChange={(e) => setFilters(prev => ({ ...prev, targetType: e.target.value }))}
+                  options={[
+                    { label: 'All Types', value: '' },
+                    { label: 'User', value: 'User' },
+                    { label: 'Company', value: 'Company' },
+                    { label: 'Product', value: 'Product' },
+                    { label: 'Category', value: 'Category' },
+                    { label: 'Guide', value: 'Guide' },
+                    { label: 'Content', value: 'Content' },
+                    { label: 'Support', value: 'Support' }
+                  ]}
+                />
+              </div>
+              <div>
+                <SelectField 
+                  id="filter-severity"
+                  label="Severity"
+                  value={filters.severity}
+                  onChange={(e) => setFilters(prev => ({ ...prev, severity: e.target.value }))}
+                  options={[
+                    { label: 'All Severities', value: '' },
+                    { label: 'Info', value: 'info' },
+                    { label: 'Warning', value: 'warning' },
+                    { label: 'Critical', value: 'critical' }
+                  ]}
+                />
+              </div>
+              <div>
+                <InputField 
+                  id="filter-date-from"
+                  label="From Date"
+                  type="date"
+                  value={filters.dateFrom}
+                  onChange={(e) => setFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+                />
+              </div>
+              <div className="pw-flex pw-gap-2 pw-items-end">
+                <div style={{ flex: 1 }}>
+                  <InputField 
+                    id="filter-date-to"
+                    label="To Date"
+                    type="date"
+                    value={filters.dateTo}
+                    onChange={(e) => setFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+                  />
+                </div>
+                <button 
+                  className="pw-btn pw-btn-outline" 
+                  onClick={handleClearFilters}
+                  title="Clear all filters"
+                  style={{ height: '46px', padding: '0 16px' }}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -12,6 +12,7 @@ export type RootStackParamList = {
     PendingApproval: undefined;
     TechnicianApplication: undefined;
     TechnicianPortal: undefined;
+    ProductForm: { id?: string };
 };
 
 export type MainTabParamList = {

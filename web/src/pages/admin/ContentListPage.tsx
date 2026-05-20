@@ -23,6 +23,9 @@ export const ContentListPage: React.FC = () => {
     const { token } = useSelector((state: RootState) => state.auth);
     const [content, setContent] = useState<ContentItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [products, setProducts] = useState<any[]>([]);
+    const [selectedProduct, setSelectedProduct] = useState<string>('all');
+    const [selectedType, setSelectedType] = useState<string>('all');
 
     const headers = { Authorization: `Bearer ${token}` };
 
@@ -38,8 +41,21 @@ export const ContentListPage: React.FC = () => {
         }
     };
 
+    const fetchProductsList = async () => {
+        try {
+            const { data } = await axios.get(`${API_URL}/products`, {
+                headers,
+                params: { limit: 100, manage: true }
+            });
+            setProducts(data.data || data || []);
+        } catch (err) {
+            console.error('Failed to fetch products for filtering', err);
+        }
+    };
+
     useEffect(() => {
         fetchContent();
+        fetchProductsList();
     }, []);
 
     const handleSubmitForApproval = async (id: string) => {
@@ -109,6 +125,13 @@ export const ContentListPage: React.FC = () => {
         return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(dateStr));
     };
 
+    const filteredContent = content.filter(item => {
+        const matchesProduct = selectedProduct === 'all' || 
+            (typeof item.product === 'object' ? item.product?.id === selectedProduct : item.product === selectedProduct);
+        const matchesType = selectedType === 'all' || item.type === selectedType;
+        return matchesProduct && matchesType;
+    });
+
     return (
         <div>
             <PageHeader
@@ -121,6 +144,62 @@ export const ContentListPage: React.FC = () => {
                 }
             />
 
+            <div className="filter-bar" style={{
+                display: 'flex',
+                gap: '1rem',
+                marginBottom: '1.5rem',
+                background: 'rgba(255, 255, 255, 0.05)',
+                padding: '1rem',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+                alignItems: 'center'
+            }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-muted)' }}>Filter by Product</label>
+                    <select
+                        value={selectedProduct}
+                        onChange={e => setSelectedProduct(e.target.value)}
+                        style={{
+                            background: 'var(--color-bg-alt)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            padding: '0.5rem',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--color-text-main)',
+                            outline: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="all">All Products</option>
+                        {products.map(p => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
+                        ))}
+                    </select>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1 }}>
+                    <label style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--color-text-muted)' }}>Filter by Type</label>
+                    <select
+                        value={selectedType}
+                        onChange={e => setSelectedType(e.target.value)}
+                        style={{
+                            background: 'var(--color-bg-alt)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            padding: '0.5rem',
+                            borderRadius: 'var(--radius-md)',
+                            color: 'var(--color-text-main)',
+                            outline: 'none',
+                            cursor: 'pointer'
+                        }}
+                    >
+                        <option value="all">All Types</option>
+                        <option value="article">📖 Knowledge Base Article</option>
+                        <option value="guide">🛠️ Step-by-Step Repair Guide</option>
+                        <option value="faq">❓ FAQ Entry</option>
+                        <option value="tutorial">🎬 Video Episode</option>
+                    </select>
+                </div>
+            </div>
+
             {loading ? (
                 <div style={{ height: '50vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Spinner size="lg" /></div>
             ) : content.length === 0 ? (
@@ -129,6 +208,13 @@ export const ContentListPage: React.FC = () => {
                     title="Library is Empty"
                     description="You haven't created any support content for your products yet."
                     action={<Button onClick={() => navigate('/admin/support/new')}>Create Your First Article</Button>}
+                />
+            ) : filteredContent.length === 0 ? (
+                <EmptyState
+                    icon="funnel-outline"
+                    title="No Matching Content"
+                    description="No support documents match the chosen product and type filters."
+                    action={<Button onClick={() => { setSelectedProduct('all'); setSelectedType('all'); }}>Clear Filters</Button>}
                 />
             ) : (
                 <div className="card">
@@ -144,7 +230,7 @@ export const ContentListPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {content.map(item => (
+                                {filteredContent.map(item => (
                                     <tr key={item.id}>
                                         <td>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

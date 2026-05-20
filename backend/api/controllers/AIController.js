@@ -53,12 +53,17 @@ module.exports = {
 
       const prompt = PromptBuilder.build(task, context, constraints);
       const result = await sails.services.geminiservice.generateText(prompt, {
-        maxOutputTokens: 300,
         temperature: 0.4
       });
 
       if (!result.success) {
-        return res.status(500).json(result);
+        sails.log.warn('AI Description generation failed (falling back locally):', result.message || result.error);
+        const fallbackText = `The ${productName} is a premium hardware device in the ${category || 'electronics'} category. Engineered with high-performance components, it offers outstanding reliability, seamless integration capabilities, and is designed to meet demanding user requirements.`;
+        return res.json({
+          success: true,
+          data: { text: fallbackText },
+          fallback: true
+        });
       }
 
       return res.json({
@@ -67,8 +72,13 @@ module.exports = {
         usage: result.usage
       });
     } catch (err) {
-      sails.log.error('AI Description Error:', err);
-      return res.status(500).json({ success: false, message: 'Failed to generate description', code: 'SERVER_ERROR' });
+      sails.log.error('AI Description Error (falling back locally):', err);
+      const fallbackText = `The ${req.body.productName || 'device'} is a premium hardware product designed for optimal performance, reliability, and seamless user integration.`;
+      return res.json({
+        success: true,
+        data: { text: fallbackText },
+        fallback: true
+      });
     }
   },
 
@@ -97,7 +107,20 @@ module.exports = {
       });
 
       if (!result.success) {
-        return res.status(500).json(result);
+        sails.log.warn('AI Suggest Steps generation failed (falling back locally):', result.message || result.error);
+        const fallbackSteps = [
+          'Safety Check: Power off the device and disconnect it from any electrical outlets or batteries.',
+          'Disassembly: Carefully remove external screws and open the casing using specialized tools.',
+          'Inspection: Visually examine the interior for physical damage, burnt components, or loose cables.',
+          'Component Check: Test the component or sub-assembly for electrical continuity or correct positioning.',
+          'Reassembly: Carefully reinstall all components, ensuring secure connections and correct routing.',
+          'Testing: Power on the system and perform functional tests to ensure the issue is resolved.'
+        ];
+        return res.json({
+          success: true,
+          data: { steps: fallbackSteps },
+          fallback: true
+        });
       }
 
       return res.json({
@@ -106,8 +129,19 @@ module.exports = {
         usage: result.usage
       });
     } catch (err) {
-      sails.log.error('AI Suggest Steps Error:', err);
-      return res.status(500).json({ success: false, message: 'Failed to suggest steps', code: 'SERVER_ERROR' });
+      sails.log.error('AI Suggest Steps Error (falling back locally):', err);
+      const fallbackSteps = [
+        'Safety Check: Power off the device and disconnect it from any electrical outlets or batteries.',
+        'Disassembly: Carefully remove external screws and open the casing using specialized tools.',
+        'Inspection: Visually examine the interior for physical damage, burnt components, or loose cables.',
+        'Reassembly: Carefully reinstall all components, ensuring secure connections and correct routing.',
+        'Testing: Power on the system and perform functional tests to ensure the issue is resolved.'
+      ];
+      return res.json({
+        success: true,
+        data: { steps: fallbackSteps },
+        fallback: true
+      });
     }
   },
 
@@ -152,12 +186,17 @@ module.exports = {
 
       const prompt = PromptBuilder.build(task, `User Query: ${message}\n${contextStr}`, constraints);
       const result = await sails.services.geminiservice.generateText(prompt, {
-        temperature: 0.7, // Higher for chat
-        maxOutputTokens: 1000
+        temperature: 0.7 // Higher for chat
       });
 
       if (!result.success) {
-        return res.status(500).json(result);
+        sails.log.warn('AI Chat Assistant failed (falling back locally):', result.message || result.error);
+        const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable. Based on your query "${message}", please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
+        return res.json({
+          success: true,
+          data: { response: fallbackResponse },
+          fallback: true
+        });
       }
 
       return res.json({
@@ -167,8 +206,13 @@ module.exports = {
       });
 
     } catch (err) {
-      sails.log.error('AI Chat Error:', err);
-      return res.status(500).json({ success: false, message: 'AI Assistant error', code: 'SERVER_ERROR' });
+      sails.log.error('AI Chat Error (falling back locally):', err);
+      const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable. Please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
+      return res.json({
+        success: true,
+        data: { response: fallbackResponse },
+        fallback: true
+      });
     }
   },
 
@@ -195,7 +239,15 @@ module.exports = {
       });
 
       if (!result.success) {
-        return res.status(500).json(result);
+        sails.log.warn('AI Feedback Analysis failed (falling back locally):', result.message || result.error);
+        const sentiment = (feedback.rating && feedback.rating >= 4) ? 'positive' : ((feedback.rating && feedback.rating <= 2) ? 'negative' : 'neutral');
+        const keyIssue = sentiment === 'negative' ? 'Customer noted technical difficulties or unsatisfactory experience.' : 'General user review/satisfaction feedback.';
+        const suggestion = sentiment === 'negative' ? 'Initiate a support ticket to follow up and resolve the customer concern.' : 'Log customer satisfaction metrics for system improvements.';
+        return res.json({
+          success: true,
+          data: { sentiment, keyIssue, suggestion },
+          fallback: true
+        });
       }
 
       return res.json({
@@ -204,8 +256,97 @@ module.exports = {
         usage: result.usage
       });
     } catch (err) {
-      sails.log.error('AI Feedback Analysis Error:', err);
-      return res.status(500).json({ success: false, message: 'Failed to analyze feedback', code: 'SERVER_ERROR' });
+      sails.log.error('AI Feedback Analysis Error (falling back locally):', err);
+      return res.json({
+        success: true,
+        data: {
+          sentiment: 'neutral',
+          keyIssue: 'Failed to analyze feedback due to server error.',
+          suggestion: 'Review feedback manually.'
+        },
+        fallback: true
+      });
+    }
+  },
+
+  /**
+   * POST /api/ai/component-insight
+   */
+  componentInsight: async function (req, res) {
+    const { component, productContext } = req.body;
+    if (!component || !component.name) {
+      return res.status(400).json({ success: false, message: 'Component with a valid name is required' });
+    }
+
+    const generateLocalFallbackInsight = (comp, context) => {
+      const type = (comp.type || '').toLowerCase();
+      const name = comp.name || '';
+      const manufacturer = comp.manufacturer || '';
+      const specs = comp.specifications || '';
+
+      let fallback = `The ${name} is a key ${comp.type || 'component'} configured for this system.`;
+
+      if (type.includes('cpu') || type.includes('processor') || name.toLowerCase().includes('intel') || name.toLowerCase().includes('amd') || name.toLowerCase().includes('ryzen') || name.toLowerCase().includes('core i') || name.toLowerCase().includes('m1') || name.toLowerCase().includes('m2') || name.toLowerCase().includes('m3')) {
+        fallback = `The ${name} serves as the central processing unit (CPU), directing all system operations and executing computational threads.`;
+        if (specs) {
+          fallback += ` Features include: ${specs}.`;
+        }
+      } else if (type.includes('gpu') || type.includes('graphics') || type.includes('vga') || name.toLowerCase().includes('nvidia') || name.toLowerCase().includes('rtx') || name.toLowerCase().includes('radeon') || name.toLowerCase().includes('geforce')) {
+        fallback = `The ${name} is the dedicated GPU, delivering high-performance graphics rendering for gaming, design rendering, and display output.`;
+        if (specs) {
+          fallback += ` Features include: ${specs}.`;
+        }
+      } else if (type.includes('ram') || type.includes('memory') || name.toLowerCase().includes('ddr') || name.toLowerCase().includes('sodimm')) {
+        fallback = `The ${name} serves as active system memory (RAM), holding temporary data for running applications and system processes.`;
+      } else if (type.includes('ssd') || type.includes('storage') || type.includes('hdd') || type.includes('drive') || name.toLowerCase().includes('nvme')) {
+        fallback = `The ${name} acts as the primary system storage drive, hosting the operating system and applications for ultra-fast boot times.`;
+      } else if (type.includes('motherboard') || type.includes('board') || type.includes('mainboard')) {
+        fallback = `The ${name} motherboard links all key hardware modules, facilitating high-speed data flow and reliable power delivery.`;
+      } else if (specs) {
+        fallback = `Configured specs: ${specs}`;
+      }
+
+      return fallback;
+    };
+
+    try {
+      const task = 'Provide a brief, helpful explanation of what this component is and its significance/role within the product. This must be an informative technical description, not repeating the raw name or model label. For example, explain how they work, or if they share processor / graphic card resources.';
+      const context = `Product Context: ${productContext || 'Consumer Hardware'}\nComponent Name: ${component.name}\nType: ${component.type || 'Unknown'}\nManufacturer: ${component.manufacturer || 'Unknown'}\nModel: ${component.modelNumber || 'N/A'}\nSpecifications: ${component.specifications || 'N/A'}`;
+      const constraints = [
+        'Keep the explanation to exactly 1-2 sentences.',
+        'Maximum 45 words.',
+        'Explain the role or value of the component (e.g. why it matters, processor architecture, GPU memory bandwidth, or compatibility) rather than just restating specs.',
+        'Be directly helpful to a user reading a product specs overview.'
+      ];
+
+      const prompt = PromptBuilder.build(task, context, constraints);
+      const result = await sails.services.geminiservice.generateText(prompt, {
+        temperature: 0.3
+      });
+
+      if (!result.success) {
+        sails.log.warn('Gemini API failed to generate insight, falling back locally:', result.message || result.error);
+        return res.json({
+          success: true,
+          data: { insight: generateLocalFallbackInsight(component, productContext) },
+          fallback: true
+        });
+      }
+
+      const insightText = typeof result.data === 'object' ? (result.data.insight || JSON.stringify(result.data)) : result.data;
+
+      return res.json({
+        success: true,
+        data: { insight: insightText },
+        usage: result.usage
+      });
+    } catch (err) {
+      sails.log.error('AI Component Insight Error (falling back locally):', err);
+      return res.json({
+        success: true,
+        data: { insight: generateLocalFallbackInsight(component, productContext) },
+        fallback: true
+      });
     }
   }
 

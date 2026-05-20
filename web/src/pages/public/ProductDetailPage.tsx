@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { geminiService } from '../../services/geminiService';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../../config';
 import { Badge, Button, EmptyState, PageHeader, Skeleton, IonIcon, Modal } from '../../components/ui';
@@ -163,6 +164,8 @@ export const ProductDetailPage: React.FC = () => {
     const [supportTab, setSupportTab] = useState<SupportTabKey>('steps');
     
     const [selectedComponents, setSelectedComponents] = useState<any[]>([]);
+    const [insights, setInsights] = useState<Record<string, string>>({});
+    const [loadingInsights, setLoadingInsights] = useState<Record<string, boolean>>({});
     const [playingVideo, setPlayingVideo] = useState<any>(null);
     const navigate = useNavigate();
     const { user, token } = useSelector((state: RootState) => state.auth);
@@ -208,6 +211,40 @@ export const ProductDetailPage: React.FC = () => {
                 : [...previous, nextSelection]
         ));
     };
+
+    useEffect(() => {
+        selectedComponents.forEach((component) => {
+            const key = component.selectionKey;
+            if (!insights[key] && !loadingInsights[key]) {
+                setLoadingInsights(prev => ({ ...prev, [key]: true }));
+                geminiService.getComponentInsight(component, product?.name || '')
+                    .then((insight) => {
+                        setInsights(prev => ({ ...prev, [key]: insight }));
+                    })
+                    .catch((err) => {
+                        console.error('Error fetching component insight:', err);
+                        const type = (component.type || '').toLowerCase();
+                        const name = component.name || '';
+                        const manufacturer = component.manufacturer || '';
+                        const specs = component.specifications || '';
+                        let fallback = `The ${name} is a key ${component.type || 'component'} configured for this system.`;
+                        if (type.includes('cpu') || type.includes('processor') || name.toLowerCase().includes('intel') || name.toLowerCase().includes('amd') || name.toLowerCase().includes('ryzen') || name.toLowerCase().includes('core i') || name.toLowerCase().includes('m1') || name.toLowerCase().includes('m2') || name.toLowerCase().includes('m3')) {
+                            fallback = `The ${name} serves as the central processing unit (CPU), directing all system operations and executing computational threads.`;
+                        } else if (type.includes('gpu') || type.includes('graphics') || name.toLowerCase().includes('nvidia') || name.toLowerCase().includes('rtx') || name.toLowerCase().includes('radeon') || name.toLowerCase().includes('geforce')) {
+                            fallback = `The ${name} is the dedicated GPU, delivering high-performance graphics rendering for gaming, design rendering, and display output.`;
+                        } else if (type.includes('ram') || type.includes('memory') || name.toLowerCase().includes('ddr') || name.toLowerCase().includes('sodimm')) {
+                            fallback = `The ${name} serves as active system memory (RAM), holding temporary data for running applications and system processes.`;
+                        } else if (specs) {
+                            fallback = `Configured specifications: ${specs}`;
+                        }
+                        setInsights(prev => ({ ...prev, [key]: fallback }));
+                    })
+                    .finally(() => {
+                        setLoadingInsights(prev => ({ ...prev, [key]: false }));
+                    });
+            }
+        });
+    }, [selectedComponents, product, insights, loadingInsights]);
 
     if (loading) {
         return (
@@ -414,6 +451,22 @@ export const ProductDetailPage: React.FC = () => {
                                                         {component.manufacturer} {component.modelNumber}
                                                     </div>
                                                 )}
+                                                {component.specifications && (
+                                                    <p style={{ 
+                                                        margin: '0.25rem 0 0 0', 
+                                                        fontSize: '0.9rem', 
+                                                        color: isSelected ? 'var(--color-primary-dark)' : 'var(--color-text-muted)', 
+                                                        lineHeight: 1.5,
+                                                        display: '-webkit-box',
+                                                        WebkitLineClamp: 3,
+                                                        WebkitBoxOrient: 'vertical',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
+                                                        opacity: 0.85
+                                                    }}>
+                                                        {component.specifications}
+                                                    </p>
+                                                )}
                                             </button>
                                         );
                                     })}
@@ -422,7 +475,79 @@ export const ProductDetailPage: React.FC = () => {
                         </section>
 
                         {selectedComponents.length > 0 && (
-                            <div style={{ marginTop: '2.5rem' }}>
+                            <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                                <section className="card" style={{ padding: '2.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+                                        <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--color-text-strong)' }}>
+                                            <IonIcon name="document-text-outline" style={{ color: 'var(--color-primary)', fontSize: '1.5rem' }} />
+                                            Technical Specifications & Instructions
+                                        </h3>
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                                            {selectedComponents.length} selected
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        {selectedComponents.map((component) => (
+                                            <div key={component.selectionKey} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-primary)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
+                                                    <div>
+                                                        <h4 style={{ margin: '0 0 0.25rem 0', fontSize: '1.15rem', fontWeight: 700, color: 'var(--color-text-strong)' }}>
+                                                            {component.name}
+                                                        </h4>
+                                                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                                                            {component.manufacturer} {component.modelNumber ? `• Model: ${component.modelNumber}` : ''}
+                                                        </p>
+                                                    </div>
+                                                    {component.type && (
+                                                        <span style={{ 
+                                                            background: 'var(--color-primary-faint)', 
+                                                            color: 'var(--color-primary)', 
+                                                            padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase'
+                                                        }}>
+                                                            {component.type}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div style={{ fontSize: '1rem', lineHeight: 1.7, color: 'var(--color-text)' }}>
+                                                    {component.specifications ? (
+                                                        <div style={{ whiteSpace: 'pre-wrap' }}>{component.specifications}</div>
+                                                    ) : (
+                                                        <span style={{ fontStyle: 'italic', color: 'var(--color-text-muted)' }}>No technical instructions or specifications provided for this component.</span>
+                                                    )}
+                                                </div>
+
+                                                {/* AI Insights Section */}
+                                                <div style={{ 
+                                                    marginTop: '1.25rem', 
+                                                    padding: '1.25rem', 
+                                                    background: 'var(--color-surface)', 
+                                                    borderRadius: 'var(--radius-md)', 
+                                                    border: '1px solid var(--color-border)',
+                                                    borderLeft: '4px solid var(--color-accent, #10B981)',
+                                                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                                        <IonIcon name="sparkles-outline" style={{ color: 'var(--color-accent, #10B981)', fontSize: '1.15rem' }} />
+                                                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text-strong)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            AI Technical Insight
+                                                        </span>
+                                                    </div>
+                                                    {loadingInsights[component.selectionKey] ? (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                            <div className="skeleton-loading" style={{ height: '14px', width: '90%', borderRadius: '4px' }}></div>
+                                                            <div className="skeleton-loading" style={{ height: '14px', width: '75%', borderRadius: '4px' }}></div>
+                                                        </div>
+                                                    ) : (
+                                                        <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--color-text-strong)' }}>
+                                                            {insights[component.selectionKey] || 'Loading insight...'}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+
                                 <RecommendationSection
                                     mode="components"
                                     currentProductId={id}

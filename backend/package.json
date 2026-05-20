@@ -18,6 +18,7 @@
     "jsonwebtoken": "^9.0.3",
     "merge-defaults": "^0.2.2",
     "mongodb-connection-string-url": "^3.0.2",
+    "optional-require": "^1.1.10",
     "qrcode": "^1.5.4",
     "rc": "^1.2.8",
     "sails": "^1.5.17",

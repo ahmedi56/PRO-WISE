@@ -42,5 +42,18 @@ export const productService = {
         });
         if (!res.ok) throw new Error('Failed to fetch component matches');
         return res.json();
+    },
+
+    getComponentInsight: async (component: any, productContext?: string): Promise<string> => {
+        const res = await apiFetch(`${API_URL}/ai/component-insight`, {
+            method: 'POST',
+            body: JSON.stringify({
+                component,
+                productContext
+            }),
+        });
+        if (!res.ok) throw new Error('Failed to fetch component insight');
+        const json = await res.json();
+        return json.success ? json.data.insight : 'No insight available.';
     }
 };

@@ -144,6 +144,7 @@ const App: React.FC = () => {
                         <Route path="support/new" element={<PermissionProtectedRoute permission="products.manage"><ContentFormPage /></PermissionProtectedRoute>} />
                         <Route path="support/pending" element={<PermissionProtectedRoute permission="products.manage"><PendingContentPage /></PermissionProtectedRoute>} />
                         <Route path="support/:id/edit" element={<PermissionProtectedRoute permission="products.update"><ContentFormPage /></PermissionProtectedRoute>} />
+                        <Route path="repair-support" element={<Navigate to="/admin/support" replace />} />
                         
                         <Route path="feedback" element={<CompanyAdminRoute><FeedbackPage /></CompanyAdminRoute>} />
                         <Route path="analytics" element={<CompanyAdminRoute><AnalyticsPage /></CompanyAdminRoute>} />

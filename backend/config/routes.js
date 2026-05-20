@@ -138,6 +138,7 @@ module.exports.routes = {
   'POST /api/ai/suggest-steps': 'AIController.suggestSteps',
   'POST /api/ai/chat': 'AIController.chat',
   'GET /api/ai/analyze-feedback/:feedbackId': 'AIController.analyzeFeedback',
+  'POST /api/ai/component-insight': 'AIController.componentInsight',
 
   'GET /api/homepage': 'HomeController.index',
   'GET /api/search': 'SearchController.query',
@@ -161,6 +162,17 @@ module.exports.routes = {
   'PUT /api/content/:id/approve': 'ContentController.approve',
   'PUT /api/content/:id/reject': 'ContentController.reject',
   'DELETE /api/content/:id': 'ContentController.delete',
+
+  // ─── Product Submission and Approval Workflow ────────────
+  'PUT /api/products/:id/submit': { controller: 'ProductController', action: 'submit', requiredPermission: 'products.update' },
+  'PUT /api/products/:id/approve': { controller: 'ProductController', action: 'approve' },
+  'PUT /api/products/:id/reject': { controller: 'ProductController', action: 'reject' },
+
+  // ─── Guide Submission and Approval Workflow ────────────
+  'PUT /api/guides/:id/submit': { controller: 'GuideController', action: 'submit', requiredPermission: 'guides.update' },
+  'PUT /api/guides/:id/approve': { controller: 'GuideController', action: 'approve' },
+  'PUT /api/guides/:id/reject': { controller: 'GuideController', action: 'reject' },
+
 
   // ─── Notifications ──────────────────────────────────────
   'GET /api/notifications': 'NotificationController.find',

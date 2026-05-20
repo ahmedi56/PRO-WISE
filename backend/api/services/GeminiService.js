@@ -63,11 +63,75 @@ module.exports = {
    * @param {Object} options - Configuration overrides.
    * @returns {Promise<Object>} { success: true, text, usage, metadata }
    */
+  generateWithGrok: async function(prompt, options = {}) {
+    const grokKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
+    if (!grokKey) {
+      return { success: false, message: 'Grok API key is not configured.' };
+    }
+
+    try {
+      const axios = require('axios');
+      const model = options.responseMimeType === 'application/json' ? 'grok-2-1212' : 'grok-beta';
+      
+      const response = await axios.post('https://api.xai.com/v1/chat/completions', {
+        messages: [{ role: 'user', content: prompt }],
+        model: model,
+        temperature: options.temperature ?? 0.3,
+        stream: false
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${grokKey}`
+        },
+        timeout: 10000 // 10s timeout
+      });
+
+      const text = response.data?.choices?.[0]?.message?.content;
+      if (!text) {
+        throw new Error('Empty response from Grok API');
+      }
+
+      const isJson = options.responseMimeType === 'application/json';
+
+      return {
+        success: true,
+        data: isJson ? this._parseSafeJson(text) : text,
+        usage: {
+          inputTokens: response.data.usage?.prompt_tokens || 0,
+          outputTokens: response.data.usage?.completion_tokens || 0,
+          totalTokens: response.data.usage?.total_tokens || 0
+        },
+        metadata: {
+          model: model,
+          provider: 'xai'
+        }
+      };
+    } catch (err) {
+      sails.log.error('GeminiService fallback to Grok error:', err.response?.data || err.message);
+      return {
+        success: false,
+        message: err.message || 'An error occurred during Grok generation.'
+      };
+    }
+  },
+
+  /**
+   * Generate content with full control over model and settings.
+   * @param {string} prompt - The input text.
+   * @param {Object} options - Configuration overrides.
+   * @returns {Promise<Object>} { success: true, text, usage, metadata }
+   */
   generateText: async function(prompt, options = {}) {
+    const grokKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
+
     if (!this.isAvailable()) {
+      if (grokKey) {
+        sails.log.info('GeminiService: Gemini API key is not configured, falling back to Grok...');
+        return this.generateWithGrok(prompt, options);
+      }
       return { 
         success: false, 
-        message: 'Gemini API key is not configured.', 
+        message: 'No AI API keys are configured (Gemini/Grok).', 
         code: 'MISSING_API_KEY' 
       };
     }
@@ -79,12 +143,15 @@ module.exports = {
       temperature: options.temperature ?? 0.3,
       topK: options.topK ?? 40,
       topP: options.topP ?? 0.95,
-      maxOutputTokens: options.maxOutputTokens ?? 2048,
       responseMimeType: options.responseMimeType || 'text/plain',
     };
 
-    return this._withRetry(async () => {
-      try {
+    if (options.maxOutputTokens) {
+      generationConfig.maxOutputTokens = options.maxOutputTokens;
+    }
+
+    try {
+      return await this._withRetry(async () => {
         const model = genAI.getGenerativeModel({ 
           model: modelName,
           generationConfig 
@@ -128,15 +195,19 @@ module.exports = {
             safetyRatings: candidate.safetyRatings
           }
         };
-      } catch (err) {
-        sails.log.error(`GeminiService (${modelName}) error:`, err.message);
-        return {
-          success: false,
-          message: err.message || 'An unexpected error occurred during generation.',
-          code: err.message.includes('blocked') ? 'CONTENT_BLOCKED' : 'GEN_ERROR'
-        };
+      });
+    } catch (err) {
+      sails.log.error(`GeminiService (${modelName}) error:`, err.message);
+      if (grokKey) {
+        sails.log.info('GeminiService: Gemini generation failed, falling back to Grok...');
+        return this.generateWithGrok(prompt, options);
       }
-    });
+      return {
+        success: false,
+        message: err.message || 'An unexpected error occurred during generation.',
+        code: err.message.includes('blocked') ? 'CONTENT_BLOCKED' : 'GEN_ERROR'
+      };
+    }
   },
 
   /**

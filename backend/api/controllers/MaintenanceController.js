@@ -12,11 +12,13 @@ module.exports = {
    */
   create: async function (req, res) {
     try {
-      const { productName, issueDescription, urgency, companyId } = req.body;
+      const { productName, issueDescription, urgency, companyId, techId, technician } = req.body;
 
       if (!productName || !issueDescription) {
         return res.status(400).json({ message: 'Product name and issue description are required' });
       }
+
+      const assignedTech = techId || technician || null;
 
       const request = await MaintenanceRequest.create({
         user: req.user.id,
@@ -24,7 +26,8 @@ module.exports = {
         issueDescription,
         urgency: urgency || 'low',
         company: companyId || null,
-        status: 'pending'
+        technician: assignedTech,
+        status: assignedTech ? 'assigned' : 'pending'
       }).fetch();
 
       return res.status(201).json(request);

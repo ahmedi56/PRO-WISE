@@ -195,6 +195,23 @@ module.exports = {
     try {
       const { category, company, search, page = 1, limit = 20, sort = 'createdAt DESC' } = req.query;
 
+      // Extract and verify token if present in headers to populate req.user on this public route
+      if (!req.user && req.headers && req.headers.authorization) {
+        const parts = req.headers.authorization.split(' ');
+        if (parts.length === 2 && /^Bearer$/i.test(parts[0])) {
+          const token = parts[1];
+          try {
+            const secret = sails.config.custom.jwtSecret;
+            const decoded = require('jsonwebtoken').verify(token, secret);
+            if (decoded && decoded.type !== 'refresh') {
+              req.user = decoded;
+            }
+          } catch (e) {
+            // Ignore JWT errors since this route is public
+          }
+        }
+      }
+
       // Resolve role from DB for accurate permission checks
       let roleName = '';
       if (req.user && req.user.id) {

@@ -65,5 +65,23 @@ export const geminiService = {
             console.error('Gemini Service Error:', err.message);
             throw new Error(err.response?.data?.message || 'Feedback analysis failed.');
         }
+    },
+
+    /**
+     * Generate a brief technical insight for a product component.
+     */
+    getComponentInsight: async (component: any, productContext?: string): Promise<string> => {
+        try {
+            const { data } = await axios.post<AIResponse<{ insight: string }>>(`${API_URL}/ai/component-insight`, { 
+                component,
+                productContext
+            });
+            
+            if (!data.success) throw new Error(data.message || 'Failed to generate component insight');
+            return data.data.insight;
+        } catch (err: any) {
+            console.error('Gemini Service Error:', err.message);
+            throw new Error(err.response?.data?.message || 'Failed to generate component insight.');
+        }
     }
 };

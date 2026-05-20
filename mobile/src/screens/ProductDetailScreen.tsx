@@ -25,6 +25,7 @@ import { readJson } from '../utils/apiSettings';
 import { apiFetch } from '../utils/api';
 import { colors, spacing, radius, typography, shadows } from '../theme';
 import RecommendationList from '../components/RecommendationList';
+import { productService } from '../services/productService';
 import { formatProductName } from '../utils/formatProduct';
 import { RootState, AppDispatch } from '../store';
 import { RootStackParamList } from '../navigation/types';
@@ -168,6 +169,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [selectedComponents, setSelectedComponents] = useState<any[]>([]);
+    const [insights, setInsights] = useState<Record<string, string>>({});
+    const [loadingInsights, setLoadingInsights] = useState<Record<string, boolean>>({});
     const [activeTab, setActiveTab] = useState<'manifest' | 'hardware' | 'protocols' | 'videos' | 'docs'>('manifest');
 
     const handleUnauthorized = () => dispatch(logout());
@@ -181,6 +184,40 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
             setSelectedComponents([...selectedComponents, selection]);
         }
     };
+
+    useEffect(() => {
+        selectedComponents.forEach((component) => {
+            const key = component.selectionKey;
+            if (!insights[key] && !loadingInsights[key]) {
+                setLoadingInsights(prev => ({ ...prev, [key]: true }));
+                productService.getComponentInsight(component, data?.name || '')
+                    .then((insight) => {
+                        setInsights(prev => ({ ...prev, [key]: insight }));
+                    })
+                    .catch((err) => {
+                        console.error('Error fetching component insight in mobile:', err);
+                        const type = (component.type || '').toLowerCase();
+                        const name = component.name || '';
+                        const manufacturer = component.manufacturer || '';
+                        const specs = component.specifications || '';
+                        let fallback = `The ${name} is a key ${component.type || 'component'} configured for this system.`;
+                        if (type.includes('cpu') || type.includes('processor') || name.toLowerCase().includes('intel') || name.toLowerCase().includes('amd') || name.toLowerCase().includes('ryzen') || name.toLowerCase().includes('core i') || name.toLowerCase().includes('m1') || name.toLowerCase().includes('m2') || name.toLowerCase().includes('m3')) {
+                            fallback = `The ${name} serves as the central processing unit (CPU), directing all system operations and executing computational threads.`;
+                        } else if (type.includes('gpu') || type.includes('graphics') || name.toLowerCase().includes('nvidia') || name.toLowerCase().includes('rtx') || name.toLowerCase().includes('radeon') || name.toLowerCase().includes('geforce')) {
+                            fallback = `The ${name} is the dedicated GPU, delivering high-performance graphics rendering for gaming, design rendering, and display output.`;
+                        } else if (type.includes('ram') || type.includes('memory') || name.toLowerCase().includes('ddr') || name.toLowerCase().includes('sodimm')) {
+                            fallback = `The ${name} serves as active system memory (RAM), holding temporary data for running applications and system processes.`;
+                        } else if (specs) {
+                            fallback = `Configured specifications: ${specs}`;
+                        }
+                        setInsights(prev => ({ ...prev, [key]: fallback }));
+                    })
+                    .finally(() => {
+                        setLoadingInsights(prev => ({ ...prev, [key]: false }));
+                    });
+            }
+        });
+    }, [selectedComponents, data, insights, loadingInsights]);
 
     useEffect(() => {
         if (data?.name) {
@@ -389,6 +426,11 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                                         </View>
                                                         <Text style={styles.compSpecs}>{component.manufacturer} • {component.type}</Text>
                                                         {component.modelNumber && <Text style={styles.compModel}>SN: {component.modelNumber}</Text>}
+                                                        {component.specifications ? (
+                                                            <Text style={styles.compDescription} numberOfLines={3}>
+                                                                {component.specifications}
+                                                            </Text>
+                                                        ) : null}
                                                     </View>
                                                 </View>
                                             </TouchableOpacity>
@@ -402,6 +444,54 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                 </View>
                             )}
                         </View>
+
+                        {/* ── Technical Instructions Panel for Selected Components ── */}
+                        {selectedComponents.length > 0 && (
+                            <View style={styles.compSelectedSection}>
+                                <View style={styles.compSelectedTitleRow}>
+                                    <Ionicons name="document-text-outline" size={16} color={colors.primary} />
+                                    <Text style={styles.compSelectedTitle}>TECHNICAL INSTRUCTIONS</Text>
+                                    <Text style={styles.compSelectedCount}>{selectedComponents.length} Selected</Text>
+                                </View>
+                                <View style={styles.compSelectedCards}>
+                                    {selectedComponents.map((component) => (
+                                        <View key={component.selectionKey} style={styles.compSelectedCard}>
+                                            <View style={styles.compSelectedCardHeader}>
+                                                <View style={{ flex: 1, marginRight: 8 }}>
+                                                    <Text style={styles.compSelectedCardName}>{component.name}</Text>
+                                                    <Text style={styles.compSelectedCardMeta}>
+                                                        {component.manufacturer} {component.modelNumber ? `• SN: ${component.modelNumber}` : ''}
+                                                    </Text>
+                                                </View>
+                                                {component.type && (
+                                                    <View style={styles.compSelectedCardBadge}>
+                                                        <Text style={styles.compSelectedCardBadgeText}>{component.type}</Text>
+                                                    </View>
+                                                )}
+                                            </View>
+                                            <Text style={styles.compSelectedCardSpecs}>
+                                                {component.specifications || 'No detailed specifications or instructions are registered for this component.'}
+                                            </Text>
+
+                                            {/* AI Technical Insight Box */}
+                                            <View style={styles.compSelectedAiBox}>
+                                                <View style={styles.compSelectedAiHeader}>
+                                                    <Ionicons name="sparkles-outline" size={13} color={colors.success || '#10B981'} />
+                                                    <Text style={styles.compSelectedAiTitle}>AI TECHNICAL INSIGHT</Text>
+                                                </View>
+                                                {loadingInsights[component.selectionKey] ? (
+                                                    <ActivityIndicator size="small" color={colors.primary} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
+                                                ) : (
+                                                    <Text style={styles.compSelectedAiText}>
+                                                        {insights[component.selectionKey] || 'Loading insight...'}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
                         
                         <RecommendationList
                             productId={data.id}
@@ -712,6 +802,114 @@ const styles = StyleSheet.create({
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.bg, gap: spacing.md },
     loadingText: { color: colors.primary, fontSize: 10, fontWeight: '800', letterSpacing: 2 },
     errorText: { color: colors.error, fontSize: 14, fontWeight: '600', textAlign: 'center' },
+
+    // Component specifications styling
+    compDescription: {
+        color: colors.textMuted,
+        fontSize: 12,
+        lineHeight: 18,
+        marginTop: 6,
+    },
+    compSelectedSection: {
+        marginTop: spacing.xl,
+        paddingHorizontal: spacing.lg,
+    },
+    compSelectedTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.sm,
+        marginBottom: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        paddingBottom: spacing.sm,
+    },
+    compSelectedTitle: {
+        color: colors.textStrong,
+        fontSize: 11,
+        fontWeight: '900',
+        letterSpacing: 1.5,
+        flex: 1,
+    },
+    compSelectedCount: {
+        color: colors.primary,
+        fontSize: 10,
+        fontWeight: '800',
+    },
+    compSelectedCards: {
+        gap: spacing.md,
+    },
+    compSelectedCard: {
+        backgroundColor: colors.surfaceContainer,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderLeftWidth: 4,
+        borderLeftColor: colors.primary,
+        borderRadius: radius.md,
+        padding: spacing.md,
+    },
+    compSelectedCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: spacing.xs,
+    },
+    compSelectedCardName: {
+        color: colors.textStrong,
+        fontSize: 14,
+        fontWeight: '700',
+    },
+    compSelectedCardMeta: {
+        color: colors.textMuted,
+        fontSize: 11,
+        marginTop: 2,
+    },
+    compSelectedCardBadge: {
+        backgroundColor: colors.primaryLight,
+        borderRadius: radius.sm,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    compSelectedCardBadgeText: {
+        color: colors.primary,
+        fontSize: 9,
+        fontWeight: '800',
+        textTransform: 'uppercase',
+    },
+    compSelectedCardSpecs: {
+        color: colors.text,
+        fontSize: 13,
+        lineHeight: 20,
+        marginTop: spacing.sm,
+    },
+    compSelectedAiBox: {
+        marginTop: spacing.md,
+        padding: spacing.md,
+        backgroundColor: colors.bg || '#F9FAFB',
+        borderRadius: radius.sm,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderLeftWidth: 3,
+        borderLeftColor: colors.success || '#10B981',
+    },
+    compSelectedAiHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+        marginBottom: 6,
+    },
+    compSelectedAiTitle: {
+        color: colors.textStrong,
+        fontSize: 9,
+        fontWeight: '900',
+        letterSpacing: 1,
+    },
+    compSelectedAiText: {
+        color: colors.text,
+        fontSize: 12,
+        lineHeight: 18,
+    },
 });
 
 export default ProductDetailScreen;

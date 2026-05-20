@@ -114,6 +114,7 @@ module.exports.policies = {
     'submit': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
     'approve': ['isAuthenticated', 'isSuperAdmin'],
     'reject': ['isAuthenticated', 'isSuperAdmin'],
+    'publish': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
     'unpublish': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission'],
     'archive': ['isAuthenticated', 'isCompanyAdmin', 'tenantIsolation', 'has-permission']
   },
