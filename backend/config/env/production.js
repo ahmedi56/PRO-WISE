@@ -222,6 +222,12 @@ module.exports = {
       secure: process.env.NODE_ENV === 'production',
       maxAge: 24 * 60 * 60 * 1000,  // 24 hours
     },
+    handleConstructingSessionStore: (sessionConfig, configuredSessionAdapter, expressSessionFromSailsCore) => {
+      const clonedConfig = Object.assign({}, sessionConfig);
+      delete clonedConfig.secret;
+      let CustomStore = configuredSessionAdapter(expressSessionFromSailsCore);
+      return new CustomStore(clonedConfig);
+    },
 
   },
 
