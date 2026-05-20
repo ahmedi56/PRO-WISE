@@ -19,6 +19,11 @@
  * https://sailsjs.com/docs/concepts/deployment
  */
 
+console.log('DIAGNOSTIC: production.js loading...');
+console.log('DIAGNOSTIC: process.env.NODE_ENV =', process.env.NODE_ENV);
+console.log('DIAGNOSTIC: process.env.SESSION_SECRET =', process.env.SESSION_SECRET);
+console.log('DIAGNOSTIC: process.env.MONGODB_URL =', process.env.MONGODB_URL ? 'defined' : 'undefined');
+
 module.exports = {
 
 

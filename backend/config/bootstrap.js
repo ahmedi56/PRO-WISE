@@ -9,6 +9,10 @@
  */
 
 module.exports.bootstrap = async function () {
+  console.log('BOOTSTRAP DIAGNOSTIC: sails.config.session =', JSON.stringify({
+    ...sails.config.session,
+    store: sails.config.session.store ? 'defined' : 'undefined'
+  }, null, 2));
   const isForced = process.env.FORCE_SEED === 'true';
 
   // check if ORM loaded
