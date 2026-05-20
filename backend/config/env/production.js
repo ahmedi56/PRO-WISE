@@ -163,6 +163,7 @@ module.exports = {
     adapter: 'connect-mongo',
     url: process.env.MONGODB_URL || 'mongodb://127.0.0.1:27017/prowise',
     collection: 'sessions', // Optional
+    secret: process.env.SESSION_SECRET || '4830e4eddf871b163a5a58b878803ddf',
     //--------------------------------------------------------------------------
     // /\   OR, to avoid checking it in to version control, you might opt to
     // ||   set sensitive credentials like this using an environment variable.
