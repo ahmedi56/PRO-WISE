@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: prowise-backend
+    runtime: node
+    buildCommand: npm install --workspace=backend --omit=dev
+    startCommand: node backend/app.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URL
+        sync: false
