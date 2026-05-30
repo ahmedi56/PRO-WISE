@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
-import { StyleSheet, View, Text, Platform, Dimensions, TouchableOpacity, useColorScheme } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, View, Text, Platform, Dimensions, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons as BaseIonicons } from '@expo/vector-icons';
 const Ionicons = BaseIonicons as any;
@@ -11,8 +11,8 @@ import Animated, {
     withSpring, 
     withTiming,
 } from 'react-native-reanimated';
+import { useSelector } from 'react-redux';
 
-const AnimatedView = Animated.View as any;
 const { width } = Dimensions.get('window');
 
 import HomeScreen from '../screens/HomeScreen';
@@ -20,60 +20,68 @@ import ProfileScreen from '../screens/ProfileScreen';
 import ShopStackNavigator from './ShopStackNavigator';
 import { useTheme } from '../theme';
 
+import { RootState } from '../store';
 import { MainTabParamList } from './types';
 import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-const TabNavigator = Tab.Navigator as any;
 
 const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     Home: 'hardware-chip-outline',
     Shop: 'cube-outline',
     Scan: 'aperture-outline',
+    TechnicianPortal: 'hammer-outline',
     Profile: 'shield-checkmark-outline',
 };
 
-const TAB_WIDTH = (width - 40) / 4;
+const LABELS: Record<string, string> = {
+    Home: 'Console',
+    Shop: 'Registry',
+    Scan: 'Scan',
+    TechnicianPortal: 'Tech Portal',
+    Profile: 'Operator',
+};
 
 interface TabIndicatorProps {
     index: number;
     color: string;
+    tabWidth: number;
 }
 
-const TabIndicator: React.FC<TabIndicatorProps> = ({ index, color }) => {
-    const translateX = useSharedValue(index * TAB_WIDTH);
+const TabIndicator: React.FC<TabIndicatorProps> = ({ index, color, tabWidth }) => {
+    const translateX = useSharedValue(index * tabWidth);
 
     useEffect(() => {
-        translateX.value = withSpring(index * TAB_WIDTH, {
+        translateX.value = withSpring(index * tabWidth, {
             damping: 18,
             stiffness: 150,
             mass: 0.8,
         });
-    }, [index]);
+    }, [index, tabWidth]);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ translateX: translateX.value }],
     }));
 
     return (
-        <Animated.View style={[styles.indicatorWrapper, animatedStyle]}>
+        <Animated.View style={[styles.indicatorWrapper, { width: tabWidth }, animatedStyle]}>
             <LinearGradient
                 colors={[`${color}66`, `${color}1A`]}
-                style={styles.indicator}
+                style={[styles.indicator, { width: tabWidth - 16 }]}
             />
         </Animated.View>
     );
 };
 
-const AnimatedTabIcon: React.FC<{ name: any; focused: boolean; color: string; size: number; activeColor: string }> = ({ name, focused, color, size, activeColor }) => {
+const AnimatedTabIcon: React.FC<{ name: any; focused: boolean; color: string; size: number; activeColor: string; label: string }> = ({ name, focused, color, size, activeColor, label }) => {
     const scale = useSharedValue(1);
     const translateY = useSharedValue(0);
     const opacity = useSharedValue(0.5);
 
     useEffect(() => {
-        scale.value = withSpring(focused ? 1.3 : 1, { damping: 12, stiffness: 200 });
-        translateY.value = withSpring(focused ? -4 : 0, { damping: 15, stiffness: 150 });
-        opacity.value = withTiming(focused ? 1 : 0.5, { duration: 300 });
+        scale.value = withSpring(focused ? 1.1 : 1, { damping: 12, stiffness: 200 });
+        translateY.value = withSpring(focused ? -2 : 0, { damping: 15, stiffness: 150 });
+        opacity.value = withTiming(focused ? 1 : 0.6, { duration: 300 });
     }, [focused]);
 
     const animatedStyle = useAnimatedStyle(() => ({
@@ -84,13 +92,18 @@ const AnimatedTabIcon: React.FC<{ name: any; focused: boolean; color: string; si
         opacity: opacity.value,
     }));
 
-
     return (
         <Animated.View style={[styles.iconContainer, animatedStyle]}>
-            <Ionicons name={name} size={size + 2} color={focused ? activeColor : color} />
-            {focused && (
-                <View style={[styles.activeGlow, { backgroundColor: activeColor }]} />
-            )}
+            <Ionicons name={name} size={size} color={focused ? activeColor : color} />
+            <Text style={{ 
+                fontSize: 9, 
+                fontWeight: focused ? '700' : '500', 
+                color: focused ? activeColor : color,
+                marginTop: 2,
+                textAlign: 'center'
+            }}>
+                {label}
+            </Text>
         </Animated.View>
     );
 };
@@ -110,13 +123,16 @@ const BrandedHeader: React.FC<{ title: string; colors: any; typography: any; spa
 
 const CustomTabBar = ({ state, descriptors, navigation, theme }: any) => {
     const { colors, shadows } = theme;
+    const tabsCount = state.routes.length;
+    const tabWidth = (width - 32) / tabsCount;
+
     return (
         <View style={[styles.tabBarWrapper, { borderColor: `${colors.primary}33`, ...shadows.lg }]}>
             <BlurView tint={theme.isDark ? "dark" : "light"} intensity={95} style={StyleSheet.absoluteFill}>
-                <View style={[StyleSheet.absoluteFill, { backgroundColor: `${colors.surface}D9` }]} />
+                <View style={[StyleSheet.absoluteFill, { backgroundColor: `${colors.surface}E6` }]} />
             </BlurView>
             
-            <TabIndicator index={state.index} color={colors.primary} />
+            <TabIndicator index={state.index} color={colors.primary} tabWidth={tabWidth} />
 
             <View style={styles.tabItemsContainer}>
                 {state.routes.map((route: any, index: number) => {
@@ -136,6 +152,7 @@ const CustomTabBar = ({ state, descriptors, navigation, theme }: any) => {
                     };
 
                     const iconName = ICONS[route.name] || 'square-outline';
+                    const labelText = LABELS[route.name] || route.name;
                     const color = isFocused ? colors.primary : colors.textMuted;
 
                     return (
@@ -149,8 +166,9 @@ const CustomTabBar = ({ state, descriptors, navigation, theme }: any) => {
                                 name={isFocused ? ((iconName as string).replace('-outline', '') as any) : iconName} 
                                 focused={isFocused} 
                                 color={color} 
-                                size={24} 
+                                size={20} 
                                 activeColor={colors.primary}
+                                label={labelText}
                             />
                         </TouchableOpacity>
                     );
@@ -160,10 +178,11 @@ const CustomTabBar = ({ state, descriptors, navigation, theme }: any) => {
     );
 };
 
-
 const MainTabNavigator: React.FC = () => {
     const theme = useTheme();
     const { colors, typography, spacing, radius } = theme;
+    const { user } = useSelector((state: RootState) => state.auth);
+    const isApprovedTech = user?.isTechnician && user?.technicianStatus === 'approved';
 
     return (
         <Tab.Navigator
@@ -194,6 +213,13 @@ const MainTabNavigator: React.FC = () => {
                 component={require('../screens/QRScannerScreen').default} 
                 options={{ title: 'Optical Scan' }} 
             />
+            {isApprovedTech && (
+                <Tab.Screen 
+                    name="TechnicianPortal" 
+                    component={require('../screens/TechnicianPortalScreen').default} 
+                    options={{ headerShown: false, title: 'Tech Portal' }} 
+                />
+            )}
             <Tab.Screen name="Profile" component={ProfileScreen as any} options={{ title: 'Operator' }} />
         </Tab.Navigator>
     );
@@ -202,14 +228,13 @@ const MainTabNavigator: React.FC = () => {
 const styles = StyleSheet.create({
     tabBarWrapper: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 34 : 24,
-        left: 20,
-        right: 20,
-        height: 70,
-        borderRadius: 35,
+        bottom: Platform.OS === 'ios' ? 30 : 20,
+        left: 16,
+        right: 16,
+        height: 72,
+        borderRadius: 20,
         overflow: 'hidden',
-        borderWidth: 1.5,
-        elevation: 20,
+        borderWidth: 1,
     },
     tabItemsContainer: {
         flex: 1,
@@ -226,30 +251,20 @@ const styles = StyleSheet.create({
     iconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        width: 50,
-        height: 50,
-    },
-    activeGlow: {
-        position: 'absolute',
-        width: 30,
-        height: 30,
-        borderRadius: 15,
-        opacity: 0.15,
-        zIndex: -1,
+        width: '100%',
+        paddingVertical: 4,
     },
     indicatorWrapper: {
         position: 'absolute',
         top: 0,
         left: 0,
-        width: TAB_WIDTH,
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
     },
     indicator: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        height: 52,
+        borderRadius: 14,
     },
     headerContainer: {
         flexDirection: 'row',
@@ -293,4 +308,3 @@ const styles = StyleSheet.create({
 });
 
 export default MainTabNavigator;
-
