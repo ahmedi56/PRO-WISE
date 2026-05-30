@@ -301,6 +301,9 @@ module.exports = {
           avatar: user.avatar,
           role: user.role,
           status: user.status,
+          isTechnician: user.isTechnician,
+          technicianStatus: user.technicianStatus,
+          technicianProfile: user.technicianProfile,
           company: user.company ? {
             id: user.company.id,
             name: user.company.name,
@@ -490,6 +493,9 @@ module.exports = {
           avatar: user.avatar,
           role: user.role,
           status: user.status,
+          isTechnician: user.isTechnician,
+          technicianStatus: user.technicianStatus,
+          technicianProfile: user.technicianProfile,
           company: user.company ? {
             id: user.company.id,
             name: user.company.name,
