@@ -6,7 +6,10 @@ import { maintenanceService } from '../../services/maintenanceService';
 import { authService } from '../../services/authService';
 import '../../styles/home-page.css';
 
+import { useAuth } from '../../hooks/useAuth';
+
 export const ServiceRequestPage: React.FC = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const techId = searchParams.get('techId');
@@ -123,7 +126,7 @@ export const ServiceRequestPage: React.FC = () => {
                                     onChange={(e) => handleTechnicianChange(e.target.value)}
                                 >
                                     <option value="" style={{ background: '#1f1f2e', color: '#fff' }}>AI-Powered Auto Routing</option>
-                                    {technicians.map(t => (
+                                    {technicians.filter(t => t.id !== user?.id).map(t => (
                                         <option key={t.id} value={t.id} style={{ background: '#1f1f2e', color: '#fff' }}>
                                             {t.name} - {t.technicianProfile?.city || 'Expert'} ({t.technicianProfile?.averageRating || t.averageRating || '5.0'} ★)
                                         </option>

@@ -7,13 +7,13 @@ import { useAuth } from '../../hooks/useAuth';
 import '../../styles/technician-application.css';
 
 const TUNISIAN_GOVERNORATES = [
-    'Tunis', 'Ariana', 'Ben Brous', 'Manouba', 'Nabeul', 'Zaghouan', 'Bizerte', 'Béja', 'Jendouba', 'Kef', 'Siliana', 'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Kairouan', 'Kasserine', 'Sidi Bouzid', 'Gabès', 'Medenine', 'Tataouine', 'Gafsa', 'Tozeur', 'Kebili'
+    'Tunis', 'Ariana', 'Ben Arous', 'Manouba', 'Nabeul', 'Zaghouan', 'Bizerte', 'Béja', 'Jendouba', 'Kef', 'Siliana', 'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Kairouan', 'Kasserine', 'Sidi Bouzid', 'Gabès', 'Medenine', 'Tataouine', 'Gafsa', 'Tozeur', 'Kebili'
 ];
 
 const TUNISIAN_CITIES: Record<string, string[]> = {
     'Tunis': ['Tunis', 'La Marsa', 'Carthage', 'Sidi Bou Said', 'Le Bardo', 'La Goulette'],
     'Ariana': ['Ariana', 'Sidi Thabet', 'Raoued', 'Kalaat el-Andalous', 'La Soukra'],
-    'Ben Brous': ['Ben Arous', 'Radès', 'Hammam Lif', 'Ezzahra', 'Mégarine', 'Bou Mhel'],
+    'Ben Arous': ['Ben Arous', 'Radès', 'Hammam Lif', 'Ezzahra', 'Mégarine', 'Bou Mhel'],
     'Manouba': ['Manouba', 'Denden', 'Douar Hicher', 'Oued Ellil', 'Tebourba'],
     'Nabeul': ['Nabeul', 'Hammamet', 'Kelibia', 'Menzel Temime', 'Dar Chaabane', 'Korba'],
     'Zaghouan': ['Zaghouan', 'El Fahs', 'Bir Mcherga', 'Zriba'],
@@ -168,8 +168,9 @@ export const TechnicianApplicationPage: React.FC = () => {
                 return;
             }
             if (step === 1 && (!formData.latitude || !formData.longitude)) {
-                setError('Please capture your workshop location for the expert map.');
-                return;
+                // If geolocation is unavailable or denied, assign fallback coordinates (Tunis) to avoid blocking the wizard
+                formData.latitude = 36.8065;
+                formData.longitude = 10.1815;
             }
             setStep(step + 1);
             return;
