@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageWrapper, Spinner, EmptyState, IonIcon, Button, Badge, Section } from '../../components/index';
 import { authService } from '../../services/authService';
+import { useAuth } from '../../hooks/useAuth';
 import '../../styles/technician-application.css'; // Reuse some layout styles
 
 export const ExpertProfilePage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [technician, setTechnician] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -103,9 +105,28 @@ export const ExpertProfilePage: React.FC = () => {
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: '240px' }}>
-                        <Button fullWidth size="lg" onClick={() => navigate(`/service-request?techId=${technician.id}`)} style={{ height: '60px', fontSize: '1.1rem' }}>
-                            Book This Expert
-                        </Button>
+                        {user && user.id === technician.id ? (
+                            <div style={{ 
+                                padding: '1rem', 
+                                textAlign: 'center', 
+                                background: 'rgba(255,255,255,0.05)', 
+                                borderRadius: '12px', 
+                                border: '1px solid var(--color-border)', 
+                                fontWeight: 700, 
+                                color: 'var(--color-primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '0.5rem',
+                                height: '60px'
+                            }}>
+                                <IonIcon name="person-outline" /> This is your profile
+                            </div>
+                        ) : (
+                            <Button fullWidth size="lg" onClick={() => navigate(`/service-request?techId=${technician.id}`)} style={{ height: '60px', fontSize: '1.1rem' }}>
+                                Book This Expert
+                            </Button>
+                        )}
                         <Button variant="ghost" fullWidth onClick={() => {
                             if (profile.phone) window.location.href = `tel:${profile.phone}`;
                         }}>

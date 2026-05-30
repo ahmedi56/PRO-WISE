@@ -30,13 +30,18 @@ export const ServiceRequestPage: React.FC = () => {
 
     useEffect(() => {
         if (techId) {
+            if (user && techId === user.id) {
+                alert('You cannot request a maintenance service from yourself.');
+                navigate('/home');
+                return;
+            }
             authService.getOne(techId).then(data => setTechnician(data)).catch(console.error);
         } else {
             authService.getPublicTechnicians().then(res => {
                 setTechnicians(res.data || res || []);
             }).catch(console.error);
         }
-    }, [techId]);
+    }, [techId, user, navigate]);
 
     const handleTechnicianChange = (selectedId: string) => {
         setFormData({ ...formData, techId: selectedId || '' });
