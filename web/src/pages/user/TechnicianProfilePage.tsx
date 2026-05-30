@@ -6,6 +6,43 @@ import { authService } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
 import '../../styles/technician-application.css';
 
+const TUNISIAN_GOVERNORATES = [
+    'Tunis', 'Ariana', 'Ben Brous', 'Manouba', 'Nabeul', 'Zaghouan', 'Bizerte', 'Béja', 'Jendouba', 'Kef', 'Siliana', 'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Kairouan', 'Kasserine', 'Sidi Bouzid', 'Gabès', 'Medenine', 'Tataouine', 'Gafsa', 'Tozeur', 'Kebili'
+];
+
+const TUNISIAN_CITIES: Record<string, string[]> = {
+    'Tunis': ['Tunis', 'La Marsa', 'Carthage', 'Sidi Bou Said', 'Le Bardo', 'La Goulette'],
+    'Ariana': ['Ariana', 'Sidi Thabet', 'Raoued', 'Kalaat el-Andalous', 'La Soukra'],
+    'Ben Brous': ['Ben Arous', 'Radès', 'Hammam Lif', 'Ezzahra', 'Mégarine', 'Bou Mhel'],
+    'Manouba': ['Manouba', 'Denden', 'Douar Hicher', 'Oued Ellil', 'Tebourba'],
+    'Nabeul': ['Nabeul', 'Hammamet', 'Kelibia', 'Menzel Temime', 'Dar Chaabane', 'Korba'],
+    'Zaghouan': ['Zaghouan', 'El Fahs', 'Bir Mcherga', 'Zriba'],
+    'Bizerte': ['Bizerte', 'Menzel Bourguiba', 'Mateur', 'Ghar El Melh', 'Ras Jebel'],
+    'Béja': ['Béja', 'Testour', 'Teboursouk', 'Majeur el-Bab'],
+    'Jendouba': ['Jendouba', 'Tabarka', 'Ain Draham', 'Bou Salem'],
+    'Kef': ['Le Kef', 'Dahmani', 'Tajerouine', 'Sakiet Sidi Youssef'],
+    'Siliana': ['Siliana', 'Makthar', 'Bou Arada', 'Gaafour'],
+    'Sousse': ['Sousse', 'Hammam Sousse', 'Port El Kantaoui', 'Akouda', 'Kalaa Kebira', 'Msaken'],
+    'Monastir': ['Monastir', 'Jemmal', 'Ksar Hellal', 'Teboulba', 'Moknine', 'Sahline'],
+    'Mahdia': ['Mahdia', 'Ksour Essef', 'El Jem', 'Chebba'],
+    'Sfax': ['Sfax', 'Sakiet Ezzit', 'Sakiet Eddaier', 'Kerkennah', 'El Hencha'],
+    'Kairouan': ['Kairouan', 'Sbikha', 'Oueslatia', 'Haffouz'],
+    'Kasserine': ['Kasserine', 'Sbeitla', 'Fériana', 'Thala'],
+    'Sidi Bouzid': ['Sidi Bouzid', 'Regueb', 'Menzel Bouzaiane', 'Jilma'],
+    'Gabès': ['Gabès', 'El Hamma', 'Mareth', 'Ghannouch'],
+    'Medenine': ['Medenine', 'Djerba Houmt Souk', 'Djerba Midoun', 'Zarzis', 'Ben Guerdane'],
+    'Tataouine': ['Tataouine', 'Ghomrassen', 'Bir Lahmar', 'Dehiba'],
+    'Gafsa': ['Gafsa', 'Metlaoui', 'Redeyef', 'El Ksar'],
+    'Tozeur': ['Tozeur', 'Nefta', 'Degache', 'Tamezret'],
+    'Kebili': ['Kebili', 'Douz', 'Souk Lahad']
+};
+
+const POPULAR_SKILLS = [
+    'Smartphone Repair', 'Tablet Repair', 'Laptop Repair', 'Console Repair', 'Desktop Support',
+    'Microsoldering', 'Logic Board Diagnostics', 'Data Recovery', 'Networking & Router Setup',
+    'Smart Home Installation', 'Printer Repair', 'TV & Audio System Repair', 'Industrial Electronics'
+];
+
 export const TechnicianProfilePage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -192,7 +229,18 @@ export const TechnicianProfilePage: React.FC = () => {
                                     <h4 className="modern-h4">Specializations</h4>
                                     <div className="spec-adder">
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '1rem', marginBottom: '1rem' }}>
-                                            <InputField id="new-spec-name" label="Specialization" value={currentSpec.name} onChange={(e) => setCurrentSpec({...currentSpec, name: e.target.value})} />
+                                            <div className="input-group">
+                                                <label className="label">Specialization</label>
+                                                <select 
+                                                    className="input" 
+                                                    value={currentSpec.name}
+                                                    onChange={(e) => setCurrentSpec({...currentSpec, name: e.target.value})}
+                                                >
+                                                    <option value="">Select Skill</option>
+                                                    {POPULAR_SKILLS.map(s => <option key={s} value={s}>{s}</option>)}
+                                                    <option value="Other">Other / Custom</option>
+                                                </select>
+                                            </div>
                                             <div className="input-group">
                                                 <label className="label">Level</label>
                                                 <select className="input" value={currentSpec.skillLevel} onChange={(e) => setCurrentSpec({...currentSpec, skillLevel: e.target.value})}>
@@ -204,6 +252,11 @@ export const TechnicianProfilePage: React.FC = () => {
                                             </div>
                                             <InputField id="new-spec-years" label="Years" type="number" value={currentSpec.yearsExperience} onChange={(e) => setCurrentSpec({...currentSpec, yearsExperience: Number(e.target.value)})} />
                                         </div>
+                                        {currentSpec.name === 'Other' && (
+                                            <div style={{ marginBottom: '1rem' }}>
+                                                <InputField id="custom-spec-name" label="Custom Specialization" placeholder="e.g. Laser Alignment" onChange={(e) => setCurrentSpec({...currentSpec, name: e.target.value})} />
+                                            </div>
+                                        )}
                                         <Button type="button" variant="secondary" onClick={addSpecialization} fullWidth>Add Specialization</Button>
                                     </div>
 
@@ -282,8 +335,31 @@ export const TechnicianProfilePage: React.FC = () => {
                         <Section title="Service & Location">
                             <div className="card glass-card">
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                                    <InputField id="governorate" name="governorate" label="Governorate" value={formData.governorate} onChange={handleChange} />
-                                    <InputField id="city" name="city" label="City" value={formData.city} onChange={handleChange} />
+                                    <div className="input-group">
+                                        <label className="label">Governorate</label>
+                                        <select 
+                                            name="governorate"
+                                            className="input" 
+                                            value={formData.governorate}
+                                            onChange={(e) => setFormData({ ...formData, governorate: e.target.value, city: '' })}
+                                        >
+                                            <option value="">Select Governorate</option>
+                                            {TUNISIAN_GOVERNORATES.map(gov => <option key={gov} value={gov}>{gov}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="label">City</label>
+                                        <select 
+                                            name="city"
+                                            className="input" 
+                                            value={formData.city}
+                                            onChange={handleChange}
+                                            disabled={!formData.governorate}
+                                        >
+                                            <option value="">Select City</option>
+                                            {(TUNISIAN_CITIES[formData.governorate] || []).map(cit => <option key={cit} value={cit}>{cit}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 <InputField id="serviceRadiusKm" name="serviceRadiusKm" label="Service Radius (KM)" type="number" value={formData.serviceRadiusKm} onChange={handleChange} />
                                 

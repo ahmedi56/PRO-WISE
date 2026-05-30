@@ -56,8 +56,8 @@ const palettes = {
     }
 };
 
-const isDark = Appearance.getColorScheme() === 'dark';
-export const colors = isDark ? palettes.dark : palettes.light;
+const isDark = false;
+export const colors = palettes.light;
 
 export const spacing = {
     xs: 4, sm: 8, md: 16, base: 16, lg: 24, xl: 32, xxl: 48, huge: 64,
@@ -111,9 +111,8 @@ export const getColors = (scheme: 'light' | 'dark' | null | undefined) => {
 import { useColorScheme } from 'react-native';
 
 export const useTheme = () => {
-    const scheme = useColorScheme();
-    const isDark = scheme === 'dark';
-    const themeColors = isDark ? palettes.dark : palettes.light;
+    const isDark = false;
+    const themeColors = palettes.light;
     
     return {
         colors: themeColors,

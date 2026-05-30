@@ -6,6 +6,43 @@ import { authService } from '../../services/authService';
 import { useAuth } from '../../hooks/useAuth';
 import '../../styles/technician-application.css';
 
+const TUNISIAN_GOVERNORATES = [
+    'Tunis', 'Ariana', 'Ben Brous', 'Manouba', 'Nabeul', 'Zaghouan', 'Bizerte', 'Béja', 'Jendouba', 'Kef', 'Siliana', 'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Kairouan', 'Kasserine', 'Sidi Bouzid', 'Gabès', 'Medenine', 'Tataouine', 'Gafsa', 'Tozeur', 'Kebili'
+];
+
+const TUNISIAN_CITIES: Record<string, string[]> = {
+    'Tunis': ['Tunis', 'La Marsa', 'Carthage', 'Sidi Bou Said', 'Le Bardo', 'La Goulette'],
+    'Ariana': ['Ariana', 'Sidi Thabet', 'Raoued', 'Kalaat el-Andalous', 'La Soukra'],
+    'Ben Brous': ['Ben Arous', 'Radès', 'Hammam Lif', 'Ezzahra', 'Mégarine', 'Bou Mhel'],
+    'Manouba': ['Manouba', 'Denden', 'Douar Hicher', 'Oued Ellil', 'Tebourba'],
+    'Nabeul': ['Nabeul', 'Hammamet', 'Kelibia', 'Menzel Temime', 'Dar Chaabane', 'Korba'],
+    'Zaghouan': ['Zaghouan', 'El Fahs', 'Bir Mcherga', 'Zriba'],
+    'Bizerte': ['Bizerte', 'Menzel Bourguiba', 'Mateur', 'Ghar El Melh', 'Ras Jebel'],
+    'Béja': ['Béja', 'Testour', 'Teboursouk', 'Majeur el-Bab'],
+    'Jendouba': ['Jendouba', 'Tabarka', 'Ain Draham', 'Bou Salem'],
+    'Kef': ['Le Kef', 'Dahmani', 'Tajerouine', 'Sakiet Sidi Youssef'],
+    'Siliana': ['Siliana', 'Makthar', 'Bou Arada', 'Gaafour'],
+    'Sousse': ['Sousse', 'Hammam Sousse', 'Port El Kantaoui', 'Akouda', 'Kalaa Kebira', 'Msaken'],
+    'Monastir': ['Monastir', 'Jemmal', 'Ksar Hellal', 'Teboulba', 'Moknine', 'Sahline'],
+    'Mahdia': ['Mahdia', 'Ksour Essef', 'El Jem', 'Chebba'],
+    'Sfax': ['Sfax', 'Sakiet Ezzit', 'Sakiet Eddaier', 'Kerkennah', 'El Hencha'],
+    'Kairouan': ['Kairouan', 'Sbikha', 'Oueslatia', 'Haffouz'],
+    'Kasserine': ['Kasserine', 'Sbeitla', 'Fériana', 'Thala'],
+    'Sidi Bouzid': ['Sidi Bouzid', 'Regueb', 'Menzel Bouzaiane', 'Jilma'],
+    'Gabès': ['Gabès', 'El Hamma', 'Mareth', 'Ghannouch'],
+    'Medenine': ['Medenine', 'Djerba Houmt Souk', 'Djerba Midoun', 'Zarzis', 'Ben Guerdane'],
+    'Tataouine': ['Tataouine', 'Ghomrassen', 'Bir Lahmar', 'Dehiba'],
+    'Gafsa': ['Gafsa', 'Metlaoui', 'Redeyef', 'El Ksar'],
+    'Tozeur': ['Tozeur', 'Nefta', 'Degache', 'Tamezret'],
+    'Kebili': ['Kebili', 'Douz', 'Souk Lahad']
+};
+
+const POPULAR_SKILLS = [
+    'Smartphone Repair', 'Tablet Repair', 'Laptop Repair', 'Console Repair', 'Desktop Support',
+    'Microsoldering', 'Logic Board Diagnostics', 'Data Recovery', 'Networking & Router Setup',
+    'Smart Home Installation', 'Printer Repair', 'TV & Audio System Repair', 'Industrial Electronics'
+];
+
 export const TechnicianApplicationPage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -191,8 +228,33 @@ export const TechnicianApplicationPage: React.FC = () => {
                                     <InputField id="email" name="email" label="Public Email" value={formData.email} onChange={handleChange} required />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                    <InputField id="governorate" name="governorate" label="Governorate" value={formData.governorate} onChange={handleChange} required />
-                                    <InputField id="city" name="city" label="City" value={formData.city} onChange={handleChange} required />
+                                    <div className="input-group">
+                                        <label className="label">Governorate</label>
+                                        <select 
+                                            name="governorate"
+                                            className="input" 
+                                            value={formData.governorate}
+                                            onChange={(e) => setFormData({ ...formData, governorate: e.target.value, city: '' })}
+                                            required
+                                        >
+                                            <option value="">Select Governorate</option>
+                                            {TUNISIAN_GOVERNORATES.map(gov => <option key={gov} value={gov}>{gov}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="label">City</label>
+                                        <select 
+                                            name="city"
+                                            className="input" 
+                                            value={formData.city}
+                                            onChange={handleChange}
+                                            disabled={!formData.governorate}
+                                            required
+                                        >
+                                            <option value="">Select City</option>
+                                            {(TUNISIAN_CITIES[formData.governorate] || []).map(cit => <option key={cit} value={cit}>{cit}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
                                 
                                 <div className={`location-box ${formData.latitude ? 'active' : ''}`}>
@@ -212,11 +274,39 @@ export const TechnicianApplicationPage: React.FC = () => {
                         {step === 2 && (
                             <div className="field-section">
                                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '1rem', alignItems: 'end' }}>
-                                    <InputField id="specName" label="Skill" placeholder="Repair" value={currentSpec.name} onChange={(e: any) => setCurrentSpec({...currentSpec, name: e.target.value})} />
-                                    <InputField id="specLevel" label="Level" value={currentSpec.skillLevel} onChange={(e: any) => setCurrentSpec({...currentSpec, skillLevel: e.target.value})} />
-                                    <InputField id="specYears" label="Years" type="number" value={currentSpec.yearsExperience} onChange={(e: any) => setCurrentSpec({...currentSpec, yearsExperience: parseInt(e.target.value)})} />
+                                    <div className="input-group">
+                                        <label className="label">Skill</label>
+                                        <select 
+                                            className="input" 
+                                            value={currentSpec.name}
+                                            onChange={(e: any) => setCurrentSpec({...currentSpec, name: e.target.value})}
+                                        >
+                                            <option value="">Select Skill</option>
+                                            {POPULAR_SKILLS.map(s => <option key={s} value={s}>{s}</option>)}
+                                            <option value="Other">Other / Custom</option>
+                                        </select>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="label">Level</label>
+                                        <select 
+                                            className="input" 
+                                            value={currentSpec.skillLevel}
+                                            onChange={(e: any) => setCurrentSpec({...currentSpec, skillLevel: e.target.value})}
+                                        >
+                                            <option value="Beginner">Beginner</option>
+                                            <option value="Intermediate">Intermediate</option>
+                                            <option value="Expert">Expert</option>
+                                            <option value="Master">Master</option>
+                                        </select>
+                                    </div>
+                                    <InputField id="specYears" label="Years" type="number" value={currentSpec.yearsExperience} onChange={(e: any) => setCurrentSpec({...currentSpec, yearsExperience: parseInt(e.target.value) || 1})} />
                                     <Button type="button" onClick={addSpecialization} variant="secondary" style={{ marginBottom: '4px' }}><IonIcon name="add" /></Button>
                                 </div>
+                                {currentSpec.name === 'Other' && (
+                                    <div style={{ marginTop: '1rem' }}>
+                                        <InputField id="customSpecName" label="Custom Skill Name" placeholder="e.g. Laser Alignment" onChange={(e: any) => setCurrentSpec({...currentSpec, name: e.target.value})} />
+                                    </div>
+                                )}
                                 <div className="spec-list">
                                     {formData.specializations.map((spec, i) => (
                                         <div key={i} className="item-row">

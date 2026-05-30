@@ -36,7 +36,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
 
     useEffect(() => {
         if (user) {
-            setName(user.firstName || user.name || '');
+            setName(user.name || user.firstName || '');
             setUsername(user.username || '');
             setEmail(user.email || '');
             setPhone((user as any).phone || '');
@@ -55,7 +55,7 @@ const EditProfileScreen: React.FC<EditProfileScreenProps> = ({ navigation }) => 
     }, [updateSuccess, error, loading, dispatch, navigation]);
 
     const handleUpdate = () => {
-        dispatch(updateUser({ firstName: name, username, email, phone }));
+        dispatch(updateUser({ name, username, email, phone }));
     };
 
     return (

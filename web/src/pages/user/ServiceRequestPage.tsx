@@ -12,13 +12,14 @@ export const ServiceRequestPage: React.FC = () => {
     const techId = searchParams.get('techId');
 
     const [technician, setTechnician] = useState<any>(null);
+    const [technicians, setTechnicians] = useState<any[]>([]);
     const [formData, setFormData] = useState({
         productName: '',
         category: 'Smartphone',
         serviceType: 'Repair',
         issueDescription: '',
         urgency: 'low',
-        techId: techId || null
+        techId: techId || ''
     });
     
     const [loading, setLoading] = useState(false);
@@ -27,8 +28,22 @@ export const ServiceRequestPage: React.FC = () => {
     useEffect(() => {
         if (techId) {
             authService.getOne(techId).then(data => setTechnician(data)).catch(console.error);
+        } else {
+            authService.getPublicTechnicians().then(res => {
+                setTechnicians(res.data || res || []);
+            }).catch(console.error);
         }
     }, [techId]);
+
+    const handleTechnicianChange = (selectedId: string) => {
+        setFormData({ ...formData, techId: selectedId || '' });
+        if (selectedId) {
+            const found = technicians.find(t => t.id === selectedId);
+            setTechnician(found || null);
+        } else {
+            setTechnician(null);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -97,6 +112,25 @@ export const ServiceRequestPage: React.FC = () => {
                             <h1 className="modern-h2" style={{ fontSize: '2.5rem', lineHeight: 1.1, marginBottom: '1.5rem' }}>Open a New Case</h1>
                             <p style={{ color: 'var(--color-text-muted)', lineHeight: 1.6 }}>Initialize your technical support request. Provide diagnostic details to ensure rapid resolution.</p>
                         </header>
+
+                        {!techId && technicians.length > 0 && (
+                            <div className="input-group" style={{ marginBottom: '2rem' }}>
+                                <label className="label" style={{ fontWeight: 700, marginBottom: '0.5rem', display: 'block' }}>Assigned Technician</label>
+                                <select 
+                                    className="input" 
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', background: 'rgba(255,255,255,0.05)', color: 'var(--color-text-strong)', border: '1px solid var(--color-border)' }}
+                                    value={formData.techId || ''}
+                                    onChange={(e) => handleTechnicianChange(e.target.value)}
+                                >
+                                    <option value="" style={{ background: '#1f1f2e', color: '#fff' }}>AI-Powered Auto Routing</option>
+                                    {technicians.map(t => (
+                                        <option key={t.id} value={t.id} style={{ background: '#1f1f2e', color: '#fff' }}>
+                                            {t.name} - {t.technicianProfile?.city || 'Expert'} ({t.technicianProfile?.averageRating || t.averageRating || '5.0'} ★)
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {technician && (
                             <div className="card glass" style={{ padding: '1.5rem', borderLeft: '4px solid var(--color-primary)' }}>

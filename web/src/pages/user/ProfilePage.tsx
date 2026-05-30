@@ -215,7 +215,6 @@ export const ProfilePage: React.FC = () => {
                         )}
                         
                         <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem', flexWrap: 'wrap' }}>
-                            <Button variant="outline" onClick={() => navigate('/service-request')}>Request Service</Button>
                             
                             {canApply && (
                                 <Button variant="secondary" onClick={() => navigate('/technician/apply')}>Become a Technician</Button>
@@ -260,7 +259,6 @@ export const ProfilePage: React.FC = () => {
                         </div>
                         <h4 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--color-text-strong)', marginBottom: '0.25rem' }}>No Active Requests</h4>
                         <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', marginBottom: '1.5rem' }}>Need hardware support or repairs? Request assistance from a certified expert.</p>
-                        <Button variant="outline" onClick={() => navigate('/service-request')}>Request Service</Button>
                     </div>
                 ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
