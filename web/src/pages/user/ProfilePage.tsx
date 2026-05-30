@@ -235,7 +235,7 @@ export const ProfilePage: React.FC = () => {
 
                             {user.technicianStatus === 'approved' && (
                                 <>
-                                    <Button variant="secondary" onClick={() => navigate('/technician-portal')}>Technician Portal</Button>
+                                    <Button variant="secondary" onClick={() => navigate('/technician-portal')}>Maintenance Requests</Button>
                                     <Button variant="outline" onClick={() => navigate('/technician/profile')}>Edit Technician Profile</Button>
                                 </>
                             )}

@@ -4,6 +4,7 @@ import { PageWrapper, Section, CategoryCard, ProductCard, Spinner, EmptyState, I
 import { categoryService } from '../../services/categoryService';
 import { productService } from '../../services/productService';
 import { Category, Product } from '../../types/product';
+import { useAuth } from '../../hooks/useAuth';
 import '../../styles/home-page.css';
 
 const Typewriter = ({ text, delay = 0, speed = 30, onComplete }: any) => {
@@ -42,6 +43,7 @@ const Typewriter = ({ text, delay = 0, speed = 30, onComplete }: any) => {
 };
 
 export const HomePage: React.FC = () => {
+    const { user } = useAuth();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [categories, setCategories] = useState<Category[]>([]);
@@ -262,21 +264,42 @@ export const HomePage: React.FC = () => {
                                 <div className="icon-box" style={{ margin: '0 auto 2rem', background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
                                     <IonIcon name="hammer-outline" style={{ fontSize: '2rem' }} />
                                 </div>
-                                <h2 className="modern-h2" style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Are you a Repair Expert?</h2>
-                                <p className="modern-subtitle" style={{ fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
-                                    Join our global network of specialized technicians. Access professional diagnostic tools, 
-                                    contribute to premium repair guides, and help the community master hardware maintenance.
-                                </p>
-                                <button 
-                                    className="hero-search-btn" 
-                                    style={{ 
-                                        padding: '1.25rem 3.5rem', fontSize: '1.1rem', borderRadius: 'var(--radius-lg)',
-                                        height: 'auto', width: 'auto'
-                                    }}
-                                    onClick={() => navigate('/technician/apply')}
-                                >
-                                    Apply as a Technician
-                                </button>
+                                {user && user.technicianStatus === 'approved' ? (
+                                    <>
+                                        <h2 className="modern-h2" style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Welcome Back, Expert!</h2>
+                                        <p className="modern-subtitle" style={{ fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
+                                            Access your active job pool, update your verification profile, or review technical specs.
+                                        </p>
+                                        <button 
+                                            className="hero-search-btn" 
+                                            style={{ 
+                                                padding: '1.25rem 3.5rem', fontSize: '1.1rem', borderRadius: 'var(--radius-lg)',
+                                                height: 'auto', width: 'auto'
+                                            }}
+                                            onClick={() => navigate('/technician-portal')}
+                                        >
+                                            Go to Technician Portal
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h2 className="modern-h2" style={{ fontSize: '2.5rem', marginBottom: '1.5rem' }}>Are you a Repair Expert?</h2>
+                                        <p className="modern-subtitle" style={{ fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto 3rem', lineHeight: 1.6 }}>
+                                            Join our global network of specialized technicians. Access professional diagnostic tools, 
+                                            contribute to premium repair guides, and help the community master hardware maintenance.
+                                        </p>
+                                        <button 
+                                            className="hero-search-btn" 
+                                            style={{ 
+                                                padding: '1.25rem 3.5rem', fontSize: '1.1rem', borderRadius: 'var(--radius-lg)',
+                                                height: 'auto', width: 'auto'
+                                            }}
+                                            onClick={() => navigate('/technician/apply')}
+                                        >
+                                            Apply as a Technician
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </section>

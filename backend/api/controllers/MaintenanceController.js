@@ -12,7 +12,7 @@ module.exports = {
    */
   create: async function (req, res) {
     try {
-      const { productName, issueDescription, urgency, companyId, techId, technician } = req.body;
+      const { productName, issueDescription, urgency, companyId, techId, technician, contactPhone, contactEmail, contactMethod } = req.body;
 
       if (!productName || !issueDescription) {
         return res.status(400).json({ message: 'Product name and issue description are required' });
@@ -27,7 +27,10 @@ module.exports = {
         urgency: urgency || 'low',
         company: companyId || null,
         technician: assignedTech,
-        status: assignedTech ? 'assigned' : 'pending'
+        status: assignedTech ? 'assigned' : 'pending',
+        contactPhone,
+        contactEmail,
+        contactMethod
       }).fetch();
 
       return res.status(201).json(request);

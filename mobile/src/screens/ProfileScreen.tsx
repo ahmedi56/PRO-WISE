@@ -137,7 +137,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                         <View style={[styles.actionIconWell, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
                             <Ionicons name="terminal" size={20} color={colors.primary} />
                         </View>
-                        <Text style={[styles.actionText, { color: colors.primary }]}>Technician Command Center</Text>
+                        <Text style={[styles.actionText, { color: colors.primary }]}>Maintenance Requests</Text>
                         <Ionicons name="chevron-forward" size={16} color={colors.primary} />
                     </TouchableOpacity>
                 )}

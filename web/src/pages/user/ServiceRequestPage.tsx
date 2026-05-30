@@ -22,11 +22,24 @@ export const ServiceRequestPage: React.FC = () => {
         serviceType: 'Repair',
         issueDescription: '',
         urgency: 'low',
-        techId: techId || ''
+        techId: techId || '',
+        contactPhone: '',
+        contactEmail: '',
+        contactMethod: 'phone'
     });
     
     const [loading, setLoading] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                contactPhone: user.phone || '',
+                contactEmail: user.email || ''
+            }));
+        }
+    }, [user]);
 
     useEffect(() => {
         if (techId) {
@@ -259,6 +272,41 @@ export const ServiceRequestPage: React.FC = () => {
                                 <section>
                                     <div className="form-step-header">
                                         <span className="step-num">04</span>
+                                        <h3 className="pw-label">Client Contact Channels</h3>
+                                    </div>
+                                    <div className="pw-grid pw-grid-cols-1 md:pw-grid-cols-3 pw-gap-4">
+                                        <Input 
+                                            label="Contact Phone"
+                                            placeholder="Your phone number"
+                                            value={formData.contactPhone} 
+                                            onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} 
+                                            required 
+                                        />
+                                        <Input 
+                                            label="Contact Email"
+                                            placeholder="Your email address"
+                                            value={formData.contactEmail} 
+                                            onChange={(e) => setFormData({...formData, contactEmail: e.target.value})} 
+                                            required 
+                                        />
+                                        <div className="input-group">
+                                            <label className="label">Preferred Method</label>
+                                            <select 
+                                                className="input" 
+                                                value={formData.contactMethod}
+                                                onChange={(e) => setFormData({...formData, contactMethod: e.target.value})}
+                                            >
+                                                <option value="phone">Phone Call</option>
+                                                <option value="whatsapp">WhatsApp Message</option>
+                                                <option value="email">Email</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section>
+                                    <div className="form-step-header">
+                                        <span className="step-num">05</span>
                                         <h3 className="pw-label">Diagnostic Summary</h3>
                                     </div>
                                     <Input 

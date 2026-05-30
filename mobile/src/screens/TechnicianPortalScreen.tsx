@@ -80,6 +80,29 @@ const TechnicianPortalScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                     <Text style={styles.metaText}>{formatDate(item.createdAt)}</Text>
                 </View>
 
+                {(item.contactPhone || item.contactEmail) && (
+                    <View style={{ marginTop: spacing.xs, marginBottom: spacing.md, padding: spacing.sm, backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: radius.md, borderWidth: 1, borderColor: colors.border }}>
+                        <Text style={{ fontSize: 12, color: colors.textStrong, fontWeight: '600' }}>
+                            Contact Info:
+                        </Text>
+                        {item.contactPhone && (
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                                📞 {item.contactPhone}
+                            </Text>
+                        )}
+                        {item.contactEmail && (
+                            <Text style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                                ✉️ {item.contactEmail}
+                            </Text>
+                        )}
+                        {item.contactMethod && (
+                            <Text style={{ fontSize: 10, color: colors.primary, marginTop: 2, fontStyle: 'italic' }}>
+                                Preferred: {item.contactMethod}
+                            </Text>
+                        )}
+                    </View>
+                )}
+
                 <View style={styles.cardActions}>
                     {canAccept && (
                         <CustomButton 
@@ -138,8 +161,8 @@ const TechnicianPortalScreen: React.FC<{ navigation: any }> = ({ navigation }) =
                 <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
                     <Ionicons name="arrow-back" size={24} color={colors.textStrong} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Tech Command</Text>
-                <Text style={styles.subtitle}>Fleet management and mission control</Text>
+                <Text style={styles.title}>Maintenance Requests</Text>
+                <Text style={styles.subtitle}>Manage your service requests and fleet tasks</Text>
             </View>
 
             <View style={styles.statsRow}>

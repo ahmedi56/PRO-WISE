@@ -19,6 +19,38 @@ import { authService } from '../services/authService';
 import { RootState } from '../store';
 import CustomInput from '../components/CustomInput';
 import CustomButton from '../components/CustomButton';
+import CustomDropdown from '../components/CustomDropdown';
+
+const TUNISIAN_GOVERNORATES = [
+    'Tunis', 'Ariana', 'Ben Arous', 'Manouba', 'Nabeul', 'Zaghouan', 'Bizerte', 'Béja', 'Jendouba', 'Kef', 'Siliana', 'Sousse', 'Monastir', 'Mahdia', 'Sfax', 'Kairouan', 'Kasserine', 'Sidi Bouzid', 'Gabès', 'Medenine', 'Tataouine', 'Gafsa', 'Tozeur', 'Kebili'
+];
+
+const TUNISIAN_CITIES: Record<string, string[]> = {
+    'Tunis': ['Tunis', 'La Marsa', 'Carthage', 'Sidi Bou Said', 'Le Bardo', 'La Goulette'],
+    'Ariana': ['Ariana', 'Sidi Thabet', 'Raoued', 'Kalaat el-Andalous', 'La Soukra'],
+    'Ben Arous': ['Ben Arous', 'Radès', 'Hammam Lif', 'Ezzahra', 'Mégarine', 'Bou Mhel'],
+    'Manouba': ['Manouba', 'Denden', 'Douar Hicher', 'Oued Ellil', 'Tebourba'],
+    'Nabeul': ['Nabeul', 'Hammamet', 'Kelibia', 'Menzel Temime', 'Dar Chaabane', 'Korba'],
+    'Zaghouan': ['Zaghouan', 'El Fahs', 'Bir Mcherga', 'Zriba'],
+    'Bizerte': ['Bizerte', 'Menzel Bourguiba', 'Mateur', 'Ghar El Melh', 'Ras Jebel'],
+    'Béja': ['Béja', 'Testour', 'Teboursouk', 'Majeur el-Bab'],
+    'Jendouba': ['Jendouba', 'Tabarka', 'Ain Draham', 'Bou Salem'],
+    'Kef': ['Le Kef', 'Dahmani', 'Tajerouine', 'Sakiet Sidi Youssef'],
+    'Siliana': ['Siliana', 'Makthar', 'Bou Arada', 'Gaafour'],
+    'Sousse': ['Sousse', 'Hammam Sousse', 'Port El Kantaoui', 'Akouda', 'Kalaa Kebira', 'Msaken'],
+    'Monastir': ['Monastir', 'Jemmal', 'Ksar Hellal', 'Teboulba', 'Moknine', 'Sahline'],
+    'Mahdia': ['Mahdia', 'Ksour Essef', 'El Jem', 'Chebba'],
+    'Sfax': ['Sfax', 'Sakiet Ezzit', 'Sakiet Eddaier', 'Kerkennah', 'El Hencha'],
+    'Kairouan': ['Kairouan', 'Sbikha', 'Oueslatia', 'Haffouz'],
+    'Kasserine': ['Kasserine', 'Sbeitla', 'Fériana', 'Thala'],
+    'Sidi Bouzid': ['Sidi Bouzid', 'Regueb', 'Menzel Bouzaiane', 'Jilma'],
+    'Gabès': ['Gabès', 'El Hamma', 'Mareth', 'Ghannouch'],
+    'Medenine': ['Medenine', 'Djerba Houmt Souk', 'Djerba Midoun', 'Zarzis', 'Ben Guerdane'],
+    'Tataouine': ['Tataouine', 'Ghomrassen', 'Bir Lahmar', 'Dehiba'],
+    'Gafsa': ['Gafsa', 'Metlaoui', 'Redeyef', 'El Ksar'],
+    'Tozeur': ['Tozeur', 'Nefta', 'Degache', 'Tamezret'],
+    'Kebili': ['Kebili', 'Douz', 'Souk Lahad']
+};
 
 const PRESET_SKILLS = [
     'Smartphone Repair', 'Laptop Repair', 'Tablet Repair', 
@@ -154,21 +186,24 @@ const TechnicianApplicationScreen: React.FC<{ navigation: any }> = ({ navigation
 
                         <View style={styles.row}>
                             <View style={{ flex: 1 }}>
-                                <CustomInput
+                                <CustomDropdown
                                     label="Governorate"
-                                    placeholder="Region"
+                                    placeholder="Select region"
                                     value={formData.governorate}
-                                    onChangeText={(val) => setFormData({ ...formData, governorate: val })}
+                                    options={TUNISIAN_GOVERNORATES}
+                                    onSelect={(val) => setFormData({ ...formData, governorate: val, city: '' })}
                                     icon="map-outline"
                                 />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <CustomInput
+                                <CustomDropdown
                                     label="City"
-                                    placeholder="City"
+                                    placeholder="Select city"
                                     value={formData.city}
-                                    onChangeText={(val) => setFormData({ ...formData, city: val })}
+                                    options={TUNISIAN_CITIES[formData.governorate] || []}
+                                    onSelect={(val) => setFormData({ ...formData, city: val })}
                                     icon="navigate-outline"
+                                    disabled={!formData.governorate}
                                 />
                             </View>
                         </View>

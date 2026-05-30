@@ -137,7 +137,7 @@ export const Navbar: React.FC = () => {
 
                                 {user?.technicianStatus === 'approved' && (
                                     <Link to="/technician-portal" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                                        <IonIcon name="hammer-outline" /> Technician Portal
+                                        <IonIcon name="hammer-outline" /> Maintenance Requests
                                     </Link>
                                 )}
 

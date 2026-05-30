@@ -94,9 +94,17 @@ export const TechnicianPortalPage: React.FC = () => {
                                             <p style={{ color: 'var(--color-text)', fontSize: '0.9375rem', marginBottom: '0.75rem' }}>
                                                 {req.issueDescription}
                                             </p>
-                                            <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)' }}>
+                                            <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                                                 Requested by {req.user?.name || 'Customer'} on {formatDate(req.createdAt)}
                                             </div>
+                                            {(req.contactPhone || req.contactEmail) && (
+                                                <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '0.875rem', border: '1px solid var(--color-border)', display: 'inline-flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+                                                    <strong>Contact Channel:</strong>
+                                                    {req.contactPhone && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>📞 {req.contactPhone}</span>}
+                                                    {req.contactEmail && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>✉️ {req.contactEmail}</span>}
+                                                    {req.contactMethod && <span style={{ opacity: 0.7, fontSize: '0.75rem' }}>({req.contactMethod})</span>}
+                                                </div>
+                                            )}
                                             {req.technician && req.technician.id === user.id && (
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 600, marginTop: '0.5rem' }}>
                                                     Assigned to YOU

@@ -41,6 +41,18 @@ module.exports = {
 
     company: {
       model: 'company'
+    },
+
+    contactPhone: {
+      type: 'string'
+    },
+
+    contactEmail: {
+      type: 'string'
+    },
+
+    contactMethod: {
+      type: 'string'
     }
 
   },
