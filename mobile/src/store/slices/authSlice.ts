@@ -43,10 +43,10 @@ export const loginUser = createAsyncThunk(
                 return rejectWithValue(data.message || 'Login failed');
             }
 
-            // Role Check: Mobile is for Customers only
+            // Role Check: Mobile is for Customers and Technicians only
             const roleName = normalizeRoleName(data.user?.role);
-            if (roleName !== 'user') {
-                return rejectWithValue('Access denied: This app is for customers only. Admins should use the web portal.');
+            if (roleName !== 'user' && roleName !== 'technician') {
+                return rejectWithValue('Access denied: This app is for customers and technicians only. Admins should use the web portal.');
             }
 
             await AsyncStorage.setItem('userToken', data.token);
@@ -104,10 +104,10 @@ export const googleLogin = createAsyncThunk(
                 return rejectWithValue(data.message || 'Google login failed');
             }
 
-            // Role Check: Mobile is for Customers only
+            // Role Check: Mobile is for Customers and Technicians only
             const roleName = normalizeRoleName(data.user?.role);
-            if (roleName !== 'user') {
-                return rejectWithValue('Access denied: This app is for customers only. Admins should use the web portal.');
+            if (roleName !== 'user' && roleName !== 'technician') {
+                return rejectWithValue('Access denied: This app is for customers and technicians only. Admins should use the web portal.');
             }
 
             await AsyncStorage.setItem('userToken', data.token);
