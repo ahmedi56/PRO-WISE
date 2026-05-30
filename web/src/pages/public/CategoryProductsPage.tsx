@@ -11,17 +11,29 @@ export const CategoryProductsPage: React.FC = () => {
     const navigate = useNavigate();
     const [products, setProducts] = useState<Product[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [productsLoading, setProductsLoading] = useState(false);
 
+    // Fetch categories only once on mount
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
+        const fetchCategories = async () => {
             try {
-                // Fetch categories for the sidebar
                 const cats = await categoryService.getCategories();
                 setCategories(cats.data || []);
+            } catch (err) {
+                console.error(err);
+            } finally {
+                setInitialLoading(false);
+            }
+        };
+        fetchCategories();
+    }, []);
 
-                // Fetch products for the main view
+    // Fetch products when categoryName changes
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setProductsLoading(true);
+            try {
                 if (categoryName) {
                     const response = await productService.getProducts({ category: categoryName });
                     setProducts(response.data || []);
@@ -31,13 +43,13 @@ export const CategoryProductsPage: React.FC = () => {
             } catch (err) {
                 console.error(err);
             } finally {
-                setLoading(false);
+                setProductsLoading(false);
             }
         };
-        fetchData();
+        fetchProducts();
     }, [categoryName]);
 
-    if (loading) {
+    if (initialLoading) {
         return (
             <div className="pw-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
                 <Spinner size="lg" />
@@ -140,91 +152,97 @@ export const CategoryProductsPage: React.FC = () => {
 
                 {/* Main Content */}
                 <div className="pw-flex-1">
-                    {(() => {
-                        const currentCategory = categories.find(c => c.slug === categoryName || c.id === categoryName);
-                        const subcategories = currentCategory 
-                            ? categories.filter(c => {
-                                const parentId = typeof c.parent === 'object' ? (c.parent as any)?.id : c.parent;
-                                return parentId === currentCategory.id;
-                             }) 
-                            : [];
+                    {productsLoading ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '40vh' }}>
+                            <Spinner size="lg" />
+                        </div>
+                    ) : (
+                        (() => {
+                            const currentCategory = categories.find(c => c.slug === categoryName || c.id === categoryName);
+                            const subcategories = currentCategory 
+                                ? categories.filter(c => {
+                                    const parentId = typeof c.parent === 'object' ? (c.parent as any)?.id : c.parent;
+                                    return parentId === currentCategory.id;
+                                 }) 
+                                : [];
 
-                        return (
-                            <>
-                                <PageHeader 
-                                    title={displayTitle} 
-                                    subtitle={products.length > 0 
-                                        ? `Showing ${products.length} products in this category`
-                                        : (subcategories.length > 0 ? `Showing ${subcategories.length} subcategories` : `No products or subcategories`)}
-                                />
-                                
-                                {products.length === 0 && subcategories.length === 0 ? (
-                                    <EmptyState 
-                                        icon="cube-outline" 
-                                        title="No Content Found" 
-                                        description={`There are no products or subcategories in the ${displayTitle} directory yet.`} 
+                            return (
+                                <>
+                                    <PageHeader 
+                                        title={displayTitle} 
+                                        subtitle={products.length > 0 
+                                            ? `Showing ${products.length} products in this category`
+                                            : (subcategories.length > 0 ? `Showing ${subcategories.length} subcategories` : `No products or subcategories`)}
                                     />
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                                        {subcategories.length > 0 && (
-                                            <div>
-                                                <h3 className="pw-mb-4" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Subcategories</h3>
-                                                <div className="category-grid">
-                                                    {subcategories.map(cat => (
-                                                        <CategoryCard key={cat.id} category={cat} onClick={(id) => navigate(`/home/category/${id}`)} />
-                                                    ))}
+                                    
+                                    {products.length === 0 && subcategories.length === 0 ? (
+                                        <EmptyState 
+                                            icon="cube-outline" 
+                                            title="No Content Found" 
+                                            description={`There are no products or subcategories in the ${displayTitle} directory yet.`} 
+                                        />
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                                            {subcategories.length > 0 && (
+                                                <div>
+                                                    <h3 className="pw-mb-4" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Subcategories</h3>
+                                                    <div className="category-grid">
+                                                        {subcategories.map(cat => (
+                                                            <CategoryCard key={cat.id} category={cat} onClick={(id) => navigate(`/home/category/${id}`)} />
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
-                                        
-                                        {products.length > 0 && (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                                {subcategories.length > 0 && <h3 className="pw-mb-2" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Products by Brand</h3>}
-                                                {(() => {
-                                                    const productsByBrand = products.reduce((acc: Record<string, Product[]>, prod) => {
-                                                        const brandName = prod.manufacturer || (prod.company && typeof prod.company === 'object' ? prod.company.name : null) || 'Other Brands';
-                                                        if (!acc[brandName]) acc[brandName] = [];
-                                                        acc[brandName].push(prod);
-                                                        return acc;
-                                                    }, {});
+                                            )}
+                                            
+                                            {products.length > 0 && (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                                    {subcategories.length > 0 && <h3 className="pw-mb-2" style={{ fontSize: '1.25rem', fontWeight: 700 }}>Products by Brand</h3>}
+                                                    {(() => {
+                                                        const productsByBrand = products.reduce((acc: Record<string, Product[]>, prod) => {
+                                                            const brandName = prod.manufacturer || (prod.company && typeof prod.company === 'object' ? prod.company.name : null) || 'Other Brands';
+                                                            if (!acc[brandName]) acc[brandName] = [];
+                                                            acc[brandName].push(prod);
+                                                            return acc;
+                                                        }, {});
 
-                                                    return Object.entries(productsByBrand).map(([brandName, brandProducts]) => (
-                                                        <div key={brandName} className="brand-card glassmorphism" style={{ 
-                                                            padding: '1.5rem', 
-                                                            borderRadius: 'var(--radius-xl)',
-                                                            border: '1px solid var(--color-border)',
-                                                            background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.1))'
-                                                        }}>
-                                                            <div className="pw-mb-6 pw-flex pw-items-center pw-gap-3" style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
-                                                                <div style={{ 
-                                                                    width: '40px', height: '40px', 
-                                                                    borderRadius: 'var(--radius-md)', 
-                                                                    background: 'rgba(99, 102, 241, 0.1)',
-                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                    color: 'var(--color-primary)'
-                                                                }}>
-                                                                    <IonIcon name="business" style={{ fontSize: '20px' }} />
+                                                        return Object.entries(productsByBrand).map(([brandName, brandProducts]) => (
+                                                            <div key={brandName} className="brand-card glassmorphism" style={{ 
+                                                                padding: '1.5rem', 
+                                                                borderRadius: 'var(--radius-xl)',
+                                                                border: '1px solid var(--color-border)',
+                                                                background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.4), rgba(15, 23, 42, 0.1))'
+                                                            }}>
+                                                                <div className="pw-mb-6 pw-flex pw-items-center pw-gap-3" style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem' }}>
+                                                                    <div style={{ 
+                                                                        width: '40px', height: '40px', 
+                                                                        borderRadius: 'var(--radius-md)', 
+                                                                        background: 'rgba(99, 102, 241, 0.1)',
+                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                        color: 'var(--color-primary)'
+                                                                    }}>
+                                                                        <IonIcon name="business" style={{ fontSize: '20px' }} />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{brandName}</h3>
+                                                                        <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{brandProducts.length} Product{brandProducts.length !== 1 ? 's' : ''}</span>
+                                                                    </div>
                                                                 </div>
-                                                                <div>
-                                                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>{brandName}</h3>
-                                                                    <span style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>{brandProducts.length} Product{brandProducts.length !== 1 ? 's' : ''}</span>
+                                                                <div className="product-grid">
+                                                                    {brandProducts.map(prod => (
+                                                                        <ProductCard key={prod.id} product={prod} onClick={(id) => navigate(`/products/${id}`)} />
+                                                                    ))}
                                                                 </div>
                                                             </div>
-                                                            <div className="product-grid">
-                                                                {brandProducts.map(prod => (
-                                                                    <ProductCard key={prod.id} product={prod} onClick={(id) => navigate(`/products/${id}`)} />
-                                                                ))}
-                                                            </div>
-                                                        </div>
-                                                    ));
-                                                })()}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        );
-                    })()}
+                                                        ));
+                                                    })()}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            );
+                        })()
+                    )}
                 </div>
             </div>
             
