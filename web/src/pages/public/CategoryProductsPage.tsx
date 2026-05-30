@@ -58,10 +58,10 @@ export const CategoryProductsPage: React.FC = () => {
                 <span style={{ opacity: 0.5 }}>/</span>
                 <span style={{ color: 'var(--color-text)' }}>{displayTitle}</span>
             </nav>
-
+ 
             <div className="pw-flex pw-flex-col lg:pw-flex-row pw-gap-8">
                 {/* Visual Sidebar */}
-                <aside className="pw-w-full lg:pw-w-64 pw-flex-shrink-0">
+                <aside className="category-sidebar-aside">
                     <div style={{
                         background: 'rgba(255, 255, 255, 0.02)',
                         border: '1px solid var(--color-border)',
@@ -146,7 +146,7 @@ export const CategoryProductsPage: React.FC = () => {
                             ? categories.filter(c => {
                                 const parentId = typeof c.parent === 'object' ? (c.parent as any)?.id : c.parent;
                                 return parentId === currentCategory.id;
-                            }) 
+                             }) 
                             : [];
 
                         return (
@@ -240,9 +240,15 @@ export const CategoryProductsPage: React.FC = () => {
                     background-color: rgba(255,255,255,0.03) !important;
                     color: var(--color-text-strong) !important;
                 }
+                .category-sidebar-aside {
+                    width: 100%;
+                    flex-shrink: 0;
+                }
                 @media (min-width: 1024px) {
                     .lg\\:pw-flex-row { flex-direction: row !important; }
-                    .lg\\:pw-w-64 { width: 16rem !important; }
+                    .category-sidebar-aside {
+                        width: 280px !important;
+                    }
                 }
             `}</style>
         </PageWrapper>
