@@ -84,7 +84,7 @@ export const ExpertProfilePage: React.FC = () => {
                         <div className="stats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem' }}>
                             <div className="stat-pill">
                                 <span className="stat-label">Rating</span>
-                                <span className="stat-value"><IonIcon name="star" style={{ color: '#f59e0b' }} /> {profile.averageRating.toFixed(1)}</span>
+                                <span className="stat-value"><IonIcon name="star" style={{ color: '#f59e0b' }} /> {(profile.averageRating || 0).toFixed(1)}</span>
                             </div>
                             <div className="stat-pill">
                                 <span className="stat-label">Experience</span>

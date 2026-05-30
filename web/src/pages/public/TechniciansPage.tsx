@@ -122,7 +122,7 @@ export const TechniciansPage: React.FC = () => {
                         <div class="popup-stats">
                             <div class="popup-stat">
                                 <i class="star-icon">⭐</i>
-                                <span>${tech.averageRating.toFixed(1)}</span>
+                                <span>${(tech.averageRating || 0).toFixed(1)}</span>
                             </div>
                             <div class="popup-stat">
                                 <span>${tech.completedJobs} Jobs</span>
@@ -207,9 +207,9 @@ export const TechniciansPage: React.FC = () => {
                                     </div>
                                     
                                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
-                                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>★ {tech.averageRating.toFixed(1)}</span>
+                                        <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>★ {(tech.averageRating || 0).toFixed(1)}</span>
                                         <span style={{ color: 'var(--color-text-muted)' }}>({tech.completedJobs} jobs)</span>
-                                        {tech.distanceKm !== undefined && <span style={{ color: 'var(--color-text-muted)' }}>• {tech.distanceKm.toFixed(1)} km away</span>}
+                                        {tech.distanceKm !== undefined && <span style={{ color: 'var(--color-text-muted)' }}>• {(tech.distanceKm || 0).toFixed(1)} km away</span>}
                                         {tech.emergencyAvailable && <span style={{ color: '#ef4444', fontWeight: 'bold' }}>• 24/7</span>}
                                     </div>
 
