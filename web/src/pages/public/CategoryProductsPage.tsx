@@ -59,19 +59,14 @@ export const CategoryProductsPage: React.FC = () => {
                 <span style={{ color: 'var(--color-text)' }}>{displayTitle}</span>
             </nav>
 
-            <div className="pw-flex pw-flex-col lg:pw-flex-row pw-gap-8" style={{ marginLeft: '-2rem' }}>
+            <div className="pw-flex pw-flex-col lg:pw-flex-row pw-gap-8">
                 {/* Visual Sidebar */}
                 <aside className="pw-w-full lg:pw-w-64 pw-flex-shrink-0">
                     <div style={{
-                        background: 'linear-gradient(145deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05))',
-                        borderRight: '1px solid rgba(99, 102, 241, 0.2)',
-                        borderTop: '1px solid rgba(99, 102, 241, 0.2)',
-                        borderBottom: '1px solid rgba(99, 102, 241, 0.2)',
-                        borderTopRightRadius: 'var(--radius-xl)',
-                        borderBottomRightRadius: 'var(--radius-xl)',
-                        padding: '0.75rem',
-                        backdropFilter: 'blur(12px)',
-                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
+                        background: 'rgba(255, 255, 255, 0.02)',
+                        border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-lg)',
+                        padding: '1rem',
                         position: 'sticky',
                         top: '100px',
                         maxHeight: 'calc(100vh - 140px)',
