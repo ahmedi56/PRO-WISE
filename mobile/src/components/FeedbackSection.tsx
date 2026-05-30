@@ -62,7 +62,12 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
             });
             const data = await readJson(res);
             if (res.ok) {
-                setFeedbacks(data.data || []);
+                const rawFeedbacks = data.data || [];
+                const uniqueFeedbacks = rawFeedbacks.filter(
+                    (item: FeedbackEntry, index: number, self: FeedbackEntry[]) =>
+                        self.findIndex((t) => t.id === item.id) === index
+                );
+                setFeedbacks(uniqueFeedbacks);
             }
 
             const statsRes = await apiFetch(`${API_URL}/feedback/stats/${companyId}`, {
@@ -130,13 +135,15 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                         )}
                     </View>
                 </View>
-                <CustomButton 
-                    title="Rate Now"
-                    size="small"
-                    icon={<Ionicons name="create-outline" size={18} color="white" />}
-                    onPress={() => setModalVisible(true)}
-                    style={{ paddingHorizontal: 16 }}
-                />
+                {!summaryOnly && (
+                    <CustomButton 
+                        title="Rate Now"
+                        size="small"
+                        icon={<Ionicons name="create-outline" size={18} color="white" />}
+                        onPress={() => setModalVisible(true)}
+                        style={{ paddingHorizontal: 16 }}
+                    />
+                )}
             </View>
 
             {!summaryOnly && (

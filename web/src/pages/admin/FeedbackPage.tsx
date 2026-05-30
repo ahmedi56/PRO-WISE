@@ -12,7 +12,12 @@ export const FeedbackPage: React.FC = () => {
         const fetchFeedback = async () => {
             try {
                 const res = await feedbackService.getAllFeedback(); 
-                setFeedbackList(res.data || res || []);
+                const rawList = res.data || res || [];
+                const uniqueList = rawList.filter(
+                    (item: any, index: number, self: any[]) =>
+                        self.findIndex((t) => t.id === item.id) === index
+                );
+                setFeedbackList(uniqueList);
             } catch (err) {
                 console.error(err);
             } finally {

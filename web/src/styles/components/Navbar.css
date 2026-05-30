@@ -1,0 +1,156 @@
+/* ============================================
+   PRO-WISE Navbar Styles — Neo-Industrial
+   ============================================ */
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 var(--space-8);
+  height: 64px;
+  background: var(--color-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-glass-border);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky, 1100);
+  transition: all var(--duration-slow) var(--ease);
+}
+
+.navbar-brand {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nav-link {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.nav-link:hover {
+  color: var(--color-text-strong);
+  background: var(--color-surface-hover);
+}
+
+.nav-link.active {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.nav-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  margin-left: var(--space-3);
+}
+
+.nav-icon-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-fast) var(--ease);
+}
+
+.nav-icon-btn:hover {
+  color: var(--color-text-strong);
+  background: var(--color-surface-hover);
+}
+
+.nav-user-pill {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease);
+  border: 1px solid transparent;
+}
+
+.nav-user-pill:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border);
+}
+
+.user-dropdown {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: all var(--duration-fast) var(--ease);
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-primary);
+}
+
+.dropdown-item.logout {
+  color: var(--color-error);
+}
+
+.dropdown-item.logout:hover {
+  background: var(--color-error-light);
+}
+
+@media (max-width: 1024px) {
+  .navbar {
+    padding: 0 var(--space-4);
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    height: 60px;
+  }
+  
+  .desktop-links {
+    display: none;
+  }
+}

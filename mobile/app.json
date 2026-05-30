@@ -27,7 +27,12 @@
         "foregroundImage": "./assets/pro-wise.png",
         "backgroundColor": "#161B22"
       },
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/pro-wise.png"
@@ -36,6 +41,12 @@
       "expo-asset",
       "expo-font",
       "expo-camera"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e47f049c-0ec0-49d8-882a-ad49d0b28bdc"
+      }
+    },
+    "owner": "proassist1"
   }
 }

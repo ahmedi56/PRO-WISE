@@ -44,12 +44,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     const { loading, error, success } = useSelector((state: RootState) => state.auth);
 
     const [request, response, promptAsync] = Google.useAuthRequest({
-        clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+        clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '1007717796636-6j5ll09sbmpubbirplsl3428e43mobb4.apps.googleusercontent.com',
+        androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || '1007717796636-nv4ei1ci62asa321dtmlm7vjuaoskk79.apps.googleusercontent.com',
+        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '1007717796636-6j5ll09sbmpubbirplsl3428e43mobb4.apps.googleusercontent.com',
         iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
         scopes: ['profile', 'email'],
-        redirectUri: process.env.EXPO_PUBLIC_GOOGLE_REDIRECT_URI,
+        redirectUri: process.env.EXPO_PUBLIC_GOOGLE_REDIRECT_URI || 'https://auth.expo.io/@proassist1/product-assistant-mobile',
     });
 
     useEffect(() => {

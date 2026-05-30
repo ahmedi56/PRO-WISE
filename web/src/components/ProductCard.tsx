@@ -11,16 +11,23 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) => {
     const navigate = useNavigate();
+    const [isHovered, setIsHovered] = React.useState(false);
     const categoryName = ((typeof product.category === 'object' && product.category !== null ? (product.category as any)?.name : null) || '').toLowerCase();
     
     return (
         <div 
-            className="pw-card search-result-card pw-flex pw-flex-col" 
+            className={`pw-card search-result-card pw-flex pw-flex-col pw-transition-all pw-duration-300 ${isHovered ? 'pw-shadow-xl pw-scale-[1.01] pw-border-primary/40' : ''}`}
             onClick={() => onClick ? onClick(product.id) : navigate(`/products/${product.id}`)}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            onTouchStart={() => setIsHovered(true)}
+            onTouchEnd={() => setIsHovered(false)}
             style={{ 
                 cursor: 'pointer',
                 height: '100%',
-                border: '1px solid var(--color-border)'
+                border: isHovered ? '1px solid var(--pw-primary)' : '1px solid var(--color-border)',
+                position: 'relative',
+                overflow: 'hidden'
             }}
         >
             {/* Header / Category Icon */}
@@ -78,6 +85,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
                 <p className="pw-text-sm pw-text-muted pw-line-clamp-2 pw-mb-6 pw-leading-relaxed pw-font-medium">
                     {product.description}
                 </p>
+
+                {/* Matched Components (Hover/Touch Hold Reveal) */}
+                {isHovered && Array.isArray((product as any).matchedComponents) && (product as any).matchedComponents.length > 0 && (
+                    <div className="pw-mb-4 pw-p-3 pw-bg-primary-light/10 pw-rounded-lg pw-border pw-border-primary/10" style={{ animation: 'fadeIn 0.2s ease-in-out' }}>
+                        <div className="pw-text-[9px] pw-font-extrabold pw-text-primary pw-uppercase pw-mb-1.5 pw-tracking-wider pw-flex pw-items-center pw-gap-1">
+                            <IonIcon name="git-compare-outline" /> Matched Components
+                        </div>
+                        <div className="pw-flex pw-flex-wrap pw-gap-1">
+                            {(product as any).matchedComponents.map((comp: any, i: number) => (
+                                <span key={i} className="pw-text-[9px] pw-px-1.5 pw-py-0.5 pw-bg-surface pw-border pw-rounded pw-text-strong pw-font-bold">
+                                    {comp.source || comp.matched}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Why this result? */}
                 {product.recommendationReason && (

@@ -9,6 +9,6 @@ const getLocalHost = (): string => {
 };
 
 const DEFAULT_API_URL = `http://${getLocalHost()}:1337/api`;
-const API_URL = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL;
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://prowise-backend.onrender.com/api';
 
 export default API_URL;
