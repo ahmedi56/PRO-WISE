@@ -8,7 +8,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Configuration from environment
-const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || 'AQ.Ab8RN6I_PxnjpEQYBLFw_GWpsRXmbL47ME4f4Ao5QdiBdHB4PQ';
 const DEFAULT_GEN_MODEL = 'gemini-2.5-flash';
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 

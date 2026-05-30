@@ -22,7 +22,7 @@ export const Navbar: React.FC = () => {
     const [lastScrollY, setLastScrollY] = useState(0);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [stormEnabled, setStormEnabled] = useState(() => {
-        return localStorage.getItem('prowise-storm') !== 'false';
+        return localStorage.getItem('prowise-storm') === 'true';
     });
 
     useEffect(() => {
