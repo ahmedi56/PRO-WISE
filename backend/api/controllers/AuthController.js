@@ -307,7 +307,8 @@ module.exports = {
           company: user.company ? {
             id: user.company.id,
             name: user.company.name,
-            status: user.company.status
+            status: user.company.status,
+            category: user.company.category ? (user.company.category.id || user.company.category) : null
           } : null
         }
       });

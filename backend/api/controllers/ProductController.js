@@ -498,7 +498,8 @@ module.exports = {
       }
 
       // Validate category exists if provided
-      let finalCategory = category;
+      // Validate category exists if provided
+      let finalCategory = category || null;
       if (finalCategory) {
         const cat = await Category.findOne({ id: finalCategory });
         if (!cat) {
@@ -536,7 +537,7 @@ module.exports = {
         updateData.company = (req.user && req.user.companyId);
       } else if (company !== undefined) {
         // Super admin: allow specific assignment
-        updateData.company = company;
+        updateData.company = company || null;
       }
 
       const product = await Product.updateOne({ id: req.params.id }).set(updateData);

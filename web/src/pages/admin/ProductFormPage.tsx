@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 import { PageHeader, Button, InputField, SelectField, IonIcon, Spinner } from '../../components/index';
 import { productService } from '../../services/productService';
 import { categoryService } from '../../services/categoryService';
@@ -9,11 +11,14 @@ export const ProductFormPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const isEdit = !!id;
     const navigate = useNavigate();
+    const { user } = useSelector((state: RootState) => state.auth);
 
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         category: '',
+        manufacturer: '',
+        modelNumber: '',
         status: 'draft',
         components: [] as { name: string; type: string; manufacturer: string; modelNumber: string; specifications: string; }[]
     });
@@ -82,6 +87,8 @@ export const ProductFormPage: React.FC = () => {
                         name: prod.name || '',
                         description: prod.description || '',
                         category: typeof prod.category === 'object' ? prod.category?.id : (prod.category || ''),
+                        manufacturer: prod.manufacturer || '',
+                        modelNumber: prod.modelNumber || '',
                         status: prod.status || 'draft',
                         components: (() => {
                             let comps = prod.components;
@@ -153,6 +160,25 @@ export const ProductFormPage: React.FC = () => {
                         required
                         icon="cube-outline"
                     />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+                        <InputField 
+                            id="product-manufacturer"
+                            label="Manufacturer" 
+                            placeholder="e.g. ASUS"
+                            value={formData.manufacturer}
+                            onChange={(e) => setFormData({...formData, manufacturer: e.target.value})}
+                            icon="business-outline"
+                        />
+                        <InputField 
+                            id="product-model-number"
+                            label="Model Number" 
+                            placeholder="e.g. UX3402"
+                            value={formData.modelNumber}
+                            onChange={(e) => setFormData({...formData, modelNumber: e.target.value})}
+                            icon="barcode-outline"
+                        />
+                    </div>
                     
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                         <SelectField 
@@ -162,7 +188,17 @@ export const ProductFormPage: React.FC = () => {
                             onChange={(e) => setFormData({...formData, category: e.target.value})}
                             required
                             placeholder="Select a category"
-                            options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                            options={(() => {
+                                const companyCatId = typeof user?.company === 'object' ? user?.company?.category : user?.company;
+                                if (!companyCatId) return categories.map(cat => ({ value: cat.id, label: cat.name }));
+                                
+                                return categories
+                                    .filter(cat => {
+                                        const parentId = typeof cat.parent === 'object' ? cat.parent?.id : cat.parent;
+                                        return cat.id === companyCatId || parentId === companyCatId;
+                                    })
+                                    .map(cat => ({ value: cat.id, label: cat.name }));
+                            })()}
                         />
 
                         <SelectField 
