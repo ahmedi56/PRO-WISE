@@ -11,6 +11,7 @@ export const TechnicianPortalPage: React.FC = () => {
     const [requests, setRequests] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState<'active' | 'history'>('active');
 
     if (!user) return null;
 
@@ -66,6 +67,10 @@ export const TechnicianPortalPage: React.FC = () => {
         );
     }
 
+    const activeRequests = requests.filter(r => r.status !== 'completed' && r.status !== 'cancelled');
+    const historyRequests = requests.filter(r => r.status === 'completed' || r.status === 'cancelled');
+    const displayedRequests = activeTab === 'active' ? activeRequests : historyRequests;
+
     return (
         <PageWrapper maxWidth="1000px">
             <PageHeader 
@@ -77,15 +82,46 @@ export const TechnicianPortalPage: React.FC = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2rem' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     <Section title="Request Pool & My Jobs">
+                        <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.5rem' }}>
+                            <button 
+                                onClick={() => setActiveTab('active')}
+                                style={{
+                                    background: 'none', border: 'none', padding: '0.5rem 1rem', 
+                                    color: activeTab === 'active' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    fontWeight: activeTab === 'active' ? 700 : 500,
+                                    borderBottom: activeTab === 'active' ? '2px solid var(--color-primary)' : 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Active Jobs & Pool ({activeRequests.length})
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('history')}
+                                style={{
+                                    background: 'none', border: 'none', padding: '0.5rem 1rem', 
+                                    color: activeTab === 'history' ? 'var(--color-primary)' : 'var(--color-text-muted)',
+                                    fontWeight: activeTab === 'history' ? 700 : 500,
+                                    borderBottom: activeTab === 'history' ? '2px solid var(--color-primary)' : 'none',
+                                    cursor: 'pointer'
+                                }}
+                            >
+                                Completed History ({historyRequests.length})
+                            </button>
+                        </div>
+
                         {loading ? (
                             <div className="pw-card pw-p-6">Loading requests...</div>
-                        ) : requests.length === 0 ? (
+                        ) : displayedRequests.length === 0 ? (
                             <div className="pw-card pw-p-6 pw-text-center">
-                                <p className="pw-text-muted">No requests available in the pool yet.</p>
+                                <p className="pw-text-muted">
+                                    {activeTab === 'active' 
+                                        ? 'No active requests available in the pool.' 
+                                        : 'No completed requests in your history.'}
+                                </p>
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {requests.map((req) => (
+                                {displayedRequests.map((req) => (
                                     <div key={req.id} className="pw-card pw-p-5" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                                         <div style={{ flex: 1 }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>

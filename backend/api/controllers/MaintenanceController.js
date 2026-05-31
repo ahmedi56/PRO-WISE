@@ -125,6 +125,36 @@ module.exports = {
       }
 
       const updated = await MaintenanceRequest.updateOne({ id }).set(updateData);
+
+      // Send real-time notification to the customer (request.user)
+      try {
+        if (sails.services.notificationservice) {
+          let notificationTitle = '';
+          let notificationMessage = '';
+          
+          if (status === 'assigned') {
+            notificationTitle = 'Technician Assigned 🛠️';
+            notificationMessage = `A technician has claimed your request for "${request.productName}" and will contact you.`;
+          } else if (status === 'in_progress') {
+            notificationTitle = 'Repair in Progress ⚙️';
+            notificationMessage = `The technician has started working on your request for "${request.productName}".`;
+          } else if (status === 'completed') {
+            notificationTitle = 'Job Completed Successfully! ✅';
+            notificationMessage = `Your request for "${request.productName}" is marked as resolved.`;
+          }
+
+          if (notificationTitle && notificationMessage) {
+            await sails.services.notificationservice.notifyUser(request.user, {
+              title: notificationTitle,
+              message: notificationMessage,
+              type: status === 'completed' ? 'success' : 'info',
+              link: '/profile'
+            });
+          }
+        }
+      } catch (notifErr) {
+        sails.log.error('Failed to dispatch status update notification:', notifErr);
+      }
       
       return res.json(updated);
     } catch (err) {
