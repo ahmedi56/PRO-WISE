@@ -916,9 +916,9 @@ We designed the registration and login pages to offer clean forms and quick Goog
  
  \begin{figure}[!htbp]
  \centering
- \includegraphics[width=0.45\textwidth]{images/web_login.png}
+ \includegraphics[width=0.45\textwidth]{images/login.PNG}
  \hfill
- \includegraphics[width=0.45\textwidth]{images/web_register.png}
+ \includegraphics[width=0.45\textwidth]{images/Register.PNG}
  \caption{Web interfaces – Login and Registration pages}
  \label{fig:web_auth}
  \end{figure}
@@ -931,7 +931,7 @@ Once logged in, users see a custom dashboard. Figure~\ref{fig:web_dashboard} sho
  
  \begin{figure}[!htbp]
  \centering
- \includegraphics[width=0.9\textwidth]{images/web_dashboard.png}
+ \includegraphics[width=0.9\textwidth]{images/dashbord.PNG}
  \caption{Web interface – User dashboard}
  \label{fig:web_dashboard}
  \end{figure}
@@ -944,7 +944,7 @@ We created the profile section in Figure~\ref{fig:web_profile} to allow technici
  
  \begin{figure}[!htbp]
  \centering
- \includegraphics[width=0.9\textwidth]{images/web_profile.png}
+ \includegraphics[width=0.9\textwidth]{images/Profile managment.PNG}
  \caption{Web interface – Profile management}
  \label{fig:web_profile}
  \end{figure}
@@ -1192,22 +1192,22 @@ Figure~\ref{fig:seq_content_submission} maps how the app handles draft content s
 We built the web administration dashboard to let companies organize products, write guides, and manage the moderation queue.
 
 \begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.45\textwidth]{images/web_products_list.png}
-\hfill
-\includegraphics[width=0.45\textwidth]{images/web_guide_editor.png}
-\caption{Web interfaces – Product catalog and guide editor}
-\label{fig:web_catalog}
-\end{figure}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.45\textwidth]{images/web_submission_queue.png}
-\hfill
-\includegraphics[width=0.45\textwidth]{images/web_moderation.png}
-\caption{Web interfaces – Content submission queue and moderation review dashboard}
-\label{fig:web_approval}
-\end{figure}
+ \centering
+ \includegraphics[width=0.45\textwidth]{images/product catalog.PNG}
+ \hfill
+ \includegraphics[width=0.45\textwidth]{images/content editor.PNG}
+ \caption{Web interfaces – Product catalog and guide editor}
+ \label{fig:web_catalog}
+ \end{figure}
+ 
+ \begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.45\textwidth]{images/content form.PNG}
+ \hfill
+ \includegraphics[width=0.45\textwidth]{images/product pending.PNG}
+ \caption{Web interfaces – Content submission queue and moderation review dashboard}
+ \label{fig:web_approval}
+ \end{figure}
 
 \subsection{Mobile Application Interfaces}
 
@@ -1431,13 +1431,13 @@ Figure~\ref{fig:seq_notification} maps the real-time websocket and database oper
 Figure~\ref{fig:web_reviews} displays the admin reviews dashboard and the service ticketing dashboard.
 
 \begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.45\textwidth]{images/web_reviews.png}
-\hfill
-\includegraphics[width=0.45\textwidth]{images/web_service_requests.png}
-\caption{Web interfaces – Product reviews and service ticket overview}
-\label{fig:web_reviews}
-\end{figure}
+ \centering
+ \includegraphics[width=0.45\textwidth]{images/Admin Dashbord.PNG}
+ \hfill
+ \includegraphics[width=0.45\textwidth]{images/maintenence request form.PNG}
+ \caption{Web interfaces – Admin dashboard and maintenance request form}
+ \label{fig:web_reviews}
+ \end{figure}
 
 \subsection{Mobile Interfaces}
 
@@ -1694,70 +1694,9 @@ async function generateEmbedding(text) {
 
 \subsection{Document Indexing \& Vector Database Storage}
 
-We segment technical manuals into small text paragraphs (chunks) and compute their vector embedding using the Gemini API. The database stores these floating-point arrays alongside the raw text. To calculate similarity between the query vector ($A$) and document chunk ($B$), the backend uses the Cosine Similarity formula~\cite{manning2008}:
+We segment technical manuals into small text paragraphs (chunks) and compute their vector embedding using the Gemini API. The database stores these floating-point arrays alongside the raw text. To calculate similarity between the query vector and document chunks, the backend calculates the similarity score (cosine similarity) between their embedding vectors. 
 
-\begin{align}
-\text{Similarity}(A, B) &= \frac{A \cdot B}{\|A\| \|B\|} \nonumber \\
-&= \frac{\sum_{i=1}^{n} A_i B_i}{\sqrt{\sum_{i=1}^{n} A_i^2} \sqrt{\sum_{i=1}^{n} B_i^2}}
-\label{eq:cosine_similarity}
-\end{align}
-
-We only accept paragraphs scoring higher than $0.75$.
-
-\subsubsection{Step-by-Step Similarity Calculation Example}
-
-To show how our similarity pipeline operates, we trace a calculation using simple 3-dimensional vectors. Let the query vector be:
-\begin{equation}
-A = [0.80, 0.50, 0.30]
-\end{equation}
-
-We evaluate this query against two document chunks:
-\begin{itemize}
-    \item \textbf{Chunk 1} (relevant display guide): $B_1 = [0.75, 0.55, 0.25]$
-    \item \textbf{Chunk 2} (irrelevant settings page): $B_2 = [0.10, 0.20, 0.90]$
-\end{itemize}
-
-First, we compute the magnitude of vector $A$:
-\begin{align}
-\|A\| &= \sqrt{0.80^2 + 0.50^2 + 0.30^2} \nonumber \\
-&= \sqrt{0.64 + 0.25 + 0.09} = \sqrt{0.98} \approx 0.990
-\end{align}
-
-\textbf{1. Similarity calculation for Chunk 1 ($B_1$):}
-- Magnitude of $B_1$:
-\begin{align}
-\|B_1\| &= \sqrt{0.75^2 + 0.55^2 + 0.25^2} \nonumber \\
-&= \sqrt{0.5625 + 0.3025 + 0.0625} = \sqrt{0.9275} \approx 0.963
-\end{align}
-- Dot product $A \cdot B_1$:
-\begin{align}
-A \cdot B_1 &= (0.80 \times 0.75) + (0.50 \times 0.55) + (0.30 \times 0.25) \nonumber \\
-&= 0.60 + 0.275 + 0.075 = 0.95
-\end{align}
-- Cosine Similarity:
-\begin{align}
-\text{Similarity}(A, B_1) &= \frac{A \cdot B_1}{\|A\| \|B_1\|} \nonumber \\
-&= \frac{0.95}{0.990 \times 0.963} = \frac{0.95}{0.953} \approx 0.996
-\end{align}
-Since $0.996 \ge 0.75$, Chunk 1 is \textbf{accepted} as relevant RAG context.
-
-\textbf{2. Similarity calculation for Chunk 2 ($B_2$):}
-- Magnitude of $B_2$:
-\begin{align}
-\|B_2\| &= \sqrt{0.10^2 + 0.20^2 + 0.90^2} \nonumber \\
-&= \sqrt{0.01 + 0.04 + 0.81} = \sqrt{0.86} \approx 0.927
-\end{align}
-- Dot product $A \cdot B_2$:
-\begin{align}
-A \cdot B_2 &= (0.80 \times 0.10) + (0.50 \times 0.20) + (0.30 \times 0.90) \nonumber \\
-&= 0.08 + 0.10 + 0.27 = 0.45
-\end{align}
-- Cosine Similarity:
-\begin{align}
-\text{Similarity}(A, B_2) &= \frac{A \cdot B_2}{\|A\| \|B_2\|} \nonumber \\
-&= \frac{0.45}{0.990 \times 0.927} = \frac{0.45}{0.918} \approx 0.490
-\end{align}
-Since $0.490 < 0.75$, Chunk 2 is \textbf{rejected}.
+Only the paragraphs scoring higher than a defined similarity threshold (such as $0.75$) are accepted as relevant context. This ensures that the generated prompt contains only contextually relevant troubleshooting steps before feeding them into the Gemini generation pipeline, effectively filtering out irrelevant sections.
 
 \subsection{Refinement of Use Cases}
 
@@ -1888,13 +1827,13 @@ Figure~\ref{fig:seq_sprint4} tracks the dynamic message sequence during parts re
 Figure~\ref{fig:web_recs} and Figure~\ref{fig:mobile_recs} illustrate the search and recommendation layouts we implemented for web and mobile.
 
 \begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.45\textwidth]{images/web_recommendations.png}
-\hfill
-\includegraphics[width=0.45\textwidth]{images/web_semantic_search.png}
-\caption{Web interfaces -- Semantic search and recommendations}
-\label{fig:web_recs}
-\end{figure}
+ \centering
+ \includegraphics[width=0.45\textwidth]{images/web_recommendations.png}
+ \hfill
+ \includegraphics[width=0.45\textwidth]{images/search engine.PNG}
+ \caption{Web interfaces -- Semantic search and recommendations}
+ \label{fig:web_recs}
+ \end{figure}
 
 \begin{figure}[!htbp]
 \centering
@@ -1962,14 +1901,14 @@ To structure our ticketing database collections and restrict actions by role, we
 
 Clients file a ticket if they cannot fix an issue using the online manuals. Figure~\ref{fig:usecase_submit_maintenance} and Table~\ref{tab:submit_maintenance_desc} show how tickets are submitted and saved.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{images/usecase14.drawio.png}
 \caption{Use case diagram: Submit maintenance request}
 \label{fig:usecase_submit_maintenance}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Textual description of the Submit Maintenance Request use case}
 \label{tab:submit_maintenance_desc}
@@ -1994,14 +1933,14 @@ Nominal Scenario &
 
 Approved technicians claim and update tickets via their mobile workspace. Figure~\ref{fig:usecase_manage_maintenance} and Table~\ref{tab:manage_maintenance_desc} illustrate the ticket lifecycle rules.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.75\textwidth]{images/usecase12.drawio.png}
 \caption{Use case diagram: Follow and manage maintenance requests}
 \label{fig:usecase_manage_maintenance}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Textual description of the Follow and Manage Maintenance Requests use case}
 \label{tab:manage_maintenance_desc}
@@ -2027,14 +1966,14 @@ Nominal Scenario &
 
 To ensure service quality, super administrators review and validate technician credentials. Figure~\ref{fig:usecase_approve_technician} and Table~\ref{tab:approve_technician_desc} detail this verification pipeline.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{images/usecase13.drawio.png}
 \caption{Use case diagram: Approve Technician Profile}
 \label{fig:usecase_approve_technician}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Textual description of the Approve Technician Profile use case}
 \label{tab:approve_technician_desc}
@@ -2043,7 +1982,7 @@ To ensure service quality, super administrators review and validate technician c
 \textbf{Element} & \textbf{Description} \\
 \midrule
 Use Case & Approve Technician Profile \\
-Actor & Super Admin \\
+Actor & Super Admin, Technician Applicant (Customer) \\
 Precondition & A technician applicant uploads qualifications and profile data. \\
 Postcondition & Admin approves the applicant, unlocking the technician dashboard. \\
 Nominal Scenario &
@@ -2088,11 +2027,11 @@ Figure~\ref{fig:seq_technician_app} details the sequence of API requests, docume
 The dashboard screenshot in Figure~\ref{fig:web_matching} shows where admins manage technician requests and view active tickets.
 
 \begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.6\textwidth]{images/web_matching.png}
-\caption{Web interface -- Technician approval and request pool portal}
-\label{fig:web_matching}
-\end{figure}
+ \centering
+ \includegraphics[width=0.6\textwidth]{images/technician request list.PNG}
+ \caption{Web interface -- Technician approval and request pool portal}
+ \label{fig:web_matching}
+ \end{figure}
 
 \subsection{Mobile Interfaces}
 

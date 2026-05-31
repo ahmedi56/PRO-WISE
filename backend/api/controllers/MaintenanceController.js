@@ -61,7 +61,10 @@ module.exports = {
    */
   listByTechnician: async function (req, res) {
     try {
-      if (!req.user.isTechnician || req.user.technicianStatus !== 'approved') {
+      const dbUser = await User.findOne({ id: req.user.id });
+      const isApprovedTech = dbUser && (dbUser.isTechnician || dbUser.technicianStatus === 'approved');
+
+      if (!isApprovedTech) {
         return res.status(403).json({ message: 'Only approved technicians can access the request pool' });
       }
 
@@ -89,8 +92,9 @@ module.exports = {
       const { status } = req.body;
       const { id } = req.params;
 
-      const isApprovedTech = req.user.isTechnician && req.user.technicianStatus === 'approved';
-      const roleName = (req.user.role && req.user.role.name ? req.user.role.name : '').toLowerCase();
+      const dbUser = await User.findOne({ id: req.user.id }).populate('role');
+      const isApprovedTech = dbUser && (dbUser.isTechnician || dbUser.technicianStatus === 'approved');
+      const roleName = (dbUser && dbUser.role && dbUser.role.name ? dbUser.role.name : '').toLowerCase();
       const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
 
       if (!isApprovedTech && !isAdmin) {

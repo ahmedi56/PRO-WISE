@@ -129,17 +129,17 @@ export const Navbar: React.FC = () => {
                                     <IonIcon name="person-outline" /> Profile
                                 </Link>
 
-                                {(user?.technicianStatus === 'none' || user?.technicianStatus === 'rejected' || !user?.technicianStatus) && !isAdmin && (
-                                    <Link to="/technician/apply" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                                        <IonIcon name="construct-outline" /> {user?.technicianStatus === 'rejected' ? 'Resubmit Application' : 'Become a Technician'}
-                                    </Link>
-                                )}
+                                {(user?.technicianStatus === 'none' || user?.technicianStatus === 'rejected' || !user?.technicianStatus) && !isAdmin && roleName !== 'technician' && !user?.isTechnician && (
+                                     <Link to="/technician/apply" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                         <IonIcon name="construct-outline" /> {user?.technicianStatus === 'rejected' ? 'Resubmit Application' : 'Become a Technician'}
+                                     </Link>
+                                 )}
 
-                                {user?.technicianStatus === 'approved' && (
-                                    <Link to="/technician-portal" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                                        <IonIcon name="hammer-outline" /> Maintenance Requests
-                                    </Link>
-                                )}
+                                 {(user?.technicianStatus === 'approved' || roleName === 'technician' || user?.isTechnician) && (
+                                     <Link to="/technician-portal" className="dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                                         <IonIcon name="hammer-outline" /> Maintenance Requests
+                                     </Link>
+                                 )}
 
                                 <button className="dropdown-item" onClick={() => setStormEnabled(!stormEnabled)}>
                                     <IonIcon name={stormEnabled ? "flash-outline" : "flash-off-outline"} /> 
