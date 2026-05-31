@@ -5,7 +5,7 @@ import { RootState } from '../store';
 
 interface PermissionProtectedRouteProps {
     children: React.ReactNode;
-    permission: string;
+    permission: string | string[];
 }
 
 const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({ children, permission }) => {
@@ -27,11 +27,12 @@ const PermissionProtectedRoute: React.FC<PermissionProtectedRouteProps> = ({ chi
     const isSuperAdmin = roleName === 'super_admin';
     const isCompanyAdmin = ['company_admin', 'administrator'].includes(roleName);
 
-    const hasPermission = permissions.includes(permission);
-    const hasImplicitAccess = isSuperAdmin || (isCompanyAdmin && [
+    const requestedPermissions = Array.isArray(permission) ? permission : [permission];
+    const hasPermission = requestedPermissions.some(p => permissions.includes(p));
+    const hasImplicitAccess = isSuperAdmin || (isCompanyAdmin && requestedPermissions.some(p => [
         'products.manage', 'products.update', 'guides.manage', 'guides.update',
         'technicians.manage', 'qr.generate'
-    ].includes(permission));
+    ].includes(p)));
 
     if (!hasPermission && !hasImplicitAccess) {
         return <Navigate to="/home" replace />;

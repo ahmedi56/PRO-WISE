@@ -20,9 +20,9 @@ const CompanyAdminRoute: React.FC<CompanyAdminRouteProps> = ({ children }) => {
 
     const role = user?.role || (user as any)?.Role;
     const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
-    const isAdmin = ['company_admin', 'super_admin', 'administrator'].includes(roleName);
+    const isAllowed = ['company_admin', 'super_admin', 'administrator', 'technician'].includes(roleName);
 
-    if (!isAdmin) {
+    if (!isAllowed) {
         return <Navigate to="/home" replace />;
     }
 
