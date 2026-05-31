@@ -193,7 +193,11 @@ export const TechnicianProfilePage: React.FC = () => {
         }
     };
 
-    if (!user.isTechnician || user.technicianStatus !== 'approved') {
+    const role = user?.role || (user as any)?.Role;
+    const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
+    const isApprovedTech = user?.isTechnician || user?.technicianStatus === 'approved' || roleName === 'technician';
+
+    if (!isApprovedTech) {
         return (
             <PageWrapper>
                 <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>

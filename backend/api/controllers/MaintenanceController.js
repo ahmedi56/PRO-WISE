@@ -112,7 +112,7 @@ module.exports = {
 
       // If technician, ensure they are assigned to it or it's pending (to accept it)
       if (isApprovedTech && !isAdmin) {
-        if (request.technician && request.technician !== req.user.id) {
+        if (request.technician && String(request.technician) !== String(req.user.id)) {
           return res.status(403).json({ message: 'You are not assigned to this request' });
         }
       }
