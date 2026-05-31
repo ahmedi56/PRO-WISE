@@ -53,8 +53,10 @@ module.exports = {
       
       if (!content) {return res.notFound({ error: 'Content not found' });}
       
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.forbidden({ error: 'Unauthorized access: You do not own this content' });
       }
 
@@ -115,8 +117,10 @@ module.exports = {
 
       if (!content) {return res.notFound({ error: 'Content not found' });}
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.forbidden({ error: 'Unauthorized access: You do not own this content' });
       }
 
@@ -409,8 +413,10 @@ module.exports = {
       // Check visibility rules
       if (content.status === 'approved') {return res.ok(content);}
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.forbidden({ error: 'Unauthorized access: This content is not public' });
       }
 

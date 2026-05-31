@@ -65,8 +65,10 @@ module.exports = {
         return res.status(404).json({ message: 'Guide not found' });
       }
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = existing.createdBy === req.user.id || (req.user.companyId && existing.product && String(existing.product.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -103,8 +105,10 @@ module.exports = {
         return res.status(404).json({ message: 'Guide not found' });
       }
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = existing.createdBy === req.user.id || (req.user.companyId && existing.product && String(existing.product.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -134,8 +138,10 @@ module.exports = {
       const existing = await Guide.findOne({ id: req.params.id }).populate('product');
       if (!existing) {return res.status(404).json({ message: 'Guide not found' });}
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = existing.createdBy === req.user.id || (req.user.companyId && existing.product && String(existing.product.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -235,8 +241,10 @@ module.exports = {
       const existing = await Guide.findOne({ id: req.params.id }).populate('product');
       if (!existing) {return res.status(404).json({ message: 'Guide not found' });}
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = existing.createdBy === req.user.id || (req.user.companyId && existing.product && String(existing.product.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -263,8 +271,10 @@ module.exports = {
       const existing = await Guide.findOne({ id: req.params.id }).populate('product');
       if (!existing) {return res.status(404).json({ message: 'Guide not found' });}
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = existing.createdBy === req.user.id || (req.user.companyId && existing.product && String(existing.product.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -291,8 +301,10 @@ module.exports = {
       const existing = await Guide.findOne({ id: req.params.id }).populate('product');
       if (!existing) {return res.status(404).json({ message: 'Guide not found' });}
 
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isSuperAdmin = userRole === 'super_admin';
       const isOwner = existing.createdBy === req.user.id || (req.user.companyId && existing.product && String(existing.product.company) === String(req.user.companyId));
-      if (!req.user || !isOwner) {
+      if (!req.user || (!isSuperAdmin && !isOwner)) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
