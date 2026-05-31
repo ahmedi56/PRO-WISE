@@ -135,12 +135,53 @@ export const TechnicianPortalPage: React.FC = () => {
                                             <div style={{ fontSize: '0.8125rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                                                 Requested by {req.user?.name || 'Customer'} on {formatDate(req.createdAt)}
                                             </div>
-                                            {(req.contactPhone || req.contactEmail) && (
-                                                <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '0.875rem', border: '1px solid var(--color-border)', display: 'inline-flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
-                                                    <strong>Contact Channel:</strong>
-                                                    {req.contactPhone && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>📞 {req.contactPhone}</span>}
-                                                    {req.contactEmail && <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>✉️ {req.contactEmail}</span>}
-                                                    {req.contactMethod && <span style={{ opacity: 0.7, fontSize: '0.75rem' }}>({req.contactMethod})</span>}
+                                            {/* Contact Details & Quick Actions */}
+                                            {req.status !== 'pending' && (
+                                                <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                    <div style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', fontSize: '0.875rem', border: '1px solid var(--color-border)', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center' }}>
+                                                        <strong>Contact Details:</strong>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>👤 {req.user?.name || 'Customer'}</span>
+                                                        {(req.contactPhone || req.user?.phone) && (
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>📞 {req.contactPhone || req.user?.phone}</span>
+                                                        )}
+                                                        {(req.contactEmail || req.user?.email) && (
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>✉️ {req.contactEmail || req.user?.email}</span>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {/* Quick Contact Action Buttons */}
+                                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                                                        {(req.contactPhone || req.user?.phone) && (
+                                                            <>
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm" 
+                                                                    onClick={() => window.open(`tel:${req.contactPhone || req.user?.phone}`, '_self')}
+                                                                    icon={<IonIcon name="call-outline" />}
+                                                                >
+                                                                    Call
+                                                                </Button>
+                                                                <Button 
+                                                                    variant="outline" 
+                                                                    size="sm" 
+                                                                    onClick={() => window.open(`https://wa.me/${(req.contactPhone || req.user?.phone).replace(/[^0-9]/g, '')}`, '_blank')}
+                                                                    icon={<IonIcon name="logo-whatsapp" />}
+                                                                >
+                                                                    WhatsApp
+                                                                </Button>
+                                                            </>
+                                                        )}
+                                                        {(req.contactEmail || req.user?.email) && (
+                                                            <Button 
+                                                                variant="outline" 
+                                                                size="sm" 
+                                                                onClick={() => window.open(`mailto:${req.contactEmail || req.user?.email}`, '_self')}
+                                                                icon={<IonIcon name="mail-outline" />}
+                                                            >
+                                                                Email
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                             {req.technician && req.technician.id === user.id && (
