@@ -140,10 +140,10 @@ const App: React.FC = () => {
                         <Route path="products/new" element={<PermissionProtectedRoute permission="products.manage"><ProductFormPage /></PermissionProtectedRoute>} />
                         <Route path="products/:id/edit" element={<PermissionProtectedRoute permission="products.update"><ProductFormPage /></PermissionProtectedRoute>} />
                         
-                        <Route path="support" element={<PermissionProtectedRoute permission={['products.manage', 'guides.manage']}><ContentListPage /></PermissionProtectedRoute>} />
-                        <Route path="support/new" element={<PermissionProtectedRoute permission={['products.manage', 'guides.create']}><ContentFormPage /></PermissionProtectedRoute>} />
-                        <Route path="support/pending" element={<PermissionProtectedRoute permission={['products.manage', 'guides.manage']}><PendingContentPage /></PermissionProtectedRoute>} />
-                        <Route path="support/:id/edit" element={<PermissionProtectedRoute permission={['products.update', 'guides.update']}><ContentFormPage /></PermissionProtectedRoute>} />
+                        <Route path="support" element={<PermissionProtectedRoute permission="products.manage"><ContentListPage /></PermissionProtectedRoute>} />
+                        <Route path="support/new" element={<PermissionProtectedRoute permission="products.manage"><ContentFormPage /></PermissionProtectedRoute>} />
+                        <Route path="support/pending" element={<PermissionProtectedRoute permission="products.manage"><PendingContentPage /></PermissionProtectedRoute>} />
+                        <Route path="support/:id/edit" element={<PermissionProtectedRoute permission="products.update"><ContentFormPage /></PermissionProtectedRoute>} />
                         <Route path="repair-support" element={<Navigate to="/admin/support" replace />} />
                         
                         <Route path="feedback" element={<CompanyAdminRoute><FeedbackPage /></CompanyAdminRoute>} />

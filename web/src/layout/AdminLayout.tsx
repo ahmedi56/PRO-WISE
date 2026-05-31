@@ -13,10 +13,6 @@ export const AdminLayout: React.FC = () => {
     const dispatch = useDispatch();
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const role = user?.role || (user as any)?.Role;
-    const roleName = (typeof role === 'object' && role !== null ? (role as any).name : String(role || '')).toLowerCase();
-    const isCompanyAdmin = ['company_admin', 'administrator'].includes(roleName);
-
     const handleLogout = () => {
         dispatch(logout());
         navigate('/login');
@@ -31,16 +27,12 @@ export const AdminLayout: React.FC = () => {
         { to: "/admin/users", icon: "people-outline", label: "Users" },
         { to: "/admin/audit-logs", icon: "time-outline", label: "Audit Logs" },
     ] : [
-        ...(isCompanyAdmin ? [
-            { to: "/admin/dashboard", icon: "speedometer-outline", label: "Dashboard" },
-            { to: "/admin/products", icon: "cube-outline", label: "Products" }
-        ] : []),
+        { to: "/admin/dashboard", icon: "speedometer-outline", label: "Dashboard" },
+        { to: "/admin/products", icon: "cube-outline", label: "Products" },
         { to: "/admin/support", icon: "help-buoy-outline", label: "Support Content" },
-        ...(isCompanyAdmin ? [
-            { to: "/admin/feedback", icon: "chatbubbles-outline", label: "Feedback" },
-            { to: "/admin/qr-generate", icon: "qr-code-outline", label: "QR Codes" },
-            { to: "/admin/analytics", icon: "analytics-outline", label: "Analytics" }
-        ] : [])
+        { to: "/admin/feedback", icon: "chatbubbles-outline", label: "Feedback" },
+        { to: "/admin/qr-generate", icon: "qr-code-outline", label: "QR Codes" },
+        { to: "/admin/analytics", icon: "analytics-outline", label: "Analytics" },
     ];
 
     return (

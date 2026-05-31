@@ -19,17 +19,17 @@ module.exports = {
 
     try {
       // 1. Find the technician role ID
-      const techRole = await sails.models.role.findOne({ name: 'technician' });
+      const techRole = await Role.findOne({ name: 'technician' });
       if (!techRole) {
         sails.log('No technician role found. Nothing to migrate.');
         return;
       }
 
       // 2. Find the user role ID (to reset them to)
-      let userRole = await sails.models.role.findOne({ name: 'user' });
+      let userRole = await Role.findOne({ name: 'user' });
       if (!userRole) {
         // Fallback to client if user not found
-        userRole = await sails.models.role.findOne({ name: 'client' });
+        userRole = await Role.findOne({ name: 'client' });
       }
 
       if (!userRole) {
@@ -38,7 +38,7 @@ module.exports = {
       }
 
       // 3. Find all users with techRole
-      const techs = await sails.models.user.find({ role: techRole.id });
+      const techs = await User.find({ role: techRole.id });
       sails.log(`Found ${techs.length} users with technician role.`);
 
       let migratedCount = 0;
@@ -64,7 +64,7 @@ module.exports = {
           }
         };
 
-        await sails.models.user.updateOne({ id: tech.id }).set({
+        await User.updateOne({ id: tech.id }).set({
           isTechnician: true,
           technicianStatus: 'approved',
           technicianProfile: profile,
