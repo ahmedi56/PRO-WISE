@@ -292,8 +292,8 @@ module.exports = {
       if (excludedId) { sameCategoryCriteria.id = { '!=': excludedId }; }
       if (filterCompanyId) { sameCategoryCriteria.company = filterCompanyId; }
 
-      // Always filter by category for the primary query
-      const effectiveCategoryId = filterCategoryId || boostCategoryId;
+      // Always filter by category for the primary query (unless doing component discovery)
+      const effectiveCategoryId = filterCategoryId || (isComponentDiscovery ? null : boostCategoryId);
       if (effectiveCategoryId) {
         sameCategoryCriteria.category = effectiveCategoryId;
       }
@@ -456,6 +456,13 @@ module.exports = {
       // Resolve all scoring promises
       results = await Promise.all(results);
       results = results.filter(c => c.rawScore >= 5);
+
+      // Filter component discovery results to only keep those matching: same model or same brand
+      if (isComponentDiscovery) {
+        results = results.filter(r => r.matchedComponents && r.matchedComponents.some(mc => 
+          ['exact_signature', 'exact_type_model', 'exact_model', 'partial_model', 'type_family', 'type_brand', 'brand_model', 'family', 'brand'].includes(mc.matchType)
+        ));
+      }
 
       // ── Ranking & Enrichment ──
       const resultIds = results.map(r => r.id);

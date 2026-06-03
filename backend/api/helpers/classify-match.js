@@ -55,13 +55,20 @@ module.exports = {
       reasons.push('This is the exact component model');
     }
 
-    // 2. Check for Exact Component Match (if not already exact model)
-    if (matchType === 'weak_match' && matchedComponents.length > 0) {
-      const bestComp = matchedComponents.sort((a, b) => (b.score || 0) - (a.score || 0))[0];
-      if (bestComp.score >= 180 || bestComp.matchType === 'exact_signature') {
-        matchType = 'exact_component';
+    // 2. Check for Component-level Match
+    if (matchedComponents.length > 0) {
+      const bestComp = [...matchedComponents].sort((a, b) => (b.score || 0) - (a.score || 0))[0];
+      const isExactModel = ['exact_signature', 'exact_type_model', 'exact_model'].includes(bestComp.matchType);
+      const isSameBrandDifferentModel = ['type_family', 'partial_model', 'type_brand', 'brand_model', 'family', 'brand'].includes(bestComp.matchType);
+
+      if (isExactModel) {
+        matchType = 'exact_model';
         confidence = 'high';
-        reasons.push(`Exact technical match for ${bestComp.matched}`);
+        reasons.unshift(`Same model: ${bestComp.matched}`);
+      } else if (isSameBrandDifferentModel) {
+        matchType = 'same_brand';
+        confidence = 'medium';
+        reasons.unshift(`Same brand, different model: ${bestComp.matched}`);
       }
     }
 
@@ -69,14 +76,10 @@ module.exports = {
     const isSameBrand = (intent && intent.manufacturer && candBrand === clean(intent.manufacturer)) ||
                         (sourceProduct && sourceProduct.manufacturer && candBrand === clean(sourceProduct.manufacturer));
     
-    if (isSameBrand) {
-      if (matchType === 'weak_match') {
-        matchType = 'same_brand';
-        confidence = 'medium';
-        reasons.push(`Alternative ${candidate.manufacturer} model with a different chassis design`);
-      } else {
-        reasons.push(`Verified ${candidate.manufacturer} brand matching`);
-      }
+    if (isSameBrand && matchType === 'weak_match') {
+      matchType = 'same_brand';
+      confidence = 'medium';
+      reasons.push(`Alternative ${candidate.manufacturer} model with a different chassis design`);
     }
 
     // 4. Same Category Check
@@ -98,19 +101,14 @@ module.exports = {
     }
 
     // 5. Similar Features / Semantic
-    if (semanticSimilarity > 0.75) {
-      if (matchType === 'weak_match') {
-        matchType = 'similar_features';
-        confidence = 'medium';
-        reasons.push('Matches technical specifications but features a different hardware revision');
-      }
-    }
-
-    // 6. Component Overlap (if not exact)
-    if (matchedComponents.length > 0 && matchType !== 'exact_component' && matchType !== 'exact_model') {
+    if (semanticSimilarity > 0.75 && matchType === 'weak_match') {
       matchType = 'similar_features';
       confidence = 'medium';
+      reasons.push('Matches technical specifications but features a different hardware revision');
+    }
 
+    // 6. Component Overlap detailed reasons
+    if (matchedComponents.length > 0 && matchType !== 'exact_model') {
       const cpuMatch = matchedComponents.find(c => c.type === 'cpu' || c.type === 'processor');
       const gpuMatch = matchedComponents.find(c => c.type === 'gpu' || c.type === 'graphics_card' || c.type === 'video_card');
 
@@ -134,15 +132,6 @@ module.exports = {
           .slice(0, 2);
         const componentList = componentNames.length > 0 ? `: ${componentNames.join(', ')}` : '';
         reasons.push(`Shares ${otherComps.length} other internal components${componentList}`);
-      }
-
-      if (reasons.length === 0) {
-        const componentNames = matchedComponents
-          .map(c => c.matched || c.name)
-          .filter(Boolean)
-          .slice(0, 2);
-        const componentList = componentNames.length > 0 ? `: ${componentNames.join(', ')}` : '';
-        reasons.push(`Alternative model sharing ${matchedComponents.length} internal components${componentList}`);
       }
     }
 
