@@ -172,8 +172,88 @@ Tel/Fax: +216 73 37 15 71 / +216 73 36 44 11
 
 \end{titlepage}
 
+% ===================== SIGNATURE PAGE =====================
+\newpage
+\thispagestyle{empty}
+\AddToShipoutPictureBG*{
+\begin{tikzpicture}[remember picture,overlay]
+    \draw[line width=1.5pt, color=industrialblue]
+    ($(current page.north west)+(1cm,-1cm)$)
+    rectangle
+    ($(current page.south east)+(-1cm,1cm)$);
+\end{tikzpicture}
+}
+
+\begin{center}
+
+% ===================== HEADER =====================
+{\large \textbf{HIGHER INSTITUTE OF COMPUTER SCIENCE\\
+AND COMMUNICATION TECHNOLOGIES -- SOUSSE}}\\[0.2cm]
+
+\vspace{0.3cm}
+
+% ===================== LOGO =====================
+\includegraphics[width=3cm]{isitcom.PNG}\\[0.4cm]
+
+% ===================== MAIN TITLE =====================
+{\Large \textbf{Final Year Internship Report}}\\[0.3cm]
+
+{\small Submitted in partial fulfillment of the requirements for the degree of}\\
+{\small \textbf{Bachelor of Computer Science}}\\[0.15cm]
+
+{\small Specialization: Computer Science and Multimedia}\\[0.5cm]
+
+% ===================== PROJECT TITLE =====================
+\setlength{\fboxrule}{1pt}
+\setlength{\fboxsep}{8pt}
+
+\fcolorbox{black}{gray!10}{
+\parbox{0.7\textwidth}{
+\centering
+\textbf{PRO-WISE PLATFORM}\\[0.15cm]
+\small QR-Based Product Assistance System
+}
+}
+
+\vspace{0.5cm}
+
+% ===================== AUTHORS =====================
+{\small \textbf{Presented by:}}\\[0.2cm]
+Ahmed Abderrahmen Jatlaoui\\[0.6cm]
+
+% ===================== SIGNATURES =====================
+\vspace{1cm}
+
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{Academic Supervisor}\\[1.5cm]
+\rule{5cm}{0.4pt}\\[0.2cm]
+Mr. Abdelweheb Gueddess
+\end{minipage}
+\hfill
+\begin{minipage}{0.45\textwidth}
+\centering
+\textbf{Industrial Supervisor}\\[1.5cm]
+\rule{5cm}{0.4pt}\\[0.2cm]
+Mr. Raouf Bouneb
+\end{minipage}
+
+% ===================== PUSH FOOTER DOWN =====================
+\vfill
+
+% ===================== YEAR =====================
+{\small Academic Year: 2025/2026}\\[0.2cm]
+
+% ===================== FOOTER =====================
+\footnotesize
+Higher Institute of Computer Science and Communication Technologies, Sousse\\
+Tel/Fax: +216 73 37 15 71 / +216 73 36 44 11
+
+\end{center}
+
 % ===================== DEDICATION =====================
-\clearpage
+\cleardoublepage
+\pagenumbering{roman}
 \thispagestyle{empty}
 
 \begin{center}
@@ -205,7 +285,7 @@ And to my friends, for the long hours we put in studying side by side, for lendi
 
 \vspace{0.8cm}
 
-To wrap up, I am also very grateful to those who have given me words of encouragement or have provided some technical advice when I was in the need of it. Thank you all very much
+To wrap up, I am also very grateful to those who have given me words of encouragement or have provided some technical advice when I was in the need of it. Thank you all very much.
 
 \vfill
 
@@ -213,7 +293,7 @@ To wrap up, I am also very grateful to those who have given me words of encourag
 
 
 % ===================== ACKNOWLEDGMENT =====================
-\clearpage
+\cleardoublepage
 \thispagestyle{empty}
 
 \begin{center}
@@ -245,69 +325,22 @@ Last but not least, I am very grateful to my family and friends for their ongoin
 
 \vfill
 
-\begin{flushright}
-\Large \textbf{Ahmed Jatlaoui}
-\end{flushright}
-
-
-% ===================== ABSTRACT =====================
-\clearpage
-\thispagestyle{empty}
-
-\begin{center}
-{\LARGE \textbf{Abstract}}
-\end{center}
-
-\vspace{1cm}
-
-\linespread{1.3}\selectfont
-\large
-
-PRO-WISE came about because we hate paper manuals. They are the scourge of the earth; nobody keeps them. And let's say you happen to have the stupid thing in front of you. You'll flip through page after page trying to find the manual specific to your issue.
-
-\vspace{0.5cm}
-
-We thought why not print a QR code on the device so you can scan it with your smartphone and receive assistance.
-
-\vspace{0.5cm}
-
-That's PRO-WISE in a nutshell. Scan the QR code and you'll be given access to anything and everything related to that device: manuals, parts, troubleshooting. There's even a chat function where you can describe your problem and get an answer pulled directly from the device's own manual as opposed to a generic FAQ.
-
-\vspace{0.5cm}
-
-The site itself is built with React, and we used React Native for mobile development because we wanted to share logic between the two. For data, we're running MongoDB on top of a Sails.js backend. Besides, we also put together Google Gemini API to spice up our RAG chat and search functionalities. We are not hiding that this one gave us quite a bit of trouble to get it right. On top of that, we added a role system where brand admins can make changes to the catalog, while technicians are given assignments for issues that require fixing.
-
-\vspace{0.5cm}
-
-This case study will walk you through each sprint from our initial designs, to our iterations, to the final product. But before we get into that lets just say our goal was to prove that by providing someone with information specific to what they're working on you can drastically reduce repair time.
-
-\vspace{0.8cm}
-
-\textbf{Keywords:} QR Code, Product Assistance, Web Application, Mobile Application, Google Gemini API
-
-\vfill
-
-
-% ===================== TABLE OF CONTENTS =====================
-\clearpage
-\pagenumbering{roman}
-
-\tableofcontents
 \thispagestyle{plain}
 
 
 % ===================== LIST OF FIGURES =====================
-\clearpage
+\cleardoublepage
 \listoffigures
 \thispagestyle{plain}
 
 
 % ===================== LIST OF TABLES =====================
-\clearpage
+\cleardoublepage
 \listoftables
 \thispagestyle{plain}
 
-
+\cleardoublepage
+\pagenumbering{arabic}
 \chapter*{General Introduction}
 \addcontentsline{toc}{chapter}{General Introduction}
 
@@ -319,8 +352,8 @@ This document details the engineering lifecycle of PRO-WISE across seven chapter
 
 
 % ===================== START CHAPTERS =====================
-\clearpage
-\pagenumbering{arabic}
+\cleardoublepage
+
 
 \chapter{General Presentation of the Project}
 
@@ -334,7 +367,7 @@ We kick off by introducing our host company, Accelerant, and showing their key b
 
 We developed this project at \textbf{Accelerant}, a software engineering and consulting firm. The company specializes in building digital platforms, managing cloud infrastructure, and designing modern software architectures.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.3\textwidth]{accelerant.PNG}
 \caption{Accelerant logo}
@@ -372,7 +405,7 @@ Traditional help-desk systems make support frustrating for users and expensive f
 \paragraph{The iFixit Platform}
 iFixit~\cite{ifixit} is a well-known community wiki for fixing gadgets and machines. It includes an AI assistant named \textit{FixBot} that helps diagnose issues. However, since it is a public platform, it lacks the multi-tenant brand isolation and official approval workflows that companies require to control their support data.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{ifix.PNG}
 \caption{iFixit platform interface}
@@ -381,7 +414,7 @@ iFixit~\cite{ifixit} is a well-known community wiki for fixing gadgets and machi
 \paragraph{The GE Appliances Support Portal}
 GE Appliances~\cite{geappliances} offers digital manuals and technician bookings through its \textit{SmartHQ} ecosystem. While it includes AI chat tools for home diagnostics, the system is strictly proprietary. Other hardware manufacturers cannot use this ecosystem to support their own products.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{ge app.PNG}
 \caption{GE Appliances support platform}
@@ -422,32 +455,11 @@ To bridge this gap, we built \textbf{PRO-WISE} as a multi-tenant, cloud-based Sa
     \item \textbf{Connected Help Desk}: When self-service troubleshooting fails, users can file a ticket to send the issue directly to a technician.
 \end{itemize}
 
-\subsubsection{How PRO-WISE Works End-to-End}
-
-We designed PRO-WISE to link physical machines with smart digital services. Figure~\ref{fig:prowise_workflow} shows how users and administrators interact with the system components.
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{Archetecture.png}
-\caption{PRO-WISE platform operational workflow and high-level architecture}
-\label{fig:prowise_workflow}
-\end{figure}
-
-Here is the operational workflow step-by-step:
-\begin{enumerate}
-    \item \textbf{Scanning the QR Code}: A customer scans the product's QR sticker using their phone's camera web or mobile view.
-    \item \textbf{Extracting the ID}: The app pulls the unique identifier from the QR code and requests the backend server via HTTPS.
-    \item \textbf{Data Fetching}: The backend queries MongoDB for the product's details, PDF steps, and pre-computed text embeddings.
-    \item \textbf{Semantic Querying}: If the user asks a question, the backend vectors the text, runs a similarity lookup in MongoDB, and passes the context to Google Gemini to get an exact answer.
-    \item \textbf{Rendering the App}: The backend returns the guides, parts listing, and AI replies, showing a clean workspace to the user.
-    \item \textbf{Filing a Ticket}: If the problem persists, the user submits a help request, which sends a notification and routes the ticket to available technicians.
-\end{enumerate}
-
 \section{Adopted Software Development Methodology}
 
 \subsection{Methodological Rationale}
 
-Building a multi-tenant platform with a mobile client, web dashboard, and custom RAG search is complex. We chose an Agile approach because we needed to adapt quickly to requirement changes. Working f el cycles helped us build and test features piece by piece, getting feedback from our advisors early and often.
+Building a multi-tenant platform with a mobile client, web dashboard, and custom RAG search is complex. We chose an Agile approach because we needed to adapt quickly to requirement changes. Working in short cycles helped us build and test features piece by piece, getting feedback from our advisors early and often.
 
 \subsection{The Scrum Framework}
 
@@ -474,7 +486,7 @@ We used standard Scrum practices to organize our sprints:
 
 Figure~\ref{fig:scrum_workflow} shows how we adapted the Scrum lifecycle to build PRO-WISE.
         
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.92\textwidth]{scrum.jpg}
 \caption{Scrum process workflow applied to PRO-WISE development}
@@ -483,12 +495,14 @@ Figure~\ref{fig:scrum_workflow} shows how we adapted the Scrum lifecycle to buil
 
 The project schedule and sprint distribution are summarized in Figure~\ref{fig:gantt_planning}.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.85\textwidth]{gant (2).png}
 \caption{Gantt chart of the PRO-WISE project planning}
 \label{fig:gantt_planning}
 \end{figure}
+
+Figure~\ref{fig:gantt_planning} presents the overall planning of the PRO-WISE project. It shows the main development phases and how the tasks were distributed across the different sprints. This schedule helped us organize the work, follow the project progress, and ensure that each part was completed within the planned time.
 
 \section{UML Modeling Approach}
 
@@ -501,8 +515,12 @@ We used UML diagrams~\cite{umlguide} to plan out the system before writing code.
 The detailed specifications and specific designs for each diagram type are integrated within the corresponding requirements and sprint release chapters.
 
 \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 We started by presenting our host company, Accelerant, and examining the real-world repair challenges that PRO-WISE addresses. We compared our system against market competitors like iFixit and GE Appliances to show where we stand. Lastly, we introduced the Agile Scrum workflow and UML models we used to map the application logic. The next chapter goes into system architecture, requirements capture, and the product backlog.
+
+\end{spacing}
 
 \chapter{Architecture, Tools and Development Environment}
 
@@ -551,29 +569,18 @@ To ensure the app is fast, secure, and reliable under heavy load, we met the fol
 
 \subsection{Product Backlog}
 
-\renewcommand{\arraystretch}{1.3}
-\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{4pt}
 
-\begin{longtable}{clp{8cm}c}
-\caption{Product Backlog of PRO-WISE Platform} \label{tab:product_backlog} \\
+\begin{table}[H]
+\centering
+\small
+\caption{Product Backlog of PRO-WISE Platform}
+\label{tab:product_backlog}
+\begin{tabular}{p{0.7cm}p{3.1cm}p{8.1cm}p{1.4cm}}
 \toprule
 \textbf{ID} & \textbf{Feature / Epic} & \textbf{Description} & \textbf{Priority} \\
 \midrule
-\endfirsthead
-
-\toprule
-\textbf{ID} & \textbf{Feature / Epic} & \textbf{Description} & \textbf{Priority} \\
-\midrule
-\endhead
-
-\midrule
-\multicolumn{4}{r}{\textit{Continued on next page}} \\
-\bottomrule
-\endfoot
-
-\bottomrule
-\endlastfoot
-
 1 & Authentication System & User login and registration using JWT and Google OAuth 2.0 & High \\
 2 & Role Management & Role-based access control for different user types & High \\
 3 & User Approval & Validation of administrator and technician accounts & High \\
@@ -587,8 +594,20 @@ To ensure the app is fast, secure, and reliable under heavy load, we met the fol
 11 & Content Approval System & Validation workflow for content publication & High \\
 12 & Feedback System & User ratings and comments & Medium \\
 13 & Recommendation System & Similarity-based product and component recommendations using product metadata and embeddings & Medium \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\caption{Product Backlog of PRO-WISE Platform -- continued}
+\begin{tabular}{p{0.7cm}p{3.1cm}p{8.1cm}p{1.4cm}}
+\toprule
+\textbf{ID} & \textbf{Feature / Epic} & \textbf{Description} & \textbf{Priority} \\
+\midrule
 14 & Similar Products & Display of related products within product pages & Medium \\
-15 & Search System & Semantic search for products and content using Gemini embeddings and cosine similarity ranking & Medium \\
+15 & Search System & Semantic search for products and content using Gemini embeddings and semantic similarity ranking & Medium \\
 16 & Technician Module & Upgrade users to technicians with service profiles & High \\
 17 & Maintenance Services & Creation and follow-up of repair requests between users and technicians & Medium \\
 18 & Analytics System & Tracking of system usage and activity & Medium \\
@@ -601,7 +620,9 @@ To ensure the app is fast, secure, and reliable under heavy load, we met the fol
 25 & Testing and Bug Fixing & Ensuring system stability and reliability & High \\
 26 & Security Enhancements & Implementation of secure APIs and validation & High \\
 27 & Documentation (PFE) & Final report and technical documentation & High \\
-\end{longtable}
+\bottomrule
+\end{tabular}
+\end{table}
 
 \textbf{Priority Level Legend:}
 \begin{itemize}
@@ -621,65 +642,54 @@ The global use case diagram in Figure~\ref{fig:global_usecase} maps out how each
     \item \textbf{AI-System:} An automated background worker (powered by Gemini) that runs semantic searches, auto-approves quality drafts, and translates texts without manual admin oversight.
 \end{itemize}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{images/global_usecase.pdf}
 \caption{Global use case diagram of PRO-WISE}
 \label{fig:global_usecase}
 \end{figure}
 
+\clearpage
 \subsection{Global Class Diagram}
 
 The global class diagram in Figure~\ref{fig:global_class_diagram} shows the database schema for the PRO-WISE system. It highlights our MongoDB models (auth, catalog management, feedback, and maintenance tickets), detailing fields, data types, and relationships.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth,height=0.82\textheight,keepaspectratio]{images/global_class_diagram.pdf}
 \caption{Global class diagram of the system}
 \label{fig:global_class_diagram}
 \end{figure}
 
+
+
 \subsection{Application Architecture}
 
-We built the codebase inside a monorepo containing three applications. The backend REST API runs on Node.js~\cite{nodejs} and Sails.js~\cite{sailsjs}, communicating with MongoDB~\cite{mongodb} using the \texttt{sails-mongo} driver. The web dashboard is built with React~\cite{react}, Vite~\cite{vite}, and TypeScript~\cite{typescript}, using Redux Toolkit~\cite{redux} to manage app state. The mobile client utilizes React Native~\cite{reactnative} and Expo~\cite{expo}, handles QR code scanning using the camera API~\cite{qrcode}, and navigates screens via React Navigation.
+The PRO-WISE application architecture is presented through two complementary views: the MVC logical architecture, which explains how the internal code is organized, and the global architecture, which shows how users, clients, backend services, database storage, and AI services interact.
 
-\begin{figure}[!htbp]
+\subsubsection{MVC Architecture}
+
+PRO-WISE follows the MVC (Model-View-Controller) pattern~\cite{mvc}, as shown in Figure~\ref{fig:mvc_architecture}. The Model manages data and database operations, the View represents the user interface, and the Controller handles user requests and connects the View with the Model. This structure keeps the application organized and easier to maintain.
+
+\begin{figure}[H]
 \centering
-\resizebox{\textwidth}{!}{%
-\begin{tikzpicture}[
-    node distance=1.2cm and 1.5cm,
-    block/.style={rectangle, draw=industrialblue, fill=industrialblue!5, thick, rounded corners, minimum width=3.8cm, minimum height=1.2cm, align=center, text width=3.6cm, font=\small},
-    db/.style={rectangle, draw=slategray, fill=slategray!5, thick, rounded corners, minimum width=3.0cm, minimum height=1.2cm, align=center, text width=2.8cm, font=\small},
-    api/.style={rectangle, draw=orange!80, fill=orange!5, thick, rounded corners, minimum width=3.0cm, minimum height=1.2cm, align=center, text width=2.8cm, font=\small},
-    arrow/.style={-Latex, thick, slategray}
-]
-    % Frontend Layer
-    \node[block] (web) {\textbf{React Web Client} \\ (Vite, TS, Redux, Axios)};
-    \node[block, right=1.5cm of web] (mobile) {\textbf{React Native Client} \\ (Expo, Redux, Camera)};
-    
-    % Midpoint helper
-    \node[coordinate, below=0.6cm of $(web.south)!0.5!(mobile.south)$] (midpoint) {};
-    
-    % Backend Layer
-    \node[block, below=1.0cm of midpoint, draw=industrialblue, fill=industrialblue!15] (backend) {\textbf{Sails.js Backend API} \\ (Node.js REST API, Services)};
-    
-    % Data & AI Layer
-    \node[db, below left=1.0cm and 0.5cm of backend] (db) {\textbf{MongoDB Database} \\ (Data Persistence)};
-    \node[api, below right=1.0cm and 0.5cm of backend] (ai) {\textbf{Google Gemini API} \\ (LLM \& Vector Search)};
-    
-    % Connections
-    \draw[arrow] (web.south) -- ++(0,-0.4) -| (backend.north);
-    \draw[arrow] (mobile.south) -- ++(0,-0.4) -| (backend.north);
-    \draw[arrow] (backend.south) -| (db.north);
-    \draw[arrow] (backend.south) -| (ai.north);
-    
-    % Bidirectional arrow between DB and AI
-    \draw[arrow, <->, dashed] (db.east) -- (ai.west);
-\end{tikzpicture}%
-}
-\caption{Application architecture of the PRO-WISE platform}
+\includegraphics[width=0.75\textwidth]{mvc.png}
+\caption{MVC architecture of the PRO-WISE application}
+\label{fig:mvc_architecture}
 \end{figure}
 
+\subsubsection{Global Architecture}
+
+The global architecture in Figure~\ref{fig:global_architecture} shows how PRO-WISE works end-to-end. A user accesses the web or mobile client, scans a product QR code, and sends requests to the backend API. The backend processes these requests, applies the business logic, communicates with MongoDB for data storage, and uses the Google Gemini API for intelligent search and assistance. The frontend is deployed on Vercel, while the backend API is deployed on Render.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth,height=0.72\textheight,keepaspectratio]{Archetecture.png}
+\caption{Global architecture of the PRO-WISE platform}
+\label{fig:global_architecture}
+\end{figure}
+
+\clearpage
 \section{Tools and Development Environment}
 
 \subsection{Hardware Environment}
@@ -696,32 +706,40 @@ The development was carried out using a personal computer with the following spe
 \subsection{Technical Environment}
 
 We selected a modern software stack to keep the platform fast, secure, and easy to maintain.
+The tools used in this project cover both development and deployment. They helped us build the frontend, backend, mobile application, database, AI features, diagrams, and online hosting.
 
 \begin{table}[H]
 \centering
 \caption{Technologies and tools used in the PRO-WISE platform}
+\renewcommand{\arraystretch}{1.4}
 \renewcommand{\arraystretch}{1.4}
 \setlength{\tabcolsep}{8pt}
 \begin{tabular}{>{\centering\arraybackslash}m{2.2cm}p{4.2cm}p{7.2cm}}
 \toprule
 \textbf{Logo} & \textbf{Technology / Tool} & \textbf{Role in the project} \\
 \midrule
-\techlogo{react.png} & React & Development of the dynamic web client interface. \\
-\techlogo{expo (1).png} & React Native / Expo & Development and testing of the cross-platform mobile application. \\
-\techlogo{sails.png} & Sails.js & Backend REST API, controllers, services, and business logic. \\
-\techlogo{Mongodb.png} & MongoDB & NoSQL database used for persistent and flexible data storage. \\
+\techlogo{react.png} & React~\cite{react} & Development of the dynamic web client interface. \\
+\techlogo{expo (1).png} & React Native / Expo~\cite{reactnative,expo} & Development and testing of the cross-platform mobile application. \\
+\techlogo{sails.png} & Sails.js~\cite{sailsjs} & Backend REST API, controllers, services, and business logic. \\
+\techlogo{Mongodb.png} & MongoDB~\cite{mongodb} & NoSQL database used for persistent and flexible data storage. \\
 \techlogo{gemini.png} & Google Gemini API \cite{gemini} & AI services for semantic search, recommendations, and generated assistance. \\
 \techlogo{Git.png} & Git~\cite{git} & Version control and source code history management. \\
 \techlogo{vs.png} & Visual Studio Code~\cite{vscode} & Main source code editor used during implementation. \\
 \techlogo{overleaf.png} & Overleaf~\cite{overleaf} & LaTeX writing, formatting, and report preparation support. \\
 \techlogo{draw.png} & Draw.io~\cite{drawio} & Creation of UML diagrams and technical architecture illustrations. \\
+\techlogo{images/Vercel.png} & Vercel~\cite{vercel} & Hosting and deployment of the frontend web application. \\
+\techlogo{images/Render.png} & Render~\cite{render} & Hosting and deployment of the backend API services. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 In this chapter, we reviewed the project's technical specifications, structural design, UML models, and local setup. With these blueprints ready, we started building the core features. In the next chapter, we walk through Release 1, detailing the authentication system, password hashing, and user roles.
+
+\end{spacing}
 
 \chapter{Release 1 : Authentication and User Management}
 
@@ -772,14 +790,14 @@ To map out API endpoints and UI routing, we refined three core use cases. We dra
 
 When a visitor registers, they must select a role. Figure~\ref{fig:usecase_register} and Table~\ref{tab:register_desc} show how we handle registration. Clients gain access immediately, but technicians and administrators require manual approval.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{images/usecase1.drawio.png}
 \caption{Use case diagram: Register}
 \label{fig:usecase_register}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
  \centering
  \caption{Textual description of the Register use case}
  \label{tab:register_desc}
@@ -805,14 +823,14 @@ When a visitor registers, they must select a role. Figure~\ref{fig:usecase_regis
 
 We secure app access through the login sequence shown in Figure~\ref{fig:usecase_authenticate} and Table~\ref{tab:authenticate_desc}.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{images/usecase2.drawio.png}
 \caption{Use case diagram: Authenticate}
 \label{fig:usecase_authenticate}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Textual description of the Authenticate use case}
 \label{tab:authenticate_desc}
@@ -821,11 +839,11 @@ We secure app access through the login sequence shown in Figure~\ref{fig:usecase
 \textbf{Element} & \textbf{Description} \\
 \midrule
 Use Case & Authenticate \\
-Actor & Client / Technician / Company Admin / Super Admin \\
+Actor & Visitor with an existing account \\
 Precondition & Account document exists in MongoDB. \\
 Postcondition & Backend issues active JWT session cookie. \\
 Nominal Scenario &
-1. User enters email and password. \newline
+1. Visitor enters email and password. \newline
 2. Backend matches bcrypt hash against database record. \newline
 3. Server signs JWT token using HS256 algorithm. \newline
 4. App stores token in cookie and loads dashboard. \\
@@ -837,14 +855,14 @@ Nominal Scenario &
 
 Users manage their profiles to keep records accurate. Figure~\ref{fig:usecase_profile} and Table~\ref{tab:profile_desc} show the steps to edit and save personal data.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{images/usecase3.drawio.png}
 \caption{Use case diagram: Manage Profile}
 \label{fig:usecase_profile}
 \end{figure}
 
-\begin{table}[!htbp]
+\begin{table}[H]
 \centering
 \caption{Textual description of the Manage Profile use case}
 \label{tab:profile_desc}
@@ -903,100 +921,61 @@ Figure~\ref{fig:seq_profile} shows how the profile updates travel from the UI to
  \end{figure}
  
  \section{User Interface Overview}
- 
-Here, we showcase the actual web and mobile interfaces we implemented for this release.
+ Here, we showcase the actual web and mobile interfaces we implemented for this release.
  
  \subsection{Web Application Interfaces}
  
-We built the web portal to serve admins, clients, and technicians. We used modern web tools to ensure fast loading and responsive pages.
- 
  \subsubsection{Authentication Interfaces}
  
-We designed the registration and login pages to offer clean forms and quick Google social login.
- 
- \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.45\textwidth]{images/login.PNG}
- \hfill
- \includegraphics[width=0.45\textwidth]{images/Register.PNG}
- \caption{Web interfaces – Login and Registration pages}
- \label{fig:web_auth}
- \end{figure}
- 
- We designed these forms to be quick to fill out while keeping credentials secure.
- 
- \subsubsection{Dashboard and Navigation}
- 
-Once logged in, users see a custom dashboard. Figure~\ref{fig:web_dashboard} shows the main layout.
- 
- \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.9\textwidth]{images/dashbord.PNG}
- \caption{Web interface – User dashboard}
- \label{fig:web_dashboard}
- \end{figure}
- 
- This layout gives users a single starting point to reach any tool on the platform.
- 
- \subsubsection{Profile Management Interface}
- 
-We created the profile section in Figure~\ref{fig:web_profile} to allow technicians to upload their verification files.
- 
- \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.9\textwidth]{images/Profile managment.PNG}
- \caption{Web interface – Profile management}
- \label{fig:web_profile}
- \end{figure}
- 
- This screen makes it easy for technicians to keep their qualifications up to date.
- 
- \subsection{Mobile Application Interfaces}
- 
-We also built a cross-platform mobile app using React Native and Expo to help technicians update data while on-site.
- 
- \subsubsection{Authentication Screens}
- 
-Our mobile login and registration screens feature a simplified, single-column layout adapted to touch interactions.
- 
- \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.4\textwidth]{images/mobile_login.png}
- \hfill
- \includegraphics[width=0.4\textwidth]{images/mobile_register.png}
- \caption{Mobile interfaces – Login and Registration screens}
- \label{fig:mobile_auth}
- \end{figure}
- 
- \subsubsection{Home and Navigation}
- 
-The home screen acts as a dashboard shortcut panel for key features.
- 
- \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.4\textwidth]{images/mobile_home.png}
- \caption{Mobile interface – Home screen}
- \label{fig:mobile_home}
- \end{figure}
- 
- We designed the navigation to feel snappy and natural on mobile screens.
- 
- \subsubsection{Profile Interface}
- 
-Technicians use the profile view in Figure~\ref{fig:mobile_profile} to manage credentials on the go.
- 
- \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.4\textwidth]{images/mobile_profile.png}
- \caption{Mobile interface – Profile management}
- \label{fig:mobile_profile}
- \end{figure}
- 
- This allows users to update their details on the spot, keeping the backend data fresh.
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.45\textwidth]{images/login.PNG}
+  \hfill
+  \includegraphics[width=0.45\textwidth]{images/Register.PNG}
+  \caption{Web interfaces – Login and Registration pages}
+  \label{fig:web_auth}
+  \end{figure}
+  
+  \subsubsection{Dashboard and Navigation}
+  
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.45\textwidth]{images/dashbord.PNG}
+  \hfill
+  \includegraphics[width=0.45\textwidth]{images/Admin Dashbord.PNG}
+  \caption{Web interfaces – User and Admin dashboards}
+  \label{fig:web_dashboard}
+  \end{figure}
+  
+
+  \clearpage
+  \subsection{Mobile Application Interfaces}
+  
+  \subsubsection{Home Interface}
+  
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.22\textwidth]{images/homepage.jpeg}
+  \caption{Mobile interface – Home screen}
+  \label{fig:mobile_home}
+  \end{figure}
+  
+  \subsubsection{Profile Interface}
+  
+  \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.22\textwidth]{images/profil.jpeg}
+  \caption{Mobile interface – Profile management}
+  \label{fig:mobile_profile}
+  \end{figure}
  
  \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
  
 With this authentication and user management foundation complete, we can implement catalog browsing and content moderation.
+
+\end{spacing}
 
 \chapter{Release 2 : Product Management, Guides, and Content approval}
 
@@ -1189,33 +1168,42 @@ Figure~\ref{fig:seq_content_submission} maps how the app handles draft content s
 
 \subsection{Web Interfaces}
 
-We built the web administration dashboard to let companies organize products, write guides, and manage the moderation queue.
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.45\textwidth]{images/product.PNG}
+ \hfill
+ \includegraphics[width=0.45\textwidth]{images/product catalog.PNG}
+ \caption{Web interfaces – Product list and product catalog management}
+ \label{fig:web_product_list}
+ \end{figure}
 
 \begin{figure}[!htbp]
  \centering
- \includegraphics[width=0.45\textwidth]{images/product catalog.PNG}
+ \includegraphics[width=0.45\textwidth]{images/support content .PNG}
  \hfill
- \includegraphics[width=0.45\textwidth]{images/content editor.PNG}
- \caption{Web interfaces – Product catalog and guide editor}
- \label{fig:web_catalog}
- \end{figure}
- 
- \begin{figure}[!htbp]
- \centering
  \includegraphics[width=0.45\textwidth]{images/content form.PNG}
- \hfill
- \includegraphics[width=0.45\textwidth]{images/product pending.PNG}
- \caption{Web interfaces – Content submission queue and moderation review dashboard}
- \label{fig:web_approval}
+ \caption{Web interfaces – Support content view and content submission form}
+ \label{fig:web_catalog_moderation}
  \end{figure}
 
 \subsection{Mobile Application Interfaces}
 
-We drafted mobile sketches for the catalog. We prioritized the web portal to get the authoring engine running. Mobile guide consumption is detailed in Chapter 5.
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.22\textwidth]{images/categories or regestory.jpeg}
+\hfill
+\includegraphics[width=0.22\textwidth]{images/product details description.jpeg}
+\caption{Mobile interfaces – Category directory and product details description}
+\label{fig:mobile_catalog}
+\end{figure}
 
 \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 We implemented the core catalog, guide editor, and moderation workflow. These components set the foundation for the upcoming feedback and analytics features.
+
+\end{spacing}
 
 \chapter{Release 3 : User Interactions, Feedback \& Platform Monitoring}
 
@@ -1389,6 +1377,7 @@ Nominal Scenario &
 \end{tabular}
 \end{table}
 
+\clearpage
 \subsection{Class Diagram}
 
 The database models for notifications and feedback are mapped in Figure~\ref{fig:sprint3_class}. Feedback documents link clients directly to the products they rate, while notifications store target user IDs so alerts route correctly.
@@ -1400,6 +1389,7 @@ The database models for notifications and feedback are mapped in Figure~\ref{fig
 \label{fig:sprint3_class}
 \end{figure}
 
+\clearpage
 \subsection{Sequence Diagrams}
 
 \subsubsection{Sequence Diagram: Feedback Submission Flow}
@@ -1424,37 +1414,37 @@ Figure~\ref{fig:seq_notification} maps the real-time websocket and database oper
 \label{fig:seq_notification}
 \end{figure}
 
+\clearpage
 \section{User Interface Overview}
 
 \subsection{Web Interfaces}
 
-Figure~\ref{fig:web_reviews} displays the admin reviews dashboard and the service ticketing dashboard.
-
 \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.45\textwidth]{images/Admin Dashbord.PNG}
- \hfill
- \includegraphics[width=0.45\textwidth]{images/maintenence request form.PNG}
- \caption{Web interfaces – Admin dashboard and maintenance request form}
- \label{fig:web_reviews}
- \end{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{images/company admin feedback.PNG}
+  \hfill
+  \includegraphics[width=0.45\textwidth]{images/notifications.PNG}
+  \caption{Web interfaces – Company admin feedback page and notifications portal}
+  \label{fig:web_feedback_notifications}
+  \end{figure}
 
+\clearpage
 \subsection{Mobile Interfaces}
-
-Our mobile application screens allow users to submit service requests and view notifications on the go. Customers specify their model number and write issue descriptions, while the notification feed renders system updates, as shown in Figure~\ref{fig:mobile_interactions}.
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.4\textwidth]{images/mobile_service_request.png}
-\hfill
-\includegraphics[width=0.4\textwidth]{images/mobile_notifications.png}
-\caption{Mobile interfaces – Service request form and notification list}
+\includegraphics[width=0.22\textwidth]{images/feedback mobile.jpeg}
+\caption{Mobile interface – User feedback submission}
 \label{fig:mobile_interactions}
 \end{figure}
 
 \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 In Release 3, we finished the feedback, notification, and logging modules. The ratings and comment features let users validate help guides, while notifications keep them updated in real time. In the next chapter, we introduce our hybrid intelligence features, detailing how we built vector semantic search and context-aware recommendations.
+
+\end{spacing}
 
 \chapter{Release 4 : Hybrid Intelligence Layer, Semantic Search \& AI Moderation}
 
@@ -1599,7 +1589,7 @@ This method misses related matches when users search with synonyms or typos. For
 
 \subsection{Architecture With RAG (Semantic Search Approach)}
 
-The RAG architecture implements a two-stage pipeline. During the \textbf{indexing stage}, we split manuals into small text paragraphs, convert each chunk into a 768-dimensional vector via the Gemini Embedding API, and store these arrays in MongoDB. During the \textbf{query stage}, the backend embeds the user's question, performs a cosine similarity lookup against database vectors, and passes the best matches to Gemini to generate the final response. Figure~\ref{fig:arch_with_rag} shows this workflow.
+The RAG architecture implements a two-stage pipeline. During the \textbf{indexing stage}, we split manuals into small text paragraphs, convert each chunk into a 768-dimensional vector via the Gemini Embedding API, and store these arrays in MongoDB. During the \textbf{query stage}, the backend embeds the user's question, performs a semantic similarity lookup against database vectors, and passes the best matches to Gemini to generate the final response. Figure~\ref{fig:arch_with_rag} shows this workflow.
 
 \begin{figure}[!htbp]
 \centering
@@ -1622,7 +1612,7 @@ Our recommendation system uses a hybrid engine to suggest replacement components
 The pipeline executes the following stages:
 \begin{enumerate}
     \item \textbf{Initial Extraction}: The backend parses the support ticket or user query to find the component name and target hardware model.
-    \item \textbf{Stage 1: Semantic Filtering}: The system pulls inventory parts from MongoDB, gets their 768-D vectors from the Gemini API, and calculates cosine similarity against the query vector. We discard components scoring below a $0.70$ threshold.
+    \item \textbf{Stage 1: Semantic Filtering}: The system pulls inventory parts from MongoDB, gets their 768-D vectors from the Gemini API, and calculates semantic similarity against the query vector. We discard components scoring below a $0.70$ threshold.
     \item \textbf{Stage 2: Deterministic Validation}: The system checks the remaining components against three physical hardware constraints:
     \begin{itemize}
         \item \textbf{Brand Matching}: Ensures compatibility with the original manufacturer standards.
@@ -1667,8 +1657,6 @@ To test both approaches, we evaluated search performance using a dataset of 50 t
 \label{fig:perf_comparison}
 \end{figure}
 
-The evaluations show that vector search outperforms string matches across all indicators, particularly in synonym resolution (climbing from 12\% to 94\%) and typo tolerance (rising from 18\% to 90\%).
-
 \section{Technical Implementation}
 
 \subsection{Gemini API Integration and Deployment}
@@ -1694,7 +1682,7 @@ async function generateEmbedding(text) {
 
 \subsection{Document Indexing \& Vector Database Storage}
 
-We segment technical manuals into small text paragraphs (chunks) and compute their vector embedding using the Gemini API. The database stores these floating-point arrays alongside the raw text. To calculate similarity between the query vector and document chunks, the backend calculates the similarity score (cosine similarity) between their embedding vectors. 
+We segment technical manuals into small text paragraphs (chunks) and compute their vector embedding using the Gemini API. The database stores these floating-point arrays alongside the raw text. To calculate similarity between the query vector and document chunks, the backend calculates the similarity score (semantic similarity) between their embedding vectors. 
 
 Only the paragraphs scoring higher than a defined similarity threshold (such as $0.75$) are accepted as relevant context. This ensures that the generated prompt contains only contextually relevant troubleshooting steps before feeding them into the Gemini generation pipeline, effectively filtering out irrelevant sections.
 
@@ -1824,21 +1812,21 @@ Figure~\ref{fig:seq_sprint4} tracks the dynamic message sequence during parts re
 
 \subsection{User Interfaces Overview}
 
-Figure~\ref{fig:web_recs} and Figure~\ref{fig:mobile_recs} illustrate the search and recommendation layouts we implemented for web and mobile.
-
 \begin{figure}[!htbp]
- \centering
- \includegraphics[width=0.45\textwidth]{images/web_recommendations.png}
- \hfill
- \includegraphics[width=0.45\textwidth]{images/search engine.PNG}
- \caption{Web interfaces -- Semantic search and recommendations}
- \label{fig:web_recs}
- \end{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{images/search.PNG}
+  \hfill
+  \includegraphics[width=0.45\textwidth]{images/match component instruction.PNG}
+  \caption{Web interfaces -- Semantic search and component matching instructions}
+  \label{fig:web_recs}
+  \end{figure}
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.4\textwidth]{images/mobile_recommendations.png}
-\caption{Mobile interface – Recommendation system}
+\includegraphics[width=0.22\textwidth]{images/recomendation mobile.jpeg}
+\hfill
+\includegraphics[width=0.22\textwidth]{images/match component and instruction.jpeg}
+\caption{Mobile interfaces – Recommendation system and component matching views}
 \label{fig:mobile_recs}
 \end{figure}
 
@@ -1851,8 +1839,12 @@ Integrating external AI services introduced two main challenges:
 \end{itemize}
 
 \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 In Release 4, we finished implementing the hybrid intelligence layer. Combining Google Gemini embeddings with deterministic schema validations gave us a highly accurate recommendation engine and semantic search. In the next chapter, we look at Release 5, which completes the system lifecycle by adding support ticketing and coordinating repair technicians.
+
+\end{spacing}
 
 \chapter{Release 5 : Maintenance Requests \& Technician Workflow}
 
@@ -2024,35 +2016,44 @@ Figure~\ref{fig:seq_technician_app} details the sequence of API requests, docume
 
 \subsection{Web Interfaces}
 
-The administration dashboards in Figure~\ref{fig:web_matching} show where admins manage technician requests and how technicians view their service job pools.
-
 \begin{figure}[!htbp]
  \centering
- \includegraphics[width=0.48\textwidth]{images/technician request list.PNG}
- \hfill
- \includegraphics[width=0.48\textwidth]{images/technician Portal.PNG}
- \caption{Web interfaces -- Technician approval dashboard and technician portal request pool}
+ \includegraphics[width=0.8\textwidth]{images/technician Portal.PNG}
+ \caption{Web interface -- Technician portal request pool}
  \label{fig:web_matching}
  \end{figure}
 
+ \begin{figure}[!htbp]
+  \centering
+  \includegraphics[width=0.45\textwidth]{images/maintenence request form.PNG}
+  \hfill
+  \includegraphics[width=0.45\textwidth]{images/Become a technician .PNG}
+  \caption{Web interfaces -- Maintenance request form and Become a technician page}
+  \label{fig:web_requests}
+  \end{figure}
+
+\clearpage
 \subsection{Mobile Interfaces}
 
-The mobile interface shown in Figure~\ref{fig:mobile_matching} highlights the workspace where technicians browse pending tickets, claim jobs, and report progress.
-
-\begin{figure}[!htbp]
+\begin{figure}[H]
 \centering
-\includegraphics[width=0.5\textwidth]{images/mobile_matching.png}
-\caption{Mobile interface -- Maintenance requests and technician job dashboard}
+\includegraphics[width=0.38\textwidth]{images/technician Protal.jpeg}
+\caption{Mobile interface -- Technician portal job dashboard}
 \label{fig:mobile_matching}
 \end{figure}
 
 \section{Conclusion}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 In Release 5, we completed the ticketing and technician coordination modules. This bridges digital self-service troubleshooting with physical repair logistics. With the final release implemented, the next chapter details our project conclusions and future milestones.
 
+\end{spacing}
 
 \chapter*{General Conclusion and Perspectives}
 \addcontentsline{toc}{chapter}{General Conclusion and Perspectives}
+\begin{spacing}{1.15}
+\setlength{\parskip}{2pt}
 
 Our team developed PRO-WISE to streamline appliance technical support and coordinate on-site repairs. We structured the project as a monorepo that connects manufacturers, field technicians, and customers into one cohesive, context-aware environment.
 
@@ -2088,6 +2089,8 @@ We mapped out several technical and functional updates to expand the platform in
 \subsection*{Final Remarks}
 
 The PRO-WISE architecture proves that pairing AI semantic models with strict database and role constraints works exceptionally well for real-world support systems. This platform lays a solid foundation for next-generation hardware diagnostics and field service automation.
+
+\end{spacing}
 
 \renewcommand{\bibname}{Webography}
 \begin{thebibliography}{99}
@@ -2181,6 +2184,12 @@ Overleaf Project. (2026). \textit{Overleaf LaTeX Authoring Platform Guide}. Avai
 \bibitem{drawio}
 JGraph Ltd. (2026). \textit{Draw.io / diagrams.net Diagramming Software Reference}. Available online at: \url{https://www.drawio.com/doc} [Accessed May 2026].
 
+\bibitem{vercel}
+Vercel Inc. (2026). \textit{Vercel Documentation}. Available online at: \url{https://vercel.com/docs} [Accessed May 2026].
+
+\bibitem{render}
+Render Services, Inc. (2026). \textit{Render Documentation}. Available online at: \url{https://render.com/docs} [Accessed May 2026].
+
 \bibitem{nginx}
 Nginx, Inc. (2026). \textit{NGINX Core Web Server and Reverse Proxy Reference}. Available online at: \url{https://nginx.org/en/docs} [Accessed May 2026].
 
@@ -2190,6 +2199,52 @@ Google LLC. (2026). \textit{Google Lighthouse Auditing Tool Documentation}. Avai
 \bibitem{eslint}
 ESLint Foundation. (2026). \textit{ESLint Linter for JavaScript and TypeScript Reference Guide}. Available online at: \url{https://eslint.org/docs} [Accessed May 2026].
 
+\bibitem{mvc}
+MDN Web Docs. (2026). \textit{MVC (Model-View-Controller) Design Pattern}. Available online at: \url{https://developer.mozilla.org/en-US/docs/Glossary/MVC} [Accessed May 2026].
+
 \end{thebibliography}
+
+% ===================== ABSTRACT & RESUME =====================
+\newpage
+\thispagestyle{empty}
+
+\begin{center}
+{\Large \textbf{Abstract}}
+\end{center}
+
+\begingroup
+\linespread{1.1}\selectfont
+\small
+
+PRO-WISE came about because we hate paper manuals. They are the scourge of the earth; nobody keeps them. And let's say you happen to have the stupid thing in front of you. You'll flip through page after page trying to find the manual specific to your issue.
+Scan the QR code on the device with your smartphone and you'll be given access to anything and everything related to that device: manuals, parts, troubleshooting. There's even a chat function where you can describe your problem and get an answer pulled directly from the device's own manual as opposed to a generic FAQ.
+The site itself is built with React, and we used React Native for mobile development because we wanted to share logic between the two. For data, we're running MongoDB on top of a Sails.js backend. Besides, we also put together Google Gemini API to spice up our RAG chat and search functionalities. On top of that, we added a role system where brand admins can make changes to the catalog, while technicians are given assignments for issues that require fixing.
+Our goal was to prove that by providing someone with information specific to what they're working on you can drastically reduce repair time.
+
+\vspace{0.15cm}
+\textbf{Keywords:} QR Code, Product Assistance, Web Application, Mobile Application, Google Gemini API
+\endgroup
+
+\vspace{0.3cm}
+\hrule
+\vspace{0.3cm}
+
+\begin{center}
+{\Large \textbf{Résumé}}
+\end{center}
+
+\begingroup
+\linespread{1.1}\selectfont
+\small
+
+PRO-WISE est né de notre aversion pour les manuels papier. Ils sont encombrants et personne ne les conserve. Et même si vous en avez un sous les yeux, vous devez feuilleter page après page pour trouver l'instruction spécifique à votre problème.
+Il suffit d'imprimer un code QR sur l'appareil pour que vous puissiez le scanner avec votre smartphone et recevoir une assistance immédiate.
+En scannant le code QR, vous accédez à tout ce qui concerne cet appareil : manuels, pièces de rechange, dépannage. Il y a même une fonction de chat où vous pouvez décrire votre problème et obtenir une réponse tirée directement du manuel de l'appareil, plutôt qu'une FAQ générique.
+Le site lui-même est construit avec React, et nous avons utilisé React Native pour le développement mobile afin de partager la logique entre les deux. Pour les données, nous utilisons MongoDB avec un backend Sails.js. De plus, nous avons intégré l'API Google Gemini pour enrichir notre chat RAG et nos fonctionnalités de recherche. En outre, nous avons ajouté un système de rôles où les administrateurs de marque gèrent le catalogue, tandis que les techniciens reçoivent les demandes d'intervention à résoudre.
+Notre objectif est de prouver qu'en fournissant à l'utilisateur des informations spécifiques à l'équipement sur lequel il travaille, nous pouvons réduire considérablement le temps de réparation.
+
+\vspace{0.15cm}
+\textbf{Mots-clés :} Code QR, Assistance Produit, Application Web, Application Mobile, API Google Gemini
+\endgroup
 
 \end{document}
