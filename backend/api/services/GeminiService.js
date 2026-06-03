@@ -8,23 +8,39 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 // Configuration from environment
-const API_KEY = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || 'AQ.Ab8RN6I_PxnjpEQYBLFw_GWpsRXmbL47ME4f4Ao5QdiBdHB4PQ';
+const rawKeys = process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
+let API_KEYS = rawKeys ? rawKeys.split(',').map(k => k.trim()).filter(Boolean) : [];
 const DEFAULT_GEN_MODEL = 'gemini-2.5-flash';
 const EMBEDDING_MODEL = 'gemini-embedding-001';
 
-// Initialize the API only once (Singleton pattern)
-let genAI = null;
-if (API_KEY) {
-  genAI = new GoogleGenerativeAI(API_KEY);
-}
-
 module.exports = {
+
+  /**
+   * Internal helper to rotate failed keys to the end of the queue.
+   */
+  _rotateKey: function() {
+    if (API_KEYS.length > 1) {
+      const failedKey = API_KEYS.shift();
+      API_KEYS.push(failedKey);
+      sails.log.info(`GeminiService: Rotating key. New active key: ${API_KEYS[0].substring(0, 8)}...`);
+    }
+  },
+
+  /**
+   * Get the current active genAI instance.
+   */
+  _getGenAI: function() {
+    if (API_KEYS.length === 0) {
+      throw new Error('Gemini API key is not configured.');
+    }
+    return new GoogleGenerativeAI(API_KEYS[0]);
+  },
 
   /**
    * Check if the service is properly configured.
    */
   isAvailable: function() {
-    return !!(API_KEY && genAI);
+    return API_KEYS.length > 0;
   },
 
   /**
@@ -38,6 +54,11 @@ module.exports = {
       } catch (err) {
         lastError = err;
         const msg = (err.message || '').toLowerCase();
+        const isQuotaOrAuth = msg.includes('429') || msg.includes('api_key_invalid') || msg.includes('quota') || msg.includes('not found');
+        if (isQuotaOrAuth) {
+          this._rotateKey();
+        }
+
         const isRetryable = msg.includes('429') || 
                           msg.includes('503') || 
                           msg.includes('too many requests') ||
@@ -152,7 +173,7 @@ module.exports = {
 
     try {
       return await this._withRetry(async () => {
-        const model = genAI.getGenerativeModel({ 
+        const model = this._getGenAI().getGenerativeModel({ 
           model: modelName,
           generationConfig 
         });
@@ -222,7 +243,7 @@ module.exports = {
     }
 
     return this._withRetry(async () => {
-      const model = genAI.getGenerativeModel({ model: EMBEDDING_MODEL });
+      const model = this._getGenAI().getGenerativeModel({ model: EMBEDDING_MODEL });
       const result = await model.embedContent({
         content: { parts: [{ text }] },
         taskType: taskType,
