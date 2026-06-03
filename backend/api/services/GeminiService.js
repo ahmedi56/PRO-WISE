@@ -143,16 +143,16 @@ module.exports = {
    * @returns {Promise<Object>} { success: true, text, usage, metadata }
    */
   generateText: async function(prompt, options = {}) {
-    const grokKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY;
+    const groqAvailable = sails.services.grokservice && sails.services.grokservice.isAvailable();
 
     if (!this.isAvailable()) {
-      if (grokKey) {
-        sails.log.info('GeminiService: Gemini API key is not configured, falling back to Grok...');
-        return this.generateWithGrok(prompt, options);
+      if (groqAvailable) {
+        sails.log.info('GeminiService: Gemini API key is not configured, falling back to Groq...');
+        return sails.services.grokservice.generateText(prompt, options);
       }
       return { 
         success: false, 
-        message: 'No AI API keys are configured (Gemini/Grok).', 
+        message: 'No AI API keys are configured (Gemini/Groq).', 
         code: 'MISSING_API_KEY' 
       };
     }
@@ -219,9 +219,9 @@ module.exports = {
       });
     } catch (err) {
       sails.log.error(`GeminiService (${modelName}) error:`, err.message);
-      if (grokKey) {
-        sails.log.info('GeminiService: Gemini generation failed, falling back to Grok...');
-        return this.generateWithGrok(prompt, options);
+      if (groqAvailable) {
+        sails.log.info('GeminiService: Gemini generation failed, falling back to Groq...');
+        return sails.services.grokservice.generateText(prompt, options);
       }
       return {
         success: false,
