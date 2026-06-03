@@ -248,7 +248,12 @@ module.exports = {
 
       if (!result.success) {
         sails.log.warn('AI Chat Assistant failed (falling back locally):', result.message || result.error);
-        const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable (Reason: ${result.message || 'Unknown error'}). Based on your query "${message}", please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
+        const hasGeminiKeys = !!(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY);
+        const isGeminiAvailable = sails.services.geminiservice.isAvailable();
+        const isGroqAvailable = !!(sails.services.grokservice && sails.services.grokservice.isAvailable());
+        const diag = `[GeminiKey: ${hasGeminiKeys}, GeminiAvail: ${isGeminiAvailable}, GroqAvail: ${isGroqAvailable}]`;
+
+        const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable (Reason: ${result.message || 'Unknown error'} ${diag}). Based on your query "${message}", please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
         return res.json({
           success: true,
           data: { response: fallbackResponse },
