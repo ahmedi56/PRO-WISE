@@ -248,7 +248,7 @@ module.exports = {
 
       if (!result.success) {
         sails.log.warn('AI Chat Assistant failed (falling back locally):', result.message || result.error);
-        const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable. Based on your query "${message}", please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
+        const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable (Reason: ${result.message || 'Unknown error'}). Based on your query "${message}", please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
         return res.json({
           success: true,
           data: { response: fallbackResponse },
