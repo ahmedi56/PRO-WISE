@@ -170,6 +170,63 @@ module.exports = {
           if (product.components) {
             contextStr += `Technical Specs: ${product.components.map(c => `${c.type}: ${c.name}`).slice(0, 10).join(', ')}.\n`;
           }
+
+          // RAG: Fetch all guide steps for this product
+          try {
+            const guides = await Guide.find({ product: productId, status: 'published' });
+            if (guides && guides.length > 0) {
+              const guideIds = guides.map(g => g.id);
+              const steps = await Step.find({ guide: { in: guideIds } }).populate('guide');
+              
+              if (steps && steps.length > 0) {
+                // Get embedding of user query
+                let queryEmbedding = null;
+                if (sails.services.geminiservice && sails.services.geminiservice.isAvailable()) {
+                  const result = await sails.services.geminiservice.getEmbedding(message, 'RETRIEVAL_QUERY');
+                  if (result && result.success && Array.isArray(result.embedding)) {
+                    queryEmbedding = result.embedding;
+                  }
+                }
+
+                // In-memory similarity calculation
+                const cosineSimilarity = (vecA, vecB) => {
+                  if (!vecA || !vecB || vecA.length !== vecB.length) {return 0;}
+                  let dot = 0; let normA = 0; let normB = 0;
+                  for (let i = 0; i < vecA.length; i++) {
+                    dot += vecA[i] * vecB[i];
+                    normA += vecA[i] * vecA[i];
+                    normB += vecB[i] * vecB[i];
+                  }
+                  const denom = Math.sqrt(normA) * Math.sqrt(normB);
+                  return denom === 0 ? 0 : dot / denom;
+                };
+
+                if (queryEmbedding) {
+                  const scoredSteps = steps.map(s => {
+                    const score = s.embedding ? cosineSimilarity(queryEmbedding, s.embedding) : 0;
+                    return { ...s, score };
+                  }).sort((a, b) => b.score - a.score);
+
+                  // Take top-5 steps with similarity > 0.60
+                  const relevantSteps = scoredSteps.filter(s => s.score > 0.60).slice(0, 5);
+                  if (relevantSteps.length > 0) {
+                    contextStr += '\nRelevant Troubleshooting & Guide Steps:\n';
+                    relevantSteps.forEach(s => {
+                      contextStr += `- [Guide: ${s.guide.title}] Step ${s.stepNumber}: ${s.title}. Description: ${s.description || 'N/A'}\n`;
+                    });
+                  }
+                } else {
+                  // Fallback: append steps directly if embedding is unavailable
+                  contextStr += '\nProduct Guide Steps:\n';
+                  steps.slice(0, 5).forEach(s => {
+                    contextStr += `- [Guide: ${s.guide.title}] Step ${s.stepNumber}: ${s.title}. Description: ${s.description || 'N/A'}\n`;
+                  });
+                }
+              }
+            }
+          } catch (ragErr) {
+            sails.log.warn('AIController: Failed to fetch/rank guide steps for RAG context.', ragErr.message);
+          }
         }
       }
 

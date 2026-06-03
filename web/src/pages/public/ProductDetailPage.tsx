@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { geminiService } from '../../services/geminiService';
@@ -171,6 +171,55 @@ export const ProductDetailPage: React.FC = () => {
     const { user, token } = useSelector((state: RootState) => state.auth);
 
     const canManage = useMemo(() => canManageProduct(user, product), [user, product]);
+
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [chatInput, setChatInput] = useState('');
+    const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([]);
+    const [chatLoading, setChatLoading] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+    // Initialize custom message once product is loaded
+    useEffect(() => {
+        if (product) {
+            setChatMessages([
+                { sender: 'ai', text: `Hi! I am your PRO-WISE technical assistant. Ask me anything about ${formatProductName(product.name, product.manufacturer)} or its repair guides!` }
+            ]);
+        }
+    }, [product]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        if (isChatOpen) {
+            scrollToBottom();
+        }
+    }, [chatMessages, isChatOpen]);
+
+    const handleSendChatMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const msg = chatInput.trim();
+        if (!msg) return;
+
+        setChatInput('');
+        setChatMessages(prev => [...prev, { sender: 'user', text: msg }]);
+        setChatLoading(true);
+
+        try {
+            const response = await axios.post(`${API_URL}/ai/chat`, {
+                message: msg,
+                productId: id
+            });
+            const reply = response.data?.data?.response || response.data?.data?.text || "I'm having trouble answering right now. Please try again.";
+            setChatMessages(prev => [...prev, { sender: 'ai', text: reply }]);
+        } catch (error) {
+            console.error('Chat AI error:', error);
+            setChatMessages(prev => [...prev, { sender: 'ai', text: "Offline mode. Please check your connection or try again later." }]);
+        } finally {
+            setChatLoading(false);
+        }
+    };
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -800,13 +849,197 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
             )}
 
+            {/* FLOATING AI CHAT WIDGET */}
+            <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
+                {isChatOpen && (
+                    <div className="fade-in" style={{
+                        width: '380px',
+                        height: '520px',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: '24px',
+                        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05)',
+                        border: '1px solid rgba(255, 255, 255, 0.4)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
+                        fontFamily: 'inherit'
+                    }}>
+                        {/* Chat Header */}
+                        <div style={{
+                            padding: '1.25rem 1.5rem',
+                            background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))',
+                            color: '#fff',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(255, 255, 255, 0.2)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}>
+                                    <IonIcon name="sparkles" style={{ fontSize: '1.2rem', color: '#fff' }} />
+                                </div>
+                                <div>
+                                    <h4 style={{ margin: 0, fontWeight: 700, fontSize: '1rem', letterSpacing: '0.02em' }}>PRO-WISE Assistant</h4>
+                                    <span style={{ fontSize: '0.75rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
+                                        RAG Search Enabled
+                                    </span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setIsChatOpen(false)}
+                                style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px', opacity: 0.8 }}
+                            >
+                                <IonIcon name="close" style={{ fontSize: '1.5rem' }} />
+                            </button>
+                        </div>
+
+                        {/* Chat Messages */}
+                        <div style={{
+                            flex: 1,
+                            padding: '1.5rem',
+                            overflowY: 'auto',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem',
+                            background: '#f8fafc'
+                        }}>
+                            {chatMessages.map((msg, index) => (
+                                <div 
+                                    key={index}
+                                    style={{
+                                        alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+                                        maxWidth: '80%',
+                                        background: msg.sender === 'user' ? 'var(--color-primary)' : '#fff',
+                                        color: msg.sender === 'user' ? '#fff' : 'var(--color-text)',
+                                        padding: '0.85rem 1.15rem',
+                                        borderRadius: msg.sender === 'user' ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
+                                        boxShadow: msg.sender === 'user' ? '0 4px 10px rgba(99, 102, 241, 0.1)' : '0 2px 6px rgba(0, 0, 0, 0.03)',
+                                        border: msg.sender === 'user' ? 'none' : '1px solid #e2e8f0',
+                                        fontSize: '0.95rem',
+                                        lineHeight: 1.5,
+                                        whiteSpace: 'pre-wrap'
+                                    }}
+                                >
+                                    {msg.text}
+                                </div>
+                            ))}
+                            {chatLoading && (
+                                <div style={{
+                                    alignSelf: 'flex-start',
+                                    background: '#fff',
+                                    padding: '0.85rem 1.15rem',
+                                    borderRadius: '18px 18px 18px 2px',
+                                    border: '1px solid #e2e8f0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.35rem',
+                                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)'
+                                }}>
+                                    <div className="chat-dot" style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both' }}></div>
+                                    <div className="chat-dot" style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.2s' }}></div>
+                                    <div className="chat-dot" style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.4s' }}></div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Chat Input Form */}
+                        <form 
+                            onSubmit={handleSendChatMessage}
+                            style={{
+                                padding: '1rem 1.25rem',
+                                background: '#fff',
+                                borderTop: '1px solid #e2e8f0',
+                                display: 'flex',
+                                gap: '0.75rem',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <input 
+                                value={chatInput}
+                                onChange={e => setChatInput(e.target.value)}
+                                placeholder="Ask a troubleshooting question..."
+                                style={{
+                                    flex: 1,
+                                    padding: '0.75rem 1rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid #cbd5e1',
+                                    outline: 'none',
+                                    fontSize: '0.95rem',
+                                    transition: 'border-color 0.2s'
+                                }}
+                                onFocus={e => e.target.style.borderColor = 'var(--color-primary)'}
+                                onBlur={e => e.target.style.borderColor = '#cbd5e1'}
+                            />
+                            <button 
+                                type="submit"
+                                style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '12px',
+                                    background: 'var(--color-primary)',
+                                    color: '#fff',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
+                                    transition: 'transform 0.2s, background-color 0.2s'
+                                }}
+                                onMouseOver={e => e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'}
+                                onMouseOut={e => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
+                            >
+                                <IonIcon name="send" style={{ fontSize: '1.1rem' }} />
+                            </button>
+                        </form>
+                    </div>
+                )}
+
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))',
+                        color: '#fff',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 8px 24px rgba(99, 102, 241, 0.35)',
+                        transition: 'transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                    onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                >
+                    <IonIcon name={isChatOpen ? 'close' : 'sparkles'} style={{ fontSize: '1.6rem' }} />
+                </button>
+            </div>
+
             <style>{`
                 .fade-in {
-                    animation: fadeIn 0.3s ease-in-out;
+                    animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(5px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                @keyframes bounce {
+                    0%, 80%, 100% { transform: scale(0); }
+                    40% { transform: scale(1.0); }
                 }
             `}</style>
         </div>
