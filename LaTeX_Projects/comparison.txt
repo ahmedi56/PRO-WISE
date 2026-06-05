@@ -1,0 +1,105 @@
+Backup Total Pages: 107 | Compiled Total Pages: 108
+
+Index | Section / Title                                                             | Backup Page  | Compiled Page   | Diff 
+----------------------------------------------------------------------------------------------------------------------
+0     | Level 1: General Introduction                                               | 15           | 15              | 0    
+1     | Level 1: General Presentation of the Project                                | 16           | 16              | 0    
+2     | Level 2: Introduction                                                       | 16           | 16              | 0    
+3     | Level 2: Host Organization                                                  | 16           | 16              | 0    
+4     | Level 3: Company Presentation                                               | 16           | 16              | 0    
+5     | Level 3: Core Activities                                                    | 16           | 16              | 0    
+6     | Level 2: Preliminary Study                                                  | 17           | 17              | 0    
+7     | Level 3: Industrial Context                                                 | 17           | 17              | 0    
+8     | Level 3: Problem Statement                                                  | 17           | 17              | 0    
+9     | Level 3: Analysis of Existing Solutions                                     | 18           | 18              | 0    
+10    | Level 2: Adopted Software Development Methodology                           | 22           | 22              | 0    
+11    | Level 3: Methodological Rationale                                           | 22           | 22              | 0    
+12    | Level 3: The Scrum Framework                                                | 22           | 22              | 0    
+13    | Level 3: Project Roles and Mapping                                          | 22           | 22              | 0    
+14    | Level 3: Scrum Events and Artifacts                                         | 23           | 23              | 0    
+15    | Level 2: UML Modeling Approach                                              | 24           | 25              | 1    
+16    | Level 2: Conclusion                                                         | 25           | 25              | 0    
+17    | Level 1: Architecture, Tools and Development Environment                    | 26           | 26              | 0    
+18    | Level 2: Introduction                                                       | 26           | 26              | 0    
+19    | Level 2: Requirements Capture                                               | 26           | 26              | 0    
+20    | Level 3: Actors Identification                                              | 26           | 26              | 0    
+21    | Level 3: Functional Requirements                                            | 27           | 27              | 0    
+22    | Level 3: Non-Functional Requirements                                        | 27           | 27              | 0    
+23    | Level 3: Product Backlog                                                    | 28           | 28              | 0    
+24    | Level 2: Diagrams                                                           | 31           | 31              | 0    
+25    | Level 3: Global Use Case Diagram                                            | 31           | 31              | 0    
+26    | Level 3: Global Class Diagram                                               | 33           | 34              | 1    
+27    | Level 3: Application Architecture                                           | 34           | 34              | 0    
+28    | Level 2: Tools and Development Environment                                  | 36           | 36              | 0    
+29    | Level 3: Hardware Environment                                               | 36           | 36              | 0    
+30    | Level 3: Technical Environment                                              | 36           | 36              | 0    
+31    | Level 2: Conclusion                                                         | 37           | 37              | 0    
+32    | Level 1: Release 1 : Authentication and User Management                     | 38           | 38              | 0    
+33    | Level 2: Introduction                                                       | 38           | 38              | 0    
+34    | Level 2: Sprint Backlog – Authentication and User Management                | 38           | 38              | 0    
+35    | Level 2: Refinement of Use Cases                                            | 39           | 39              | 0    
+36    | Level 3: Refinement of Sprint 1 Use Cases                                   | 39           | 39              | 0    
+37    | Level 3: Class Diagram                                                      | 43           | 43              | 0    
+38    | Level 3: Sequence Diagrams                                                  | 44           | 43              | -1   
+39    | Level 2: User Interface Overview                                            | 46           | 45              | -1   
+40    | Level 3: Web Application Interfaces                                         | 46           | 46              | 0    
+41    | Level 3: Mobile Application Interfaces                                      | 49           | 48              | -1   
+42    | Level 2: Conclusion                                                         | 49           | 48              | -1   
+43    | Level 1: Release 2 : Product Management, Guides, and Content approval       | 50           | 50              | 0    
+44    | Level 2: Introduction                                                       | 50           | 50              | 0    
+45    | Level 2: Sprint Backlog – Content and Catalog Management                    | 50           | 50              | 0    
+46    | Level 2: Refinement of Use Cases                                            | 51           | 51              | 0    
+47    | Level 3: Refinement of Sprint 2 Use Cases                                   | 51           | 51              | 0    
+48    | Level 3: Class Diagram                                                      | 54           | 54              | 0    
+49    | Level 3: Sequence Diagrams                                                  | 56           | 56              | 0    
+50    | Level 2: User Interfaces                                                    | 57           | 57              | Title Mismatch: Level 2: User Interfaces vs Level 2: User Interface Overview
+51    | Level 3: Web Interfaces                                                     | 58           | 58              | 0    
+52    | Level 3: Mobile Application Interfaces                                      | 58           | 58              | 0    
+53    | Level 2: Conclusion                                                         | 59           | 59              | 0    
+54    | Level 1: Release 3 : User Interactions, Feedback & Platform Monitoring      | 60           | 60              | 0    
+55    | Level 2: Introduction                                                       | 60           | 60              | 0    
+56    | Level 2: Sprint Backlog – User Interactions and Monitoring                  | 60           | 60              | 0    
+57    | Level 2: Refinement of Use Cases                                            | 61           | 61              | 0    
+58    | Level 3: Refinement of Sprint 3 Use Cases                                   | 61           | 61              | 0    
+59    | Level 3: Class Diagram                                                      | 65           | 66              | 1    
+60    | Level 3: Sequence Diagrams                                                  | 66           | 67              | 1    
+61    | Level 2: User Interface Overview                                            | 68           | 69              | 1    
+62    | Level 3: Web Interfaces                                                     | 68           | 69              | 1    
+63    | Level 3: Mobile Interfaces                                                  | 69           | 70              | 1    
+64    | Level 2: Conclusion                                                         | 69           | 70              | 1    
+65    | Level 1: Release 4 : Hybrid Intelligence Layer, Semantic Search & AI Moderation | 70           | 71              | 1    
+66    | Level 2: Introduction                                                       | 70           | 71              | 1    
+67    | Level 2: Sprint Backlog – Intelligent Services                              | 70           | 71              | 1    
+68    | Level 2: Comparative Study of AI Models                                     | 71           | 72              | 1    
+69    | Level 3: Selection Criteria                                                 | 71           | 72              | 1    
+70    | Level 3: Evaluated Models                                                   | 71           | 72              | 1    
+71    | Level 3: Final Choice and Performance Calculations                          | 72           | 73              | 1    
+72    | Level 2: RAG Architecture and System Integration                            | 74           | 75              | 1    
+73    | Level 3: Semantic Search & RAG-Based Troubleshooting                        | 74           | 75              | 1    
+74    | Level 3: Architecture Without RAG (Keyword-Based Approach)                  | 75           | 76              | 1    
+75    | Level 3: Architecture With RAG (Semantic Search Approach)                   | 76           | 76              | 0    
+76    | Level 3: Hybrid Compatibility & Parts Recommendation                        | 77           | 76              | -1   
+77    | Level 3: Comparison of Approaches: Without RAG vs With RAG                  | 79           | 80              | 1    
+78    | Level 3: Performance Evaluation: Keyword Search vs RAG                      | 79           | 80              | 1    
+79    | Level 2: Technical Implementation                                           | 80           | 80              | 0    
+80    | Level 3: Gemini API Integration and Deployment                              | 80           | 80              | 0    
+81    | Level 3: Backend API Services Development                                   | 80           | 82              | 2    
+82    | Level 3: Document Indexing & Vector Database Storage                        | 81           | 82              | 1    
+83    | Level 3: Refinement of Use Cases                                            | 81           | 83              | 2    
+84    | Level 3: Sequence Diagrams                                                  | 85           | 85              | 0    
+85    | Level 3: User Interfaces Overview                                           | 86           | 85              | -1   
+86    | Level 3: Technical Challenges and Solutions                                 | 87           | 87              | 0    
+87    | Level 2: Conclusion                                                         | 87           | 88              | 1    
+88    | Level 1: Release 5 : Maintenance Requests & Technician Workflow             | 88           | 89              | 1    
+89    | Level 2: Introduction                                                       | 88           | 89              | 1    
+90    | Level 2: Sprint Backlog – Maintenance & Technician                          | 88           | 89              | 1    
+91    | Level 2: Refinement of Use Cases                                            | 89           | 90              | 1    
+92    | Level 3: Sprint 5 Use Case Diagrams and Textual Descriptions                | 89           | 90              | 1    
+93    | Level 3: Class Diagram                                                      | 95           | 96              | 1    
+94    | Level 3: Sequence Diagrams                                                  | 96           | 96              | 0    
+95    | Level 2: User Interfaces                                                    | 97           | 96              | Title Mismatch: Level 2: User Interfaces vs Level 2: User Interface Overview
+96    | Level 3: Web Interfaces                                                     | 97           | 99              | 2    
+97    | Level 3: Mobile Interfaces                                                  | 98           | 99              | 1    
+98    | Level 2: Conclusion                                                         | 99           | 99              | 0    
+99    | Level 1: General Conclusion and Perspectives                                | 100          | 101             | 1    
+100   | Level 1: Webography                                                         | 103          | 104             | 1    

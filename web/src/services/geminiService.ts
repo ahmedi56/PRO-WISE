@@ -30,7 +30,7 @@ export const geminiService = {
             return data.data.text;
         } catch (err: any) {
             console.error('Gemini Service Error:', err.message);
-            throw new Error(err.response?.data?.message || 'The AI assistant is temporarily unavailable.');
+            throw new Error(err.response?.data?.message || 'The semantic search service is temporarily unavailable.');
         }
     },
 

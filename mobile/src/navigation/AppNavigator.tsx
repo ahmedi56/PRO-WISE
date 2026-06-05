@@ -77,6 +77,7 @@ const AppNavigator: React.FC = () => {
                     <>
                         <Stack.Screen name="Login" component={LoginScreen as any} options={{ headerShown: false }} />
                         <Stack.Screen name="Register" component={RegisterScreen as any} options={{ headerShown: false }} />
+                        <Stack.Screen name="ForgotPassword" component={require('../screens/ForgotPasswordScreen').default} options={{ headerShown: false }} />
                     </>
                 )}
             </StackNavigator>

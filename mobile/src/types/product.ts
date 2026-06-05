@@ -29,6 +29,7 @@ export interface Product {
   status: ProductStatus | Status;
   isPublic: boolean;
   qrCodeUrl?: string;
+  imageUrl?: string;
   guides?: Guide[];
   components?: ProductComponent[];
   content?: string;

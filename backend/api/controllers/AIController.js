@@ -1,7 +1,7 @@
 /**
  * AIController
  *
- * @description :: Server-side actions for handling AI generation and chat with standardized responses.
+ * @description :: Server-side actions for handling AI generation and semantic search with standardized responses.
  */
 
 /**
@@ -11,7 +11,7 @@ const PromptBuilder = {
   build: (task, context, constraints = []) => {
     return `
 SYSTEM:
-You are a senior PRO-WISE technical assistant. Return concise, professional, and technically accurate output.
+You are the PRO-WISE semantic search engine. You retrieve and synthesize relevant information from product manuals, troubleshooting guides, and technical documentation. Return concise, professional, and technically accurate output.
 
 TASK:
 ${task}
@@ -146,13 +146,15 @@ module.exports = {
   },
 
   /**
-   * POST /api/ai/chat
+   * POST /api/ai/search
+   * Performs semantic search over product manuals and guides using RAG.
    */
-  chat: async function(req, res) {
+  search: async function(req, res) {
     try {
-      const { message, productId, context: extraContext } = req.body;
-      if (!message) {
-        return res.status(400).json({ success: false, message: 'Message is required' });
+      const { message, query, productId, context: extraContext } = req.body;
+      const searchQuery = query || message;
+      if (!searchQuery) {
+        return res.status(400).json({ success: false, message: 'Search query is required' });
       }
 
       let contextStr = '';
@@ -179,10 +181,10 @@ module.exports = {
               const steps = await Step.find({ guide: { in: guideIds } }).populate('guide');
               
               if (steps && steps.length > 0) {
-                // Get embedding of user query
+                // Get embedding of search query for vector similarity retrieval
                 let queryEmbedding = null;
                 if (sails.services.geminiservice && sails.services.geminiservice.isAvailable()) {
-                  const result = await sails.services.geminiservice.getEmbedding(message, 'RETRIEVAL_QUERY');
+                  const result = await sails.services.geminiservice.getEmbedding(searchQuery, 'RETRIEVAL_QUERY');
                   if (result && result.success && Array.isArray(result.embedding)) {
                     queryEmbedding = result.embedding;
                   }
@@ -225,7 +227,7 @@ module.exports = {
               }
             }
           } catch (ragErr) {
-            sails.log.warn('AIController: Failed to fetch/rank guide steps for RAG context.', ragErr.message);
+            sails.log.warn('AIController: Failed to fetch/rank guide steps for semantic search context.', ragErr.message);
           }
         }
       }
@@ -234,26 +236,27 @@ module.exports = {
         contextStr += `Additional Context: ${extraContext.substring(0, 1000)}\n`;
       }
 
-      const task = 'Respond to the user\'s hardware-related inquiry.';
+      const task = 'Based on the retrieved context from product manuals and guides, provide a structured recommendation addressing the user\'s query. Present the response as search results with relevant manual excerpts, troubleshooting instructions, and maintenance recommendations.';
       const constraints = [
-        'Be helpful but concise.',
-        'If you do not know the answer, advise contacting professional support.',
+        'Present information as structured search results, not as conversational dialogue.',
+        'Reference specific guide steps or manual sections when available.',
+        'If no relevant information is found, advise consulting official product documentation or contacting professional support.',
         'Do not provide advice that could lead to physical injury or electric shock without explicit safety warnings.'
       ];
 
-      const prompt = PromptBuilder.build(task, `User Query: ${message}\n${contextStr}`, constraints);
+      const prompt = PromptBuilder.build(task, `Search Query: ${searchQuery}\n${contextStr}`, constraints);
       const result = await sails.services.geminiservice.generateText(prompt, {
-        temperature: 0.7 // Higher for chat
+        temperature: 0.4 // For search result synthesis
       });
 
       if (!result.success) {
-        sails.log.warn('AI Chat Assistant failed (falling back locally):', result.message || result.error);
+        sails.log.warn('AI Semantic Search failed (falling back locally):', result.message || result.error);
         const hasGeminiKeys = !!(process.env.GEMINI_API_KEYS || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY);
         const isGeminiAvailable = sails.services.geminiservice.isAvailable();
         const isGroqAvailable = !!(sails.services.grokservice && sails.services.grokservice.isAvailable());
         const diag = `[GeminiKey: ${hasGeminiKeys}, GeminiAvail: ${isGeminiAvailable}, GroqAvail: ${isGroqAvailable}]`;
 
-        const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable (Reason: ${result.message || 'Unknown error'} ${diag}). Based on your query "${message}", please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
+        const fallbackResponse = `The semantic search service is temporarily unavailable (Reason: ${result.message || 'Unknown error'} ${diag}). For your query "${searchQuery}", please consult the official product manuals, verify hardware connections, or contact our support team at support@prowise.com.`;
         return res.json({
           success: true,
           data: { response: fallbackResponse },
@@ -268,8 +271,8 @@ module.exports = {
       });
 
     } catch (err) {
-      sails.log.error('AI Chat Error (falling back locally):', err);
-      const fallbackResponse = `I am currently operating in offline mode because the AI provider is temporarily unavailable (Error: ${err.message || 'Internal server error'}). Please verify all hardware connections, consult our official product manuals, or contact our support team at support@prowise.com.`;
+      sails.log.error('AI Semantic Search Error (falling back locally):', err);
+      const fallbackResponse = `The semantic search service is temporarily unavailable (Error: ${err.message || 'Internal server error'}). Please consult the official product manuals, verify hardware connections, or contact our support team at support@prowise.com.`;
       return res.json({
         success: true,
         data: { response: fallbackResponse },

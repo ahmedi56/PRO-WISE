@@ -6,6 +6,7 @@ export type RootStackParamList = {
     Main: undefined;
     Login: undefined;
     Register: undefined;
+    ForgotPassword: undefined;
     EditProfile: undefined;
     QRScanner: undefined;
     ProductDetail: { id: string; product?: import('../types/product').Product };
@@ -41,3 +42,11 @@ export type MainTabNavigationProp<T extends keyof MainTabParamList> =
         BottomTabNavigationProp<MainTabParamList, T>,
         StackNavigationProp<RootStackParamList>
     >;
+
+export type ProductDetailParamList = {
+    Overview: { id: string };
+    Specs: { id: string };
+    Guides: { id: string };
+    Media: { id: string };
+    Components: { id: string };
+};

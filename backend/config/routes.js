@@ -136,7 +136,8 @@ module.exports.routes = {
   
   'POST /api/ai/generate-description': 'AIController.generateDescription',
   'POST /api/ai/suggest-steps': 'AIController.suggestSteps',
-  'POST /api/ai/chat': 'AIController.chat',
+  'POST /api/ai/search': 'AIController.search',
+  'POST /api/ai/chat': 'AIController.search',  // Legacy alias for backwards compatibility
   'GET /api/ai/analyze-feedback/:feedbackId': 'AIController.analyzeFeedback',
   'POST /api/ai/component-insight': 'AIController.componentInsight',
 

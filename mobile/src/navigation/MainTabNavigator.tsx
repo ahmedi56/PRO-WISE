@@ -182,7 +182,9 @@ const MainTabNavigator: React.FC = () => {
     const theme = useTheme();
     const { colors, typography, spacing, radius } = theme;
     const { user } = useSelector((state: RootState) => state.auth);
-    const isApprovedTech = (user?.isTechnician && user?.technicianStatus === 'approved') || user?.role?.name === 'technician';
+    const isApprovedTech = (user?.isTechnician && user?.technicianStatus === 'approved') || 
+        user?.role === 'technician' || 
+        (typeof user?.role === 'object' && (user?.role as any)?.name === 'technician');
 
     return (
         <Tab.Navigator

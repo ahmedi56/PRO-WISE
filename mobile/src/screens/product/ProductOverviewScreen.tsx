@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from 'react-native';
 import { useProduct } from '../../context/ProductContext';
 import ProductSkeleton from '../../components/ui/Skeleton/ProductSkeleton';
-import { colors, spacing, typography, radius, shadows, glass } from '../../theme';
+import { colors, spacing, typography, radius, shadows } from '../../theme';
 import CustomButton from '../../components/CustomButton';
 import { Ionicons } from '@expo/vector-icons';
 import FeedbackSection from '../../components/FeedbackSection';
@@ -35,7 +35,7 @@ const ProductOverviewScreen = () => {
             </View>
 
             {/* ── Hero Section ── */}
-            <View style={[styles.heroCard, shadows.premium]}>
+            <View style={[styles.heroCard, shadows.lg]}>
                 <Image 
                     source={{ uri: product.imageUrl || 'https://via.placeholder.com/800' }} 
                     style={styles.heroImage} 
@@ -100,7 +100,7 @@ const ProductOverviewScreen = () => {
             <View style={styles.section}>
                 <View style={styles.sectionHeaderRow}>
                     <View style={styles.sectionIconWell}>
-                        <Ionicons name="chatbubble-ellipses-outline" size={18} color={colors.primary} />
+                        <Ionicons name="star-outline" size={18} color={colors.primary} />
                     </View>
                     <Text style={styles.sectionTitle}>FIELD INTELLIGENCE</Text>
                 </View>

@@ -29,7 +29,7 @@ const IntelligenceFeed: React.FC<IntelligenceFeedProps> = ({ data, onItemPress }
                         layout={Layout.springify()}
                     >
                         <TouchableOpacity 
-                            style={[styles.card, shadows.premium]} 
+                            style={[styles.card, shadows.lg]} 
                             onPress={() => onItemPress(item)}
                             activeOpacity={0.9}
                         >

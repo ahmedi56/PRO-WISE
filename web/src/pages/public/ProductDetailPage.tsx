@@ -172,52 +172,52 @@ export const ProductDetailPage: React.FC = () => {
 
     const canManage = useMemo(() => canManageProduct(user, product), [user, product]);
 
-    const [isChatOpen, setIsChatOpen] = useState(false);
-    const [chatInput, setChatInput] = useState('');
-    const [chatMessages, setChatMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([]);
-    const [chatLoading, setChatLoading] = useState(false);
-    const messagesEndRef = useRef<HTMLDivElement | null>(null);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Array<{ type: 'query' | 'result'; text: string }>>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const resultsEndRef = useRef<HTMLDivElement | null>(null);
 
-    // Initialize custom message once product is loaded
+    // Initialize welcome message once product is loaded
     useEffect(() => {
         if (product) {
-            setChatMessages([
-                { sender: 'ai', text: `Hi! I am your PRO-WISE technical assistant. Ask me anything about ${formatProductName(product.name, product.manufacturer)} or its repair guides!` }
+            setSearchResults([
+                { type: 'result', text: `Welcome to PRO-WISE Semantic Search. Search for troubleshooting steps, maintenance recommendations, and product documentation for ${formatProductName(product.name, product.manufacturer)}.` }
             ]);
         }
     }, [product]);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        resultsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
-        if (isChatOpen) {
+        if (isSearchOpen) {
             scrollToBottom();
         }
-    }, [chatMessages, isChatOpen]);
+    }, [searchResults, isSearchOpen]);
 
-    const handleSendChatMessage = async (e: React.FormEvent) => {
+    const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
-        const msg = chatInput.trim();
-        if (!msg) return;
+        const query = searchQuery.trim();
+        if (!query) return;
 
-        setChatInput('');
-        setChatMessages(prev => [...prev, { sender: 'user', text: msg }]);
-        setChatLoading(true);
+        setSearchQuery('');
+        setSearchResults(prev => [...prev, { type: 'query', text: query }]);
+        setSearchLoading(true);
 
         try {
-            const response = await axios.post(`${API_URL}/ai/chat`, {
-                message: msg,
+            const response = await axios.post(`${API_URL}/ai/search`, {
+                message: query,
                 productId: id
             });
-            const reply = response.data?.data?.response || response.data?.data?.text || "I'm having trouble answering right now. Please try again.";
-            setChatMessages(prev => [...prev, { sender: 'ai', text: reply }]);
+            const reply = response.data?.data?.response || response.data?.data?.text || "No relevant results found. Please try a different search query.";
+            setSearchResults(prev => [...prev, { type: 'result', text: reply }]);
         } catch (error) {
-            console.error('Chat AI error:', error);
-            setChatMessages(prev => [...prev, { sender: 'ai', text: "Offline mode. Please check your connection or try again later." }]);
+            console.error('Semantic search error:', error);
+            setSearchResults(prev => [...prev, { type: 'result', text: "The search service is temporarily unavailable. Please try again later." }]);
         } finally {
-            setChatLoading(false);
+            setSearchLoading(false);
         }
     };
 
@@ -849,13 +849,13 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
             )}
 
-            {/* FLOATING AI CHAT WIDGET */}
+            {/* FLOATING SEMANTIC SEARCH PANEL */}
             <div style={{ position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
-                {isChatOpen && (
+                {isSearchOpen && (
                     <div className="fade-in" style={{
-                        width: '380px',
-                        height: '520px',
-                        background: 'rgba(255, 255, 255, 0.95)',
+                        width: '420px',
+                        height: '560px',
+                        background: 'rgba(255, 255, 255, 0.97)',
                         backdropFilter: 'blur(20px)',
                         borderRadius: '24px',
                         boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.05)',
@@ -865,7 +865,7 @@ export const ProductDetailPage: React.FC = () => {
                         overflow: 'hidden',
                         fontFamily: 'inherit'
                     }}>
-                        {/* Chat Header */}
+                        {/* Search Panel Header */}
                         <div style={{
                             padding: '1.25rem 1.5rem',
                             background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))',
@@ -884,25 +884,25 @@ export const ProductDetailPage: React.FC = () => {
                                     alignItems: 'center',
                                     justifyContent: 'center'
                                 }}>
-                                    <IonIcon name="sparkles" style={{ fontSize: '1.2rem', color: '#fff' }} />
+                                    <IonIcon name="search" style={{ fontSize: '1.2rem', color: '#fff' }} />
                                 </div>
                                 <div>
-                                    <h4 style={{ margin: 0, fontWeight: 700, fontSize: '1rem', letterSpacing: '0.02em' }}>PRO-WISE Assistant</h4>
+                                    <h4 style={{ margin: 0, fontWeight: 700, fontSize: '1rem', letterSpacing: '0.02em' }}>Product Knowledge Search</h4>
                                     <span style={{ fontSize: '0.75rem', opacity: 0.8, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                                         <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981', display: 'inline-block' }}></span>
-                                        RAG Search Enabled
+                                        Semantic Search · RAG
                                     </span>
                                 </div>
                             </div>
                             <button 
-                                onClick={() => setIsChatOpen(false)}
+                                onClick={() => setIsSearchOpen(false)}
                                 style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px', opacity: 0.8 }}
                             >
                                 <IonIcon name="close" style={{ fontSize: '1.5rem' }} />
                             </button>
                         </div>
 
-                        {/* Chat Messages */}
+                        {/* Search Results Area */}
                         <div style={{
                             flex: 1,
                             padding: '1.5rem',
@@ -912,49 +912,69 @@ export const ProductDetailPage: React.FC = () => {
                             gap: '1rem',
                             background: '#f8fafc'
                         }}>
-                            {chatMessages.map((msg, index) => (
-                                <div 
-                                    key={index}
-                                    style={{
-                                        alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                                        maxWidth: '80%',
-                                        background: msg.sender === 'user' ? 'var(--color-primary)' : '#fff',
-                                        color: msg.sender === 'user' ? '#fff' : 'var(--color-text)',
-                                        padding: '0.85rem 1.15rem',
-                                        borderRadius: msg.sender === 'user' ? '18px 18px 2px 18px' : '18px 18px 18px 2px',
-                                        boxShadow: msg.sender === 'user' ? '0 4px 10px rgba(99, 102, 241, 0.1)' : '0 2px 6px rgba(0, 0, 0, 0.03)',
-                                        border: msg.sender === 'user' ? 'none' : '1px solid #e2e8f0',
-                                        fontSize: '0.95rem',
-                                        lineHeight: 1.5,
-                                        whiteSpace: 'pre-wrap'
-                                    }}
-                                >
-                                    {msg.text}
-                                </div>
+                            {searchResults.map((item, index) => (
+                                item.type === 'query' ? (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            padding: '0.5rem 0',
+                                            borderBottom: '1px solid #e2e8f0'
+                                        }}
+                                    >
+                                        <IonIcon name="search-outline" style={{ fontSize: '0.9rem', color: 'var(--color-primary)', flexShrink: 0 }} />
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>{item.text}</span>
+                                    </div>
+                                ) : (
+                                    <div 
+                                        key={index}
+                                        style={{
+                                            background: '#fff',
+                                            padding: '1rem 1.15rem',
+                                            borderRadius: '12px',
+                                            borderLeft: '4px solid var(--color-primary)',
+                                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                                            border: '1px solid #e2e8f0',
+                                            fontSize: '0.95rem',
+                                            lineHeight: 1.6,
+                                            color: 'var(--color-text)',
+                                            whiteSpace: 'pre-wrap'
+                                        }}
+                                    >
+                                        {item.text}
+                                    </div>
+                                )
                             ))}
-                            {chatLoading && (
+                            {searchLoading && (
                                 <div style={{
-                                    alignSelf: 'flex-start',
                                     background: '#fff',
-                                    padding: '0.85rem 1.15rem',
-                                    borderRadius: '18px 18px 18px 2px',
+                                    padding: '1rem 1.15rem',
+                                    borderRadius: '12px',
+                                    borderLeft: '4px solid var(--color-primary)',
                                     border: '1px solid #e2e8f0',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '0.35rem',
-                                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)'
+                                    gap: '0.75rem',
+                                    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
+                                    color: 'var(--color-text-muted)',
+                                    fontSize: '0.9rem'
                                 }}>
-                                    <div className="chat-dot" style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both' }}></div>
-                                    <div className="chat-dot" style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.2s' }}></div>
-                                    <div className="chat-dot" style={{ width: '8px', height: '8px', background: 'var(--color-primary)', borderRadius: '50%', animation: 'bounce 1.4s infinite ease-in-out both 0.4s' }}></div>
+                                    <div style={{
+                                        width: '18px', height: '18px', border: '2px solid var(--color-primary)',
+                                        borderTopColor: 'transparent', borderRadius: '50%',
+                                        animation: 'spin 0.8s linear infinite'
+                                    }}></div>
+                                    Searching product manuals...
                                 </div>
                             )}
-                            <div ref={messagesEndRef} />
+                            <div ref={resultsEndRef} />
                         </div>
 
-                        {/* Chat Input Form */}
+                        {/* Search Input Form */}
                         <form 
-                            onSubmit={handleSendChatMessage}
+                            onSubmit={handleSearch}
                             style={{
                                 padding: '1rem 1.25rem',
                                 background: '#fff',
@@ -965,9 +985,9 @@ export const ProductDetailPage: React.FC = () => {
                             }}
                         >
                             <input 
-                                value={chatInput}
-                                onChange={e => setChatInput(e.target.value)}
-                                placeholder="Ask a troubleshooting question..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                placeholder="Search manuals, guides, troubleshooting..."
                                 style={{
                                     flex: 1,
                                     padding: '0.75rem 1rem',
@@ -999,7 +1019,7 @@ export const ProductDetailPage: React.FC = () => {
                                 onMouseOver={e => e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'}
                                 onMouseOut={e => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
                             >
-                                <IonIcon name="send" style={{ fontSize: '1.1rem' }} />
+                                <IonIcon name="search" style={{ fontSize: '1.1rem' }} />
                             </button>
                         </form>
                     </div>
@@ -1007,7 +1027,7 @@ export const ProductDetailPage: React.FC = () => {
 
                 {/* Toggle Button */}
                 <button
-                    onClick={() => setIsChatOpen(!isChatOpen)}
+                    onClick={() => setIsSearchOpen(!isSearchOpen)}
                     style={{
                         width: '60px',
                         height: '60px',
@@ -1025,7 +1045,7 @@ export const ProductDetailPage: React.FC = () => {
                     onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
                     onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
                 >
-                    <IonIcon name={isChatOpen ? 'close' : 'sparkles'} style={{ fontSize: '1.6rem' }} />
+                    <IonIcon name={isSearchOpen ? 'close' : 'search'} style={{ fontSize: '1.6rem' }} />
                 </button>
             </div>
 
@@ -1037,9 +1057,9 @@ export const ProductDetailPage: React.FC = () => {
                     from { opacity: 0; transform: translateY(10px) scale(0.95); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
-                @keyframes bounce {
-                    0%, 80%, 100% { transform: scale(0); }
-                    40% { transform: scale(1.0); }
+                @keyframes spin {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
                 }
             `}</style>
         </div>

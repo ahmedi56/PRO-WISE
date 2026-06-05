@@ -104,6 +104,10 @@ export const shadows = {
     },
 };
 
+export const glass = {
+    shimmer: ['rgba(120, 117, 135, 0.05)', 'rgba(120, 117, 135, 0.15)', 'rgba(120, 117, 135, 0.05)'] as const,
+};
+
 export const getColors = (scheme: 'light' | 'dark' | null | undefined) => {
     return scheme === 'dark' ? palettes.dark : palettes.light;
 };
@@ -162,5 +166,5 @@ export const mixins = {
     }
 };
 
-export default { colors, spacing, radius, typography, shadows, mixins };
+export default { colors, spacing, radius, typography, shadows, mixins, glass };
 
