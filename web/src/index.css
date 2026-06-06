@@ -3517,3 +3517,88 @@ input[type="number"] {
   border-color: var(--color-accent);
   color: #fff;
 }
+
+/* ==========================================================================
+   Premium SweetAlert2 Custom Styling Override (Neo-Industrial Theme)
+   ========================================================================== */
+.swal2-popup {
+  background: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-xl) !important;
+  font-family: var(--font-body) !important;
+  box-shadow: var(--shadow-xl) !important;
+}
+
+[data-theme='light'] .swal2-popup {
+  background: #ffffff !important;
+  border: 1px solid #E2E8F0 !important;
+  color: #464555 !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+.swal2-title {
+  color: var(--color-text-strong) !important;
+  font-family: var(--font-heading) !important;
+  font-weight: 700 !important;
+}
+
+.swal2-html-container {
+  color: var(--color-text-muted) !important;
+  font-size: var(--text-sm) !important;
+}
+
+.swal2-confirm {
+  background-color: var(--color-primary) !important;
+  color: #ffffff !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1.25rem !important;
+  font-size: var(--text-sm) !important;
+  transition: all var(--duration-fast) var(--ease) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.swal2-confirm:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+
+.swal2-cancel {
+  background-color: var(--color-surface-hover) !important;
+  color: var(--color-text-strong) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-md) !important;
+  font-weight: 600 !important;
+  padding: 0.625rem 1.25rem !important;
+  font-size: var(--text-sm) !important;
+  transition: all var(--duration-fast) var(--ease) !important;
+}
+
+.swal2-cancel:hover {
+  background-color: var(--color-surface-raised) !important;
+  border-color: var(--color-border-hover) !important;
+}
+
+/* Icon Customizations */
+.swal2-icon.swal2-success {
+  border-color: var(--color-success) !important;
+}
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: var(--color-success) !important;
+}
+.swal2-icon.swal2-success .swal2-success-ring {
+  border: 4px solid rgba(16, 185, 129, 0.2) !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: var(--color-error) !important;
+}
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+  background-color: var(--color-error) !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: var(--color-warning) !important;
+  color: var(--color-warning) !important;
+}
+
