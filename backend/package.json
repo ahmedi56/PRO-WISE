@@ -24,7 +24,8 @@
     "sails": "^1.5.17",
     "sails-hook-orm": "^4.0.3",
     "sails-hook-sockets": "^3.0.2",
-    "sails-mongo": "^2.1.2"
+    "sails-mongo": "^2.1.2",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
