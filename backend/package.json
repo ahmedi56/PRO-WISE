@@ -31,8 +31,8 @@
     "eslint": "^9.39.4"
   },
   "scripts": {
-    "start": "node app.js",
-    "dev": "node app.js",
+    "start": "node --no-deprecation app.js",
+    "dev": "node --no-deprecation app.js",
     "test": "npm run lint && npm run custom-tests && echo 'Done.'",
     "lint": "eslint . --max-warnings=0",
     "custom-tests": "echo \"(No other custom tests yet.)\" && echo"
