@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import Swal from 'sweetalert2';
 import { RootState } from '../../store';
 import { PageHeader, Button, InputField, SelectField, IonIcon, Spinner } from '../../components/index';
 import { productService } from '../../services/productService';
@@ -29,7 +30,14 @@ export const ProductFormPage: React.FC = () => {
 
     const handleAiGenerate = async () => {
         if (!formData.name) {
-            alert('Please enter a product name first.');
+            Swal.fire({
+                title: 'Required!',
+                text: 'Please enter a product name first.',
+                icon: 'warning',
+                confirmButtonColor: 'var(--color-primary, #6366f1)',
+                background: 'var(--color-surface, #1e293b)',
+                color: 'var(--color-text, #f8fafc)'
+            });
             return;
         }
         setIsAiLoading(true);
@@ -39,7 +47,14 @@ export const ProductFormPage: React.FC = () => {
             setFormData({ ...formData, description });
         } catch (err) {
             console.error('AI generation failed', err);
-            alert('Failed to generate description with AI.');
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to generate description with AI.',
+                icon: 'error',
+                confirmButtonColor: 'var(--color-primary, #6366f1)',
+                background: 'var(--color-surface, #1e293b)',
+                color: 'var(--color-text, #f8fafc)'
+            });
         } finally {
             setIsAiLoading(false);
         }
@@ -120,13 +135,36 @@ export const ProductFormPage: React.FC = () => {
         try {
             if (isEdit) {
                 await productService.updateProduct(id!, formData);
+                Swal.fire({
+                    title: 'Saved!',
+                    text: 'Product has been updated successfully.',
+                    icon: 'success',
+                    confirmButtonColor: 'var(--color-primary, #6366f1)',
+                    background: 'var(--color-surface, #1e293b)',
+                    color: 'var(--color-text, #f8fafc)'
+                });
             } else {
                 await productService.createProduct(formData);
+                Swal.fire({
+                    title: 'Created!',
+                    text: 'Product has been created successfully.',
+                    icon: 'success',
+                    confirmButtonColor: 'var(--color-primary, #6366f1)',
+                    background: 'var(--color-surface, #1e293b)',
+                    color: 'var(--color-text, #f8fafc)'
+                });
             }
             navigate('/admin/products');
         } catch (err) {
             console.error(err);
-            alert('Failed to save product');
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to save product.',
+                icon: 'error',
+                confirmButtonColor: 'var(--color-primary, #6366f1)',
+                background: 'var(--color-surface, #1e293b)',
+                color: 'var(--color-text, #f8fafc)'
+            });
         } finally {
             setLoading(false);
         }

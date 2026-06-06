@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { PageHeader, Button, Badge, Spinner, EmptyState, IonIcon } from '../../components/index';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/product';
@@ -31,14 +32,42 @@ export const ProductsPage: React.FC = () => {
     }, [user]);
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm('Are you sure you want to delete this product?')) return;
-        try {
-            await productService.deleteProduct(id);
-            setProducts(products.filter(p => p.id !== id));
-        } catch (err) {
-            console.error(err);
-            alert('Failed to delete product');
-        }
+        Swal.fire({
+            title: 'Are you sure?',
+            text: 'You will not be able to recover this product!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'var(--color-primary, #6366f1)',
+            cancelButtonColor: '#ef4444',
+            confirmButtonText: 'Yes, delete it!',
+            background: 'var(--color-surface, #1e293b)',
+            color: 'var(--color-text, #f8fafc)'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    await productService.deleteProduct(id);
+                    setProducts(products.filter(p => p.id !== id));
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: 'Product has been deleted.',
+                        icon: 'success',
+                        confirmButtonColor: 'var(--color-primary, #6366f1)',
+                        background: 'var(--color-surface, #1e293b)',
+                        color: 'var(--color-text, #f8fafc)'
+                    });
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to delete product.',
+                        icon: 'error',
+                        confirmButtonColor: 'var(--color-primary, #6366f1)',
+                        background: 'var(--color-surface, #1e293b)',
+                        color: 'var(--color-text, #f8fafc)'
+                    });
+                }
+            }
+        });
     };
 
     return (

@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "concurrently": "^9.2.1",
+    "sails-hook-orm": "^4.0.3",
+    "sails-hook-sockets": "^3.0.2",
     "ws": "^8.18.3"
   },
   "devDependencies": {

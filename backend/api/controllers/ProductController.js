@@ -56,6 +56,22 @@ const resolvePhoneCategory = async (categoryId, manufacturer, companyId, product
   return categoryId;
 };
 
+const inferManufacturer = (name, currentManufacturer) => {
+  if (currentManufacturer && currentManufacturer.trim()) {
+    return currentManufacturer.trim();
+  }
+  if (!name) { return null; }
+  
+  const knownBrands = ['asus', 'apple', 'samsung', 'msi', 'lenovo', 'hp', 'dell', 'acer', 'toshiba', 'sony', 'google'];
+  const nameLower = name.toLowerCase();
+  for (const brand of knownBrands) {
+    if (nameLower.startsWith(brand) || nameLower.includes(' ' + brand)) {
+      return brand === 'msi' ? 'MSI' : brand.charAt(0).toUpperCase() + brand.slice(1);
+    }
+  }
+  return null;
+};
+
 const validateAndSanitizeComponents = (components) => {
   const componentMatching = sails.services.componentmatchingservice;
 
@@ -138,6 +154,8 @@ module.exports = {
         company = (req.user && req.user.companyId);
       }
 
+      const finalManufacturer = inferManufacturer(name, manufacturer);
+
       // Validate category exists if provided
       let finalCategory = category || null;
       if (finalCategory) {
@@ -145,7 +163,7 @@ module.exports = {
         if (!cat) {
           return res.status(400).json({ message: 'Category not found' });
         }
-        finalCategory = await resolvePhoneCategory(finalCategory, manufacturer, company, name);
+        finalCategory = await resolvePhoneCategory(finalCategory, finalManufacturer, company, name);
       }
 
       // Validate company exists if provided
@@ -160,7 +178,7 @@ module.exports = {
         name,
         description: description || null,
         content: content || null,
-        manufacturer: manufacturer || null,
+        manufacturer: finalManufacturer,
         modelNumber: modelNumber || null,
         category: finalCategory,
         company: company || null,
@@ -221,18 +239,49 @@ module.exports = {
 
       const where = {};
       
-      // If category is provided, resolve it to an ID (handles slugs and IDs)
+      // If category is provided, resolve it to an ID (handles slugs and IDs) and its descendant subcategory IDs
       if (category) {
         let catId = category;
         if (!category.match(/^[0-9a-fA-F]{24}$/)) {
-          // It's a slug or name — look up the category record
-          const catObj = await Category.findOne({ or: [{ slug: category }, { name: category }] });
+          const normalized = category.toLowerCase().trim();
+          const singular = normalized.endsWith('s') ? normalized.slice(0, -1) : normalized;
+          
+          const catObj = await Category.findOne({
+            or: [
+              { slug: normalized },
+              { slug: singular },
+              { name: { contains: normalized } },
+              { name: { contains: singular } }
+            ]
+          });
           if (catObj) {
             catId = catObj.id;
           }
         }
-        where.category = catId;
-
+        
+        // Find all descendants recursively
+        const descendantIds = [];
+        const visited = new Set();
+        const queue = [catId];
+        visited.add(catId);
+        
+        while (queue.length > 0) {
+          const currentId = queue.shift();
+          const children = await Category.find({ parent: currentId });
+          for (const child of children) {
+            if (!visited.has(child.id)) {
+              visited.add(child.id);
+              descendantIds.push(child.id);
+              queue.push(child.id);
+            }
+          }
+        }
+        
+        if (descendantIds.length > 0) {
+          where.category = { in: [catId, ...descendantIds] };
+        } else {
+          where.category = catId;
+        }
       }
 
       // Respect tenant isolation — (req.user && req.user.companyId) set by tenant-isolation policy
@@ -497,7 +546,11 @@ module.exports = {
         }
       }
 
-      // Validate category exists if provided
+      // When updating, we use the updated manufacturer/company/name or fallback to existing
+      const rawManuf = manufacturer !== undefined ? manufacturer : existing.manufacturer;
+      const testName = name !== undefined ? name : existing.name;
+      const finalManufacturer = inferManufacturer(testName, rawManuf);
+
       // Validate category exists if provided
       let finalCategory = category || null;
       if (finalCategory) {
@@ -506,12 +559,8 @@ module.exports = {
           return res.status(400).json({ message: 'Category not found' });
         }
         
-        // When updating, we use the updated manufacturer/company/name or fallback to existing
-        const testManuf = manufacturer !== undefined ? manufacturer : existing.manufacturer;
         const testComp = company !== undefined ? company : existing.company;
-        const testName = name !== undefined ? name : existing.name;
-        
-        finalCategory = await resolvePhoneCategory(finalCategory, testManuf, testComp, testName);
+        finalCategory = await resolvePhoneCategory(finalCategory, finalManufacturer, testComp, testName);
       }
 
       // Validate company exists if provided
@@ -526,7 +575,9 @@ module.exports = {
       if (name !== undefined) {updateData.name = name;}
       if (description !== undefined) {updateData.description = description;}
       if (content !== undefined) {updateData.content = content;}
-      if (manufacturer !== undefined) {updateData.manufacturer = manufacturer;}
+      if (name !== undefined || manufacturer !== undefined) {
+        updateData.manufacturer = finalManufacturer;
+      }
       if (modelNumber !== undefined) {updateData.modelNumber = modelNumber;}
       if (category !== undefined) {updateData.category = finalCategory;}
       if (components !== undefined) {updateData.components = sanitizedComponents;}
