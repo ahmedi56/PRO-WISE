@@ -173,9 +173,10 @@ module.exports = {
      */
   updateRole: async function (req, res) {
     try {
-      const { roleName } = req.body;
-      if (!roleName) {
-        return res.status(400).json({ message: 'roleName is required' });
+      const { roleName, role: roleInput } = req.body;
+      const input = roleInput || roleName;
+      if (!input) {
+        return res.status(400).json({ message: 'roleName or role ID is required' });
       }
 
       const targetUser = await User.findOne({ id: req.params.id }).populate('role');
@@ -183,7 +184,7 @@ module.exports = {
         return res.status(404).json({ message: 'User not found' });
       }
 
-      const role = await Role.findOne({ name: String(roleName).toLowerCase().trim() });
+      const role = await resolveRole(input);
       if (!role) {
         return res.status(400).json({ message: 'Invalid role' });
       }

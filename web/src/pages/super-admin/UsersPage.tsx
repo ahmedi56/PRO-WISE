@@ -98,7 +98,7 @@ export const UsersPage: React.FC = () => {
         try {
             const endpoint = currentStatus === 'active' ? 'deactivate' : 'activate';
             await axios.put(`${API_URL}/users/${userId}/${endpoint}`, {}, { headers });
-            setUsers(users.map(u => u.id === userId ? { ...u, status: currentStatus === 'active' ? 'inactive' : 'active' } : u));
+            setUsers(users.map(u => u.id === userId ? { ...u, status: currentStatus === 'active' ? 'deactivated' : 'active' } : u));
         } catch (err: any) {
             alert(err.response?.data?.message || 'Failed to update status');
         } finally {
