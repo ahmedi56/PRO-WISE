@@ -17,7 +17,8 @@
     "lint": "npx --yes cross-env ESLINT_USE_FLAT_CONFIG=false eslint ."
   },
   "dependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "eslint": "^9.39.4",
