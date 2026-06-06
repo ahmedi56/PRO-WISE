@@ -19,6 +19,7 @@ import {
 import { AppDispatch, RootState } from '../../store';
 import { IonIcon, EmptyState } from '../../components/ui';
 import '../../styles/admin-support.css';
+import { swalConfirm } from '../../utils/swal';
 
 export const SupportPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -196,7 +197,12 @@ export const SupportPage: React.FC = () => {
                                 <div className="guide-mini-meta">
                                     <span><strong>Diff:</strong> {content.guide.difficulty?.toUpperCase()}</span>
                                     <span><strong>Time:</strong> {content.guide.estimated_time || 'N/A'}</span>
-                                    <button className="text-danger-link" onClick={() => window.confirm('Delete guide?') && dispatch(deleteGuide(content.guide!.id))}>Delete</button>
+                                    <button className="text-danger-link" onClick={async () => {
+                                        const result = await swalConfirm('Delete Guide?', 'Are you sure you want to delete this guide?');
+                                        if (result.isConfirmed) {
+                                            dispatch(deleteGuide(content.guide!.id));
+                                        }
+                                    }}>Delete</button>
                                 </div>
                                 
                                 <div className="steps-scroll-list">

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Swal from 'sweetalert2';
+import { swalConfirm, swalSuccess, swalError } from '../../utils/swal';
 import { PageHeader, Button, Badge, Spinner, EmptyState, IonIcon } from '../../components/index';
 import { productService } from '../../services/productService';
 import { Product } from '../../types/product';
@@ -32,42 +32,17 @@ export const ProductsPage: React.FC = () => {
     }, [user]);
 
     const handleDelete = async (id: string) => {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: 'You will not be able to recover this product!',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: 'var(--color-primary, #6366f1)',
-            cancelButtonColor: '#ef4444',
-            confirmButtonText: 'Yes, delete it!',
-            background: 'var(--color-surface, #1e293b)',
-            color: 'var(--color-text, #f8fafc)'
-        }).then(async (result) => {
-            if (result.isConfirmed) {
-                try {
-                    await productService.deleteProduct(id);
-                    setProducts(products.filter(p => p.id !== id));
-                    Swal.fire({
-                        title: 'Deleted!',
-                        text: 'Product has been deleted.',
-                        icon: 'success',
-                        confirmButtonColor: 'var(--color-primary, #6366f1)',
-                        background: 'var(--color-surface, #1e293b)',
-                        color: 'var(--color-text, #f8fafc)'
-                    });
-                } catch (err) {
-                    console.error(err);
-                    Swal.fire({
-                        title: 'Error!',
-                        text: 'Failed to delete product.',
-                        icon: 'error',
-                        confirmButtonColor: 'var(--color-primary, #6366f1)',
-                        background: 'var(--color-surface, #1e293b)',
-                        color: 'var(--color-text, #f8fafc)'
-                    });
-                }
+        const result = await swalConfirm('Are you sure?', 'You will not be able to recover this product!');
+        if (result.isConfirmed) {
+            try {
+                await productService.deleteProduct(id);
+                setProducts(products.filter(p => p.id !== id));
+                swalSuccess('Deleted!', 'Product has been deleted.');
+            } catch (err) {
+                console.error(err);
+                swalError('Error!', 'Failed to delete product.');
             }
-        });
+        }
     };
 
     return (
@@ -120,7 +95,7 @@ export const ProductsPage: React.FC = () => {
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600, color: 'var(--color-warning)' }}>
                                                 <IonIcon name="star" style={{ fontSize: '14px' }} />
-                                                {prod.averageRating?.toFixed(1) || '0.0'}
+                                                {(prod.averageRating ?? 0).toFixed(1)}
                                             </div>
                                         </td>
                                         <td style={{ textAlign: 'right' }}>

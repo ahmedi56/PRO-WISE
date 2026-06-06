@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { PageHeader, Button, InputField, SelectField, IonIcon, Spinner } from '../../components/index';
 import { categoryService } from '../../services/categoryService';
+import { swalError } from '../../utils/swal';
 
 export const CategoryFormPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -51,9 +52,9 @@ export const CategoryFormPage: React.FC = () => {
                 await categoryService.createCategory(formData);
             }
             navigate('/admin/categories');
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            alert('Failed to save category');
+            swalError('Error', err.response?.data?.message || 'Failed to save category');
         } finally {
             setLoading(false);
         }

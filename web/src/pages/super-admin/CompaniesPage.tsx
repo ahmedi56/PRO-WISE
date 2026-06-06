@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader, Button, Spinner, EmptyState, IonIcon } from '../../components/index';
 import { companyService } from '../../services/companyService';
+import { swalError, swalConfirm } from '../../utils/swal';
 
 export const CompaniesPage: React.FC = () => {
     const [companies, setCompanies] = useState<any[]>([]);
@@ -34,7 +35,7 @@ export const CompaniesPage: React.FC = () => {
                 setCompanies(companies.map(c => c.id === id ? { ...c, status: 'active' } : c));
             }
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to update status');
+            swalError('Error', err.response?.data?.message || 'Failed to update status');
         } finally {
             setActionLoading(null);
         }
@@ -46,20 +47,21 @@ export const CompaniesPage: React.FC = () => {
             await companyService.approve(id);
             setCompanies(companies.map(c => c.id === id ? { ...c, status: 'active' } : c));
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to approve company');
+            swalError('Error', err.response?.data?.message || 'Failed to approve company');
         } finally {
             setActionLoading(null);
         }
     };
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete "${name}"? This will also affect all related users and products.`)) return;
+        const result = await swalConfirm('Delete Company?', `Are you sure you want to delete "${name}"? This will also affect all related users and products.`);
+        if (!result.isConfirmed) return;
         setActionLoading(id);
         try {
             await companyService.deleteCompany(id);
             setCompanies(companies.filter(c => c.id !== id));
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to delete company');
+            swalError('Error', err.response?.data?.message || 'Failed to delete company');
         } finally {
             setActionLoading(null);
         }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader, Spinner, EmptyState, Button, Badge, IonIcon } from '../../components/index';
 import { supportService } from '../../services/supportService';
+import { swalConfirm, swalError, swalPrompt } from '../../utils/swal';
 
 export const PendingContentPage: React.FC = () => {
     const [pendingItems, setPendingItems] = useState<any[]>([]);
@@ -26,20 +27,22 @@ export const PendingContentPage: React.FC = () => {
     const handleAction = async (type: string, id: string, action: 'approve' | 'reject') => {
         try {
             if (action === 'approve') {
-                if (!window.confirm('Are you sure you want to approve this content?')) return;
+                const result = await swalConfirm('Approve Content?', 'Are you sure you want to approve this content?');
+                if (!result.isConfirmed) return;
                 await supportService.approveContent(type, id);
             } else {
-                const reason = window.prompt('Reason for rejection:');
-                if (reason === null) return;
-                if (!reason.trim()) {
-                    alert('Rejection reason is required.');
+                const result = await swalPrompt('Reject Content', 'Reason for rejection:');
+                if (!result.isConfirmed) return;
+                const reason = result.value;
+                if (!reason || !reason.trim()) {
+                    await swalError('Error', 'Rejection reason is required.');
                     return;
                 }
                 await supportService.rejectContent(type, id, reason);
             }
             fetchPending();
         } catch (err) {
-            alert(`Failed to ${action} content`);
+            swalError('Error', `Failed to ${action} content`);
         }
     };
 

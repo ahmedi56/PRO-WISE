@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader, Button, Spinner, IonIcon } from '../../components/index';
 import { guideService } from '../../services/guideService';
+import { swalError } from '../../utils/swal';
 
 interface GuideTypeForm {
     name: string;
@@ -54,7 +55,7 @@ export const GuideTypesPage: React.FC = () => {
             await fetchTypes();
         } catch (err: any) {
             console.error(err);
-            alert(err.response?.data?.message || 'Failed to save guide type');
+            swalError('Error', err.response?.data?.message || 'Failed to save guide type');
         } finally {
             setSaving(false);
         }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import Swal from 'sweetalert2';
+import swal, { swalSuccess, swalError } from '../../utils/swal';
 import { RootState } from '../../store';
 import { PageHeader, Button, InputField, SelectField, IonIcon, Spinner } from '../../components/index';
 import { productService } from '../../services/productService';
@@ -30,13 +30,10 @@ export const ProductFormPage: React.FC = () => {
 
     const handleAiGenerate = async () => {
         if (!formData.name) {
-            Swal.fire({
+            swal.fire({
                 title: 'Required!',
                 text: 'Please enter a product name first.',
-                icon: 'warning',
-                confirmButtonColor: 'var(--color-primary, #6366f1)',
-                background: 'var(--color-surface, #1e293b)',
-                color: 'var(--color-text, #f8fafc)'
+                icon: 'warning'
             });
             return;
         }
@@ -47,14 +44,7 @@ export const ProductFormPage: React.FC = () => {
             setFormData({ ...formData, description });
         } catch (err) {
             console.error('AI generation failed', err);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Failed to generate description with AI.',
-                icon: 'error',
-                confirmButtonColor: 'var(--color-primary, #6366f1)',
-                background: 'var(--color-surface, #1e293b)',
-                color: 'var(--color-text, #f8fafc)'
-            });
+            swalError('Error!', 'Failed to generate description with AI.');
         } finally {
             setIsAiLoading(false);
         }
@@ -135,36 +125,15 @@ export const ProductFormPage: React.FC = () => {
         try {
             if (isEdit) {
                 await productService.updateProduct(id!, formData);
-                Swal.fire({
-                    title: 'Saved!',
-                    text: 'Product has been updated successfully.',
-                    icon: 'success',
-                    confirmButtonColor: 'var(--color-primary, #6366f1)',
-                    background: 'var(--color-surface, #1e293b)',
-                    color: 'var(--color-text, #f8fafc)'
-                });
+                swalSuccess('Saved!', 'Product has been updated successfully.');
             } else {
                 await productService.createProduct(formData);
-                Swal.fire({
-                    title: 'Created!',
-                    text: 'Product has been created successfully.',
-                    icon: 'success',
-                    confirmButtonColor: 'var(--color-primary, #6366f1)',
-                    background: 'var(--color-surface, #1e293b)',
-                    color: 'var(--color-text, #f8fafc)'
-                });
+                swalSuccess('Created!', 'Product has been created successfully.');
             }
             navigate('/admin/products');
         } catch (err) {
             console.error(err);
-            Swal.fire({
-                title: 'Error!',
-                text: 'Failed to save product.',
-                icon: 'error',
-                confirmButtonColor: 'var(--color-primary, #6366f1)',
-                background: 'var(--color-surface, #1e293b)',
-                color: 'var(--color-text, #f8fafc)'
-            });
+            swalError('Error!', 'Failed to save product.');
         } finally {
             setLoading(false);
         }

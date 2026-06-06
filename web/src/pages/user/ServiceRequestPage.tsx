@@ -4,6 +4,7 @@ import { PageWrapper, Button, IonIcon, Badge } from '../../components/index';
 import { Input } from '../../components/ui/Input';
 import { maintenanceService } from '../../services/maintenanceService';
 import { authService } from '../../services/authService';
+import { swalError } from '../../utils/swal';
 import '../../styles/home-page.css';
 
 import { useAuth } from '../../hooks/useAuth';
@@ -44,7 +45,7 @@ export const ServiceRequestPage: React.FC = () => {
     useEffect(() => {
         if (techId) {
             if (user && techId === user.id) {
-                alert('You cannot request a maintenance service from yourself.');
+                swalError('Error', 'You cannot request a maintenance service from yourself.');
                 navigate('/home');
                 return;
             }
@@ -75,7 +76,7 @@ export const ServiceRequestPage: React.FC = () => {
             setTimeout(() => navigate('/profile'), 2500);
         } catch (err) {
             console.error(err);
-            alert('Terminal Error: Service request transmission failed.');
+            swalError('Error', 'Terminal Error: Service request transmission failed.');
         } finally {
             setLoading(false);
         }

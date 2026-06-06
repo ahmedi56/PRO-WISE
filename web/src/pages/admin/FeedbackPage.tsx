@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { PageHeader, Spinner, EmptyState, FeedbackCard } from '../../components/index';
 import { feedbackService } from '../../services/feedbackService';
 import { useAuth } from '../../hooks/useAuth';
+import { swalPrompt, swalError } from '../../utils/swal';
 
 export const FeedbackPage: React.FC = () => {
     const { user } = useAuth();
@@ -27,14 +28,15 @@ export const FeedbackPage: React.FC = () => {
         fetchFeedback();
     }, [user]);
 
-    const handleRespond = (id: string) => {
-        const responseText = window.prompt('Enter your response to this feedback:');
-        if (responseText) {
+    const handleRespond = async (id: string) => {
+        const result = await swalPrompt('Respond to Feedback', 'Enter your response to this feedback:');
+        if (result.isConfirmed && result.value) {
+            const responseText = result.value;
             feedbackService.respond(id, { response: responseText }).then(() => {
                 setFeedbackList(feedbackList.map(f => f.id === id ? { ...f, response: responseText } : f));
             }).catch(err => {
                 console.error(err);
-                alert('Failed to submit response');
+                swalError('Error', 'Failed to submit response');
             });
         }
     };

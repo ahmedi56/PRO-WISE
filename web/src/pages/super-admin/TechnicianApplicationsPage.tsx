@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { PageWrapper, PageHeader, Section, Button, Badge, IonIcon } from '../../components/index';
 import { authService } from '../../services/authService';
 import { formatDate } from '../../utils/helpers';
+import { swalConfirm, swalError, swalPrompt } from '../../utils/swal';
 
 export const TechnicianApplicationsPage: React.FC = () => {
     const [applications, setApplications] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
-    const [rejectionReason, setRejectionReason] = useState('');
     const [verificationNotes, setVerificationNotes] = useState('');
     const [activeApp, setActiveApp] = useState<any>(null);
     const [certStatuses, setCertStatuses] = useState<any[]>([]);
@@ -44,29 +44,25 @@ export const TechnicianApplicationsPage: React.FC = () => {
     };
 
     const handleApprove = async (userId: string) => {
-        if (!window.confirm('Approve this technician? Check certification statuses before proceeding.')) return;
+        const result = await swalConfirm('Approve Technician?', 'Check certification statuses before proceeding.');
+        if (!result.isConfirmed) return;
         try {
             await authService.approveTechnician(userId, { certificationsStatus: certStatuses, verificationNotes });
             fetchApplications();
             setActiveApp(null);
             setVerificationNotes('');
         } catch (err) {
-            alert('Failed to approve');
+            swalError('Error', 'Failed to approve technician application');
         }
     };
 
-    const handleReject = async (userId: string) => {
-        if (!rejectionReason) {
-            alert('Please provide a rejection reason');
-            return;
-        }
+    const handleReject = async (userId: string, reason: string) => {
         try {
-            await authService.rejectTechnician(userId, rejectionReason);
+            await authService.rejectTechnician(userId, reason);
             fetchApplications();
             setActiveApp(null);
-            setRejectionReason('');
         } catch (err) {
-            alert('Failed to reject');
+            swalError('Error', 'Failed to reject application');
         }
     };
 
@@ -155,9 +151,11 @@ export const TechnicianApplicationsPage: React.FC = () => {
                                 <textarea placeholder="Internal Verification Notes..." className="input" style={{ minHeight: '80px', marginBottom: '1rem' }} value={verificationNotes} onChange={(e) => setVerificationNotes(e.target.value)} />
                                 <div style={{ display: 'flex', gap: '0.75rem' }}>
                                     <Button fullWidth onClick={() => handleApprove(activeApp.id)}>Approve Technician</Button>
-                                    <Button variant="danger" fullWidth onClick={() => {
-                                        const reason = prompt('Rejection reason:');
-                                        if (reason) { setRejectionReason(reason); handleReject(activeApp.id); }
+                                    <Button variant="danger" fullWidth onClick={async () => {
+                                        const result = await swalPrompt('Reject Application', 'Provide rejection reason...');
+                                        if (result.isConfirmed && result.value) {
+                                            handleReject(activeApp.id, result.value);
+                                        }
                                     }}>Reject Application</Button>
                                 </div>
                             </div>

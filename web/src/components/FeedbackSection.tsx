@@ -13,6 +13,7 @@ import {
     Spinner
 } from './ui';
 import { RootState } from '../store';
+import { swalError } from '../utils/swal';
 
 interface Feedback {
     id: string;
@@ -107,7 +108,7 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
             fetchStats();
             if (!summaryOnly) fetchFeedbacks();
         } catch (error) {
-            alert('Failed to submit feedback. Please ensure you are logged in.');
+            swalError('Error', 'Failed to submit feedback. Please ensure you are logged in.');
         } finally {
             setSubmitting(false);
         }

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageHeader, Button, Spinner, IonIcon } from '../../components/index';
 import { categoryService } from '../../services/categoryService';
+import { swalConfirm, swalError } from '../../utils/swal';
 
 export const CategoriesPage: React.FC = () => {
     const navigate = useNavigate();
@@ -24,13 +25,14 @@ export const CategoriesPage: React.FC = () => {
     }, []);
 
     const handleDelete = async (id: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete category "${name}"?`)) return;
+        const result = await swalConfirm('Delete Category?', `Are you sure you want to delete category "${name}"?`);
+        if (!result.isConfirmed) return;
         try {
             await categoryService.deleteCategory(id);
             fetchCategories();
         } catch (err: any) {
             console.error(err);
-            alert(err.response?.data?.message || 'Failed to delete category');
+            swalError('Error', err.response?.data?.message || 'Failed to delete category');
         }
     };
 

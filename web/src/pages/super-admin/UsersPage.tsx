@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+import { swalError, swalConfirm } from '../../utils/swal';
 
 interface UserRecord {
     id: string;
@@ -87,7 +88,7 @@ export const UsersPage: React.FC = () => {
             await axios.put(`${API_URL}/users/${userId}/role`, { role: newRoleId }, { headers });
             await fetchUsers();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to update role');
+            swalError('Error', err.response?.data?.message || 'Failed to update role');
         } finally {
             setActionLoading(null);
         }
@@ -100,7 +101,7 @@ export const UsersPage: React.FC = () => {
             await axios.put(`${API_URL}/users/${userId}/${endpoint}`, {}, { headers });
             setUsers(users.map(u => u.id === userId ? { ...u, status: currentStatus === 'active' ? 'deactivated' : 'active' } : u));
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to update status');
+            swalError('Error', err.response?.data?.message || 'Failed to update status');
         } finally {
             setActionLoading(null);
         }
@@ -112,20 +113,21 @@ export const UsersPage: React.FC = () => {
             await axios.put(`${API_URL}/users/${userId}/validate`, {}, { headers });
             setUsers(users.map(u => u.id === userId ? { ...u, status: 'active' } : u));
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to validate user');
+            swalError('Error', err.response?.data?.message || 'Failed to validate user');
         } finally {
             setActionLoading(null);
         }
     };
 
     const handleDelete = async (userId: string, name: string) => {
-        if (!window.confirm(`Are you sure you want to delete user "${name}"? This action cannot be undone.`)) return;
+        const result = await swalConfirm('Delete User?', `Are you sure you want to delete user "${name}"? This action cannot be undone.`);
+        if (!result.isConfirmed) return;
         setActionLoading(userId);
         try {
             await axios.delete(`${API_URL}/users/${userId}`, { headers });
             setUsers(users.filter(u => u.id !== userId));
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to delete user');
+            swalError('Error', err.response?.data?.message || 'Failed to delete user');
         } finally {
             setActionLoading(null);
         }

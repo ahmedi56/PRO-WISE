@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { maintenanceService } from '../../services/maintenanceService';
 import { formatDate } from '../../utils/helpers';
 import { useNavigate } from 'react-router-dom';
+import { swalError } from '../../utils/swal';
 
 export const TechnicianPortalPage: React.FC = () => {
     const { user } = useAuth();
@@ -36,7 +37,7 @@ export const TechnicianPortalPage: React.FC = () => {
             await maintenanceService.updateRequestStatus(id, status);
             fetchRequests();
         } catch (err) {
-            alert('Failed to update status');
+            swalError('Error', 'Failed to update status');
         }
     };
 

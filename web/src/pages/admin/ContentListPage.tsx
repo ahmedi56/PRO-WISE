@@ -5,6 +5,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
+import { swalConfirm, swalError } from '../../utils/swal';
 
 interface ContentItem {
     id: string;
@@ -63,17 +64,18 @@ export const ContentListPage: React.FC = () => {
             await axios.put(`${API_URL}/content/${id}/submit`, {}, { headers });
             fetchContent();
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to submit for approval');
+            swalError('Error', err.response?.data?.message || 'Failed to submit for approval');
         }
     };
 
     const handleDelete = async (id: string, title: string) => {
-        if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+        const result = await swalConfirm('Delete Content?', `Delete "${title}"? This cannot be undone.`);
+        if (!result.isConfirmed) return;
         try {
             await axios.delete(`${API_URL}/content/${id}`, { headers });
             setContent(content.filter(c => c.id !== id));
         } catch (err: any) {
-            alert(err.response?.data?.message || 'Failed to delete content');
+            swalError('Error', err.response?.data?.message || 'Failed to delete content');
         }
     };
 
