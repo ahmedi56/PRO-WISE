@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { geminiService } from '../../services/geminiService';
 import { useSelector } from 'react-redux';
 import { API_URL } from '../../config';
 import { Badge, Button, EmptyState, PageHeader, Skeleton, IonIcon, Modal } from '../../components/ui';
+import swal, { swalConfirm, swalError, swalSuccess, swalPrompt } from '../../utils/swal';
 import RecommendationSection from '../../components/RecommendationSection';
 import { formatProductName } from '../../utils/formatProduct';
 import { Product, Guide, Media } from '../../types/product';
@@ -221,27 +222,111 @@ export const ProductDetailPage: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        window.scrollTo(0, 0);
-        const fetchProduct = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get(`${API_URL}/products/${id}`);
-                const fetchedProduct = response.data;
-                setProduct(fetchedProduct);
-                setCategoryPath(Array.isArray(fetchedProduct.categoryPath) ? fetchedProduct.categoryPath : []);
-            } catch (error) {
-                console.error('Failed to fetch product:', error);
-                setProduct(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) {
-            fetchProduct();
+    const fetchProduct = useCallback(async () => {
+        try {
+            const response = await axios.get(`${API_URL}/products/${id}`, token ? {
+                headers: { Authorization: `Bearer ${token}` }
+            } : {});
+            const fetchedProduct = response.data;
+            setProduct(fetchedProduct);
+            setCategoryPath(Array.isArray(fetchedProduct.categoryPath) ? fetchedProduct.categoryPath : []);
+        } catch (error) {
+            console.error('Failed to fetch product:', error);
+            setProduct(null);
         }
     }, [id, token]);
+
+    const handleAskQuestion = async () => {
+        const result = await swalPrompt('Ask a Question', 'Type your question here...');
+        if (result.isConfirmed && result.value) {
+            try {
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                await axios.post(`${API_URL}/content`, {
+                    title: `Question about ${product?.name}`,
+                    description: result.value,
+                    type: 'faq',
+                    product: id,
+                }, { headers });
+                
+                await swalSuccess('Submitted', 'Your question has been submitted successfully and is pending review/answers.');
+                fetchProduct();
+            } catch (err: any) {
+                console.error('Failed to submit question:', err);
+                swalError('Error', err.response?.data?.message || err.response?.data?.error || 'Failed to submit question');
+            }
+        }
+    };
+
+    const handleAnswerQuestion = async (faqId: string, questionText: string) => {
+        const result = await swalPrompt('Answer FAQ', `Question: "${questionText}"\nEnter answer:`);
+        if (result.isConfirmed && result.value) {
+            try {
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                await axios.put(`${API_URL}/content/${faqId}`, {
+                    answer: result.value
+                }, { headers });
+                
+                await swalSuccess('Answered', 'The FAQ has been answered and published.');
+                fetchProduct();
+            } catch (err: any) {
+                console.error('Failed to answer FAQ:', err);
+                swalError('Error', err.response?.data?.message || err.response?.data?.error || 'Failed to answer FAQ');
+            }
+        }
+    };
+
+    const handleEditAnswer = async (faqId: string, currentAnswer: string) => {
+        const result = await swal.fire({
+            title: 'Edit Answer',
+            input: 'textarea',
+            inputValue: currentAnswer,
+            showCancelButton: true,
+            confirmButtonText: 'Save',
+            cancelButtonText: 'Cancel',
+            inputValidator: (value) => {
+                if (!value || !value.trim()) return 'Answer cannot be empty';
+            }
+        });
+
+        if (result.isConfirmed && result.value) {
+            try {
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                await axios.put(`${API_URL}/content/${faqId}`, {
+                    answer: result.value
+                }, { headers });
+                
+                await swalSuccess('Updated', 'Answer has been updated.');
+                fetchProduct();
+            } catch (err: any) {
+                console.error('Failed to update answer:', err);
+                swalError('Error', err.response?.data?.message || err.response?.data?.error || 'Failed to update answer');
+            }
+        }
+    };
+
+    const handleDeleteContent = async (faqId: string, title: string) => {
+        const result = await swalConfirm('Delete FAQ?', `Are you sure you want to delete "${title}"? This cannot be undone.`);
+        if (result.isConfirmed) {
+            try {
+                const headers = token ? { Authorization: `Bearer ${token}` } : {};
+                await axios.delete(`${API_URL}/content/${faqId}`, { headers });
+                
+                await swalSuccess('Deleted', 'FAQ has been deleted.');
+                fetchProduct();
+            } catch (err: any) {
+                console.error('Failed to delete FAQ:', err);
+                swalError('Error', err.response?.data?.message || err.response?.data?.error || 'Failed to delete FAQ');
+            }
+        }
+    };
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+        if (id) {
+            setLoading(true);
+            fetchProduct().finally(() => setLoading(false));
+        }
+    }, [id, fetchProduct]);
 
     const { videos, pdfs, faqs, stepsFromContent } = useMemo(() => classifyMedia(product?.guides, product?.supportVideos, product?.supportPDFs, product?.approvedContent), [product]);
     
@@ -780,24 +865,118 @@ export const ProductDetailPage: React.FC = () => {
                                 )}
 
                                 {supportTab === 'faqs' && (
-                                    <div>
-                                        {faqs.length > 0 ? (
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                {faqs.map((faq: any, idx: number) => (
-                                                    <div key={idx} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--color-border)', marginBottom: '1rem' }}>
-                                                        <h5 style={{ margin: '0 0 0.75rem 0', fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-text-strong)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <IonIcon name="help-circle-outline" style={{ color: 'var(--color-primary)' }} />
-                                                            {faq.title}
-                                                        </h5>
-                                                        <p style={{ margin: 0, color: 'var(--color-text)', lineHeight: 1.6 }}>{faq.answer || faq.description}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <EmptyState icon="help-circle-outline" title="No FAQs" description="No frequently asked questions available for this product." />
-                                        )}
-                                    </div>
-                                )}
+                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                                             <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.2rem', color: 'var(--color-text-strong)' }}>
+                                                 Frequently Asked Questions
+                                             </h4>
+                                             {token && (
+                                                 <Button 
+                                                     onClick={handleAskQuestion}
+                                                     icon={<IonIcon name="help-circle-outline" />}
+                                                 >
+                                                     Ask a Question
+                                                 </Button>
+                                             )}
+                                         </div>
+
+                                         {(product as any)?.pendingContent && (product as any).pendingContent.length > 0 && (
+                                             <div style={{ 
+                                                 background: 'rgba(245, 158, 11, 0.05)', 
+                                                 border: '1px solid rgba(245, 158, 11, 0.2)',
+                                                 borderRadius: 'var(--radius-lg)', 
+                                                 padding: '1.5rem',
+                                                 display: 'flex',
+                                                 flexDirection: 'column',
+                                                 gap: '1rem'
+                                             }}>
+                                                 <h5 style={{ margin: 0, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 700 }}>
+                                                     <IonIcon name="alert-circle-outline" />
+                                                     Pending Questions ({(product as any).pendingContent.length})
+                                                 </h5>
+                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                     {(product as any).pendingContent.map((faq: any, idx: number) => {
+                                                         const { roleName } = getAccessContext(user);
+                                                         const isStaff = ['super_admin', 'administrator', 'company_admin', 'technician'].includes(roleName);
+                                                         return (
+                                                             <div key={faq.id || idx} style={{ 
+                                                                 background: 'var(--color-surface-raised)', 
+                                                                 borderRadius: 'var(--radius-md)', 
+                                                                 padding: '1rem 1.25rem', 
+                                                                 border: '1px solid var(--color-border)',
+                                                                 display: 'flex',
+                                                                 justifyContent: 'space-between',
+                                                                 alignItems: 'center',
+                                                                 gap: '1.5rem'
+                                                             }}>
+                                                                 <div>
+                                                                     <div style={{ fontWeight: 700, color: 'var(--color-text-strong)', fontSize: '0.95rem', marginBottom: '0.25rem' }}>{faq.description}</div>
+                                                                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                                                         Asked by: {faq.author} • Status: <span style={{ color: '#f59e0b', fontWeight: 600 }}>Pending Answer</span>
+                                                                     </div>
+                                                                 </div>
+                                                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                                     {isStaff && (
+                                                                         <Button size="sm" onClick={() => handleAnswerQuestion(faq.id, faq.description)}>
+                                                                             Answer
+                                                                         </Button>
+                                                                     )}
+                                                                     {roleName === 'company_admin' && (
+                                                                         <Button size="sm" variant="danger" onClick={() => handleDeleteContent(faq.id, faq.title)}>
+                                                                             Delete
+                                                                         </Button>
+                                                                     )}
+                                                                 </div>
+                                                             </div>
+                                                         );
+                                                     })}
+                                                 </div>
+                                             </div>
+                                         )}
+
+                                         {faqs.length > 0 ? (
+                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                 {faqs.map((faq: any, idx: number) => {
+                                                     const { roleName } = getAccessContext(user);
+                                                     const isOwnerAdmin = roleName === 'company_admin';
+                                                     const isAnswerer = faq.answeredBy && String(faq.answeredBy) === String(user?.id);
+                                                     const canEdit = isOwnerAdmin || (roleName === 'technician' && isAnswerer);
+                                                     const canDelete = roleName === 'company_admin';
+                                                     return (
+                                                         <div key={faq.id || idx} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '1.5rem', border: '1px solid var(--color-border)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.5rem' }}>
+                                                                 <h5 style={{ margin: 0, fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-text-strong)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                     <IonIcon name="help-circle-outline" style={{ color: 'var(--color-primary)' }} />
+                                                                     {faq.title}
+                                                                 </h5>
+                                                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                                     {canEdit && (
+                                                                         <Button size="sm" variant="secondary" onClick={() => handleEditAnswer(faq.id, faq.answer || faq.description)}>
+                                                                             Edit Answer
+                                                                         </Button>
+                                                                     )}
+                                                                     {canDelete && (
+                                                                         <Button size="sm" variant="danger" onClick={() => handleDeleteContent(faq.id, faq.title)}>
+                                                                             Delete
+                                                                         </Button>
+                                                                     )}
+                                                                 </div>
+                                                             </div>
+                                                             <p style={{ margin: 0, color: 'var(--color-text)', lineHeight: 1.6 }}>{faq.answer || faq.description}</p>
+                                                             {faq.author && (
+                                                                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
+                                                                     Verified Answer by: <span style={{ color: 'var(--color-primary)' }}>{faq.author}</span>
+                                                                 </div>
+                                                             )}
+                                                         </div>
+                                                     );
+                                                 })}
+                                             </div>
+                                         ) : (
+                                             <EmptyState icon="help-circle-outline" title="No FAQs" description="No frequently asked questions available for this product." />
+                                         )}
+                                     </div>
+                                 )}
                             </div>
                         </section>
                     </div>

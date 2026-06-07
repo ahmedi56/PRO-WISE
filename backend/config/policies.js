@@ -58,7 +58,7 @@ module.exports.policies = {
   // For reads, I'll allow isAuthenticated, since ProductController.getAll handles clients inherently.
   ProductController: {
     'getAll': true,
-    'getOne': true,
+    'getOne': 'optionalAuth',
     'getRecommendations': true,
     'getComponentRecommendations': true,
     'semanticSearch': true,

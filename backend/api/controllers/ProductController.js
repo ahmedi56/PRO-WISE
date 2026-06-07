@@ -406,12 +406,29 @@ module.exports = {
         status: 'approved'
       }).populate('createdBy');
 
+      // Fetch pending FAQs for Q&A workflow
+      const pendingContent = await Content.find({
+        product: req.params.id,
+        status: 'pending',
+        type: 'faq'
+      }).populate('createdBy');
+
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
 
       // Resolve role and company from context
-      const { roleName, companyId: userCompanyId } = await getAccessContext(req);
+      const { roleName, companyId: userCompanyId, user: resolvedUser } = await getAccessContext(req);
+
+      let filteredPendingContent = [];
+      if (resolvedUser) {
+        const isStaff = ['super_admin', 'administrator', 'company_admin', 'technician'].includes(roleName);
+        if (isStaff) {
+          filteredPendingContent = pendingContent;
+        } else {
+          filteredPendingContent = pendingContent.filter(c => String(c.createdBy?.id || c.createdBy) === String(resolvedUser.id));
+        }
+      }
 
       const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
       const isOwnerAdmin = isAdmin && String(product.company?.id || product.company) === String(userCompanyId || '');
@@ -502,6 +519,15 @@ module.exports = {
           steps: c.steps,
           media: c.media,
           author: c.createdBy ? c.createdBy.name : 'Unknown'
+        })),
+        pendingContent: filteredPendingContent.map(c => ({
+          id: c.id,
+          title: c.title,
+          description: c.description,
+          type: c.type,
+          status: c.status,
+          author: c.createdBy ? c.createdBy.name : 'Unknown',
+          createdBy: c.createdBy ? c.createdBy.id || c.createdBy : null
         }))
       });
 
