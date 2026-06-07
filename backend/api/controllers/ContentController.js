@@ -116,11 +116,14 @@ module.exports = {
         return res.forbidden({ error: 'Unauthorized: You do not have permission to update this content' });
       }
 
-      // Check staff constraint on answer modification
+      // Check staff constraint on answer modification and other fields
       const isStaff = isSuperAdmin || isCompanyAdmin || isTechnician;
       if (!isStaff) {
-        if (req.body.answer !== undefined && req.body.answer !== content.answer) {
-          return res.forbidden({ error: 'Unauthorized: Customers cannot answer or edit FAQ answers' });
+        const allowedFields = ['title', 'description'];
+        const keys = Object.keys(req.body);
+        const hasDisallowedFields = keys.some(key => !allowedFields.includes(key) && req.body[key] !== undefined && req.body[key] !== content[key]);
+        if (hasDisallowedFields) {
+          return res.forbidden({ error: 'Unauthorized: Customers can only update the question title and description' });
         }
       }
 
