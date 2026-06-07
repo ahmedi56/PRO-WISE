@@ -8,13 +8,16 @@ interface AuthResponse {
     refreshToken?: string;
 }
 
+// Enable credentials (cookies) for cross-origin requests
+axios.defaults.withCredentials = true;
+
 // Add a request interceptor to automatically attach the token
 axios.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = localStorage.getItem('token');
         if (token) {
             config.headers = config.headers || new AxiosHeaders();
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.set('Authorization', `Bearer ${token}`);
         }
         return config;
     },
@@ -54,7 +57,7 @@ axios.interceptors.response.use(
                     
                     // Update the failed request with the new token and retry
                     originalRequest.headers = originalRequest.headers || new AxiosHeaders();
-                    originalRequest.headers.Authorization = `Bearer ${data.token}`;
+                    originalRequest.headers.set('Authorization', `Bearer ${data.token}`);
                     return axios(originalRequest);
                 }
             } catch (refreshError) {

@@ -15,6 +15,10 @@ module.exports = async function (req, res, proceed) {
     }
   } else if (req.query && req.query.token) {
     token = req.query.token;
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  } else if (req.signedCookies && req.signedCookies.token) {
+    token = req.signedCookies.token;
   }
 
   if (!token) {

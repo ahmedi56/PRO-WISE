@@ -129,9 +129,9 @@ module.exports = {
     *                                                                          *
     ***************************************************************************/
     cors: {
-      // allowOrigins: [
-      //   'https://example.com',
-      // ]
+      allowOrigins: [
+        'https://pro-wise-web.vercel.app'
+      ]
     },
 
   },

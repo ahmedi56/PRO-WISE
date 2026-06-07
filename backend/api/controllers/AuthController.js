@@ -278,6 +278,21 @@ module.exports = {
 
       const { token, refreshToken } = await issueTokens(user);
 
+      // Set cookies for production/cross-site credentials support
+      const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      };
+      res.cookie('token', token, cookieOptions);
+      if (refreshToken) {
+        res.cookie('refreshToken', refreshToken, {
+          ...cookieOptions,
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+      }
+
       await logAction(req, {
         action: 'auth.login',
         target: user.id,
@@ -359,6 +374,21 @@ module.exports = {
       await RefreshToken.destroy({ token: refreshToken });
       const { token: newToken, refreshToken: newRefreshToken } = await issueTokens(user);
 
+      // Set cookies for production/cross-site credentials support
+      const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      };
+      res.cookie('token', newToken, cookieOptions);
+      if (newRefreshToken) {
+        res.cookie('refreshToken', newRefreshToken, {
+          ...cookieOptions,
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+      }
+
       return res.json({ token: newToken, refreshToken: newRefreshToken });
 
     } catch (err) {
@@ -377,6 +407,11 @@ module.exports = {
       if (refreshToken) {
         await RefreshToken.destroy({ token: refreshToken });
       }
+      
+      // Clear cookies
+      res.clearCookie('token', { httpOnly: true, secure: true, sameSite: 'none' });
+      res.clearCookie('refreshToken', { httpOnly: true, secure: true, sameSite: 'none' });
+      
       return res.json({ message: 'Logged out successfully' });
     } catch (err) {
       sails.log.error('Logout error:', err);
@@ -470,6 +505,21 @@ module.exports = {
       }
 
       const { token, refreshToken } = await issueTokens(user);
+
+      // Set cookies for production/cross-site credentials support
+      const cookieOptions = {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      };
+      res.cookie('token', token, cookieOptions);
+      if (refreshToken) {
+        res.cookie('refreshToken', refreshToken, {
+          ...cookieOptions,
+          maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+      }
 
       await logAction(req, {
         action: 'auth.login',

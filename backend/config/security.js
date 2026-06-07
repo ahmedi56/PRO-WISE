@@ -10,9 +10,14 @@ module.exports.security = {
 
   cors: {
     allRoutes: true,
-    allowOrigins: '*',
+    allowOrigins: [
+      'https://pro-wise-web.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000'
+    ],
     allowCredentials: true,
-    allowAnyOriginWithCredentialsUnsafe: true,
     allowRequestHeaders: 'content-type, authorization, x-requested-with'
   },
 
