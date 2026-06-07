@@ -101,6 +101,16 @@ module.exports = {
       columnType: 'text',
       allowNull: true,
       description: 'Definitive answer for FAQ entries'
+    },
+    question: {
+      type: 'string',
+      allowNull: true,
+      description: 'Optional separate question text for FAQ'
+    },
+    answeredBy: {
+      model: 'user',
+      required: false,
+      description: 'User who provided the answer'
     }
   }
 };

@@ -172,12 +172,12 @@ module.exports.policies = {
     'query': 'optionalAuth'
   },
 
-  // ─── Content Workflow ───────────────────────────────────
   ContentController: {
     'find': 'isAuthenticated',
     'findOne': 'isAuthenticated',
-    'create': ['isAuthenticated', 'isCompanyAdmin'],
-    'update': ['isAuthenticated', 'isCompanyAdmin'],
+    'create': 'isAuthenticated',
+    'update': 'isAuthenticated',
+    'delete': 'isAuthenticated',
     'submit': ['isAuthenticated', 'isCompanyAdmin'],
     'getPending': ['isAuthenticated', 'isSuperAdmin'],
     'approve': ['isAuthenticated', 'isSuperAdmin'],

@@ -14,7 +14,27 @@ module.exports = {
         return res.badRequest({ error: 'Missing data: title, description, and product are required' });
       }
 
-      const companyId = req.user.companyId || req.user.company || null;
+      // Check product and get its company
+      const productRecord = await Product.findOne({ id: product });
+      if (!productRecord) {
+        return res.badRequest({ error: 'Product not found' });
+      }
+      
+      const companyId = productRecord.company || null;
+      
+      // Determine user role
+      const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
+      const isCompanyAdmin = userRole === 'company_admin' || userRole === 'administrator' || userRole === 'super_admin';
+      
+      // Non-admins can only create FAQ questions
+      if (!isCompanyAdmin && type !== 'faq') {
+        return res.forbidden({ error: 'Unauthorized: Requires Company Admin role to create this content type' });
+      }
+
+      const isFaq = type === 'faq';
+      const finalAnswer = isCompanyAdmin ? (answer || null) : null;
+      const status = isCompanyAdmin ? 'draft' : 'pending';
+
       const newContent = await Content.create({
         title,
         description,
@@ -25,9 +45,10 @@ module.exports = {
         fileUrl: fileUrl || null,
         difficulty: difficulty || 'medium',
         estimatedTime: estimatedTime || null,
-        answer: answer || null,
-        product: product,
-        status: 'draft',
+        answer: finalAnswer,
+        question: isFaq ? description : null,
+        product: productRecord.id,
+        status,
         company: companyId,
         createdBy: req.user.id
       }).fetch();
@@ -53,30 +74,94 @@ module.exports = {
       
       if (!content) {return res.notFound({ error: 'Content not found' });}
       
+      // Determine user role and permissions
       const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
       const isSuperAdmin = userRole === 'super_admin';
-      const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
-      if (!req.user || (!isSuperAdmin && !isOwner)) {
-        return res.forbidden({ error: 'Unauthorized access: You do not own this content' });
+      const isCompanyAdmin = userRole === 'company_admin' || userRole === 'administrator';
+      const isTechnician = userRole === 'technician';
+      
+      const isCreator = content.createdBy === req.user.id;
+      const isSameCompany = req.user.companyId && String(content.company) === String(req.user.companyId);
+
+      let allowed = false;
+      let onlyAnswer = false;
+      let answeredBy = content.answeredBy || null;
+
+      if (isSuperAdmin || (isCompanyAdmin && isSameCompany)) {
+        // Admins can edit anything
+        allowed = true;
+      } else if (content.type === 'faq') {
+        if (isTechnician) {
+          // Technicians can answer or edit their own answer
+          if (!content.answer) {
+            allowed = true;
+            onlyAnswer = true;
+            answeredBy = req.user.id;
+          } else if (content.answeredBy && String(content.answeredBy) === String(req.user.id)) {
+            allowed = true;
+            onlyAnswer = true;
+          }
+        } else if (isCreator && !content.answer) {
+          // Creators can edit their own unanswered question
+          allowed = true;
+        }
+      } else {
+        // Non-FAQs: must be creator or same company admin (bypassed above)
+        if (isCreator || isSameCompany) {
+          allowed = true;
+        }
       }
 
-      // If approved, reset to draft to require re-approval
-      const newStatus = content.status === 'approved' ? 'draft' : content.status;
+      if (!allowed) {
+        return res.forbidden({ error: 'Unauthorized: You do not have permission to update this content' });
+      }
 
-      const updated = await Content.updateOne({ id: contentId }).set({
-        status: newStatus,
-        title: req.body.title || content.title,
-        description: req.body.description || content.description,
-        type: req.body.type || content.type,
-        steps: req.body.steps || content.steps,
-        media: req.body.media || content.media,
-        difficulty: req.body.difficulty || content.difficulty,
-        estimatedTime: req.body.estimatedTime || content.estimatedTime,
-        answer: req.body.answer || content.answer,
-        videoId: req.body.videoId !== undefined ? req.body.videoId : content.videoId,
-        fileUrl: req.body.fileUrl !== undefined ? req.body.fileUrl : content.fileUrl,
-        product: req.body.product || content.product
-      });
+      // Check staff constraint on answer modification
+      const isStaff = isSuperAdmin || isCompanyAdmin || isTechnician;
+      if (!isStaff) {
+        if (req.body.answer !== undefined && req.body.answer !== content.answer) {
+          return res.forbidden({ error: 'Unauthorized: Customers cannot answer or edit FAQ answers' });
+        }
+      }
+
+      let updatedData = {};
+
+      if (onlyAnswer) {
+        // Technicians can only update the answer field
+        if (req.body.answer === undefined || req.body.answer === null || req.body.answer.trim() === '') {
+          return res.badRequest({ error: 'Answer is required' });
+        }
+        updatedData = {
+          answer: req.body.answer,
+          answeredBy: answeredBy,
+          status: 'approved' // Automatically approve answered FAQ
+        };
+      } else {
+        // Full update for admins/creators
+        const isFaq = (req.body.type || content.type) === 'faq';
+        const isStaff = isSuperAdmin || isCompanyAdmin || isTechnician;
+        const newAnswer = isStaff ? (req.body.answer !== undefined ? req.body.answer : content.answer) : content.answer;
+        const newStatus = (isFaq && newAnswer) ? 'approved' : (content.status === 'approved' ? 'draft' : content.status);
+
+        updatedData = {
+          status: newStatus,
+          title: req.body.title || content.title,
+          description: req.body.description || content.description,
+          type: req.body.type || content.type,
+          steps: req.body.steps || content.steps,
+          media: req.body.media || content.media,
+          difficulty: req.body.difficulty || content.difficulty,
+          estimatedTime: req.body.estimatedTime || content.estimatedTime,
+          answer: newAnswer,
+          question: isFaq ? (req.body.description || content.description) : null,
+          videoId: req.body.videoId !== undefined ? req.body.videoId : content.videoId,
+          fileUrl: req.body.fileUrl !== undefined ? req.body.fileUrl : content.fileUrl,
+          product: req.body.product || content.product,
+          answeredBy: (isStaff && newAnswer) ? (content.answeredBy || req.user.id) : content.answeredBy
+        };
+      }
+
+      const updated = await Content.updateOne({ id: contentId }).set(updatedData);
 
       await logAction(req, {
         action: 'content.updated',
@@ -85,11 +170,11 @@ module.exports = {
         targetLabel: updated.title,
         details: { 
           changedFields: Object.keys(req.body),
-          statusReset: content.status === 'approved'
+          statusReset: content.status === 'approved' && updated.status === 'draft'
         }
       });
 
-      if (content.status === 'approved') {
+      if (content.status === 'approved' && updated.status === 'draft') {
         try {
           await Notification.create({
             user: req.user.id,
@@ -434,21 +519,31 @@ module.exports = {
     try {
       const contentId = req.params.id;
       const content = await Content.findOne({ id: contentId });
-
+      
       if (!content) {
         return res.notFound({ error: 'Content not found' });
       }
 
       const userRole = typeof req.user?.role === 'object' ? req.user?.role?.name : req.user?.role;
       const isSuperAdmin = userRole === 'super_admin';
-      const isOwner = content.createdBy === req.user.id || (req.user.companyId && String(content.company) === String(req.user.companyId));
+      const isCompanyAdmin = userRole === 'company_admin' || userRole === 'administrator';
+      const isCreator = content.createdBy === req.user.id;
+      const isSameCompany = req.user.companyId && String(content.company) === String(req.user.companyId);
 
-      if (!isSuperAdmin && !isOwner) {
-        return res.forbidden({ error: 'Unauthorized: You do not have permission to delete this content' });
+      let allowed = false;
+      if (isSuperAdmin || (isCompanyAdmin && isSameCompany)) {
+        allowed = true;
+      } else if (isCreator) {
+        if (content.type === 'faq' && (content.answer || content.status === 'approved')) {
+          allowed = false;
+        } else {
+          allowed = true;
+        }
       }
 
-      // Owners can delete their own content regardless of status
-      // (Used to be restricted for non-super admins if approved)
+      if (!allowed) {
+        return res.forbidden({ error: 'Unauthorized: You do not have permission to delete this content' });
+      }
 
       await Content.destroyOne({ id: contentId });
 
