@@ -86,7 +86,7 @@ const SemanticSearch: React.FC<SemanticSearchProps> = ({ variant = 'default' }) 
             }}>
                 <IonIcon 
                     name={isSemantic ? "sparkles" : "search-outline"} 
-                    style={{ fontSize: '1.2rem', color: isSemantic ? 'var(--color-primary)' : 'var(--color-text-muted)' }} 
+                    style={{ fontSize: '1.2rem', color: isSemantic ? 'var(--color-primary)' : 'var(--color-text-strong)' }} 
                 />
                 <input
                     type="text"
