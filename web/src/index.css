@@ -2346,9 +2346,11 @@ input[type="number"] {
 
 /* â”€â”€ Semantic Search Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .semantic-search-container {
+
   flex: 1;
   max-width: 400px;
   margin: 0 var(--space-6);
+  
 }
 
 .search-input-wrapper {

@@ -4,6 +4,18 @@ import { Product } from '../types/product';
 import { CATEGORY_ICON_MAP } from '../constants/icons';
 import { IonIcon } from './ui';
 
+const stripMarkdown = (text: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/\*\*([\s\S]*?)\*\*/g, '$1')
+    .replace(/\*([\s\S]*?)\*/g, '$1')
+    .replace(/^(#{1,6})\s+(.*)$/gm, '$2')
+    .replace(/^\s*[*+-]\s+(.*)$/gm, '$1')
+    .replace(/^\s*\d+\.\s+(.*)$/gm, '$1')
+    .replace(/\r?\n/g, ' ')
+    .trim();
+};
+
 interface ProductCardProps {
     product: Product;
     onClick?: (id: string) => void;
@@ -83,7 +95,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, onClick }) =>
                 )}
 
                 <p className="pw-text-sm pw-text-muted pw-line-clamp-2 pw-mb-6 pw-leading-relaxed pw-font-medium">
-                    {product.description}
+                    {stripMarkdown(product.description || '')}
                 </p>
 
                 {/* Matched Components (Hover/Touch Hold Reveal) */}

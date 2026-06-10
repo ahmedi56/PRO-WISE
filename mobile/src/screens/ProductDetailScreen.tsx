@@ -17,6 +17,7 @@ import { Ionicons as BaseIonicons } from '@expo/vector-icons';
 const Ionicons = BaseIonicons as any;
 import { BlurView } from 'expo-blur';
 // import { motion } from 'framer-motion'; // Removed web-only library from mobile screen
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 import { logout } from '../store/slices/authSlice';
 import { ProWiseLogoSvg } from '../components/ProWiseLogoSvg';
@@ -347,7 +348,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                 <Text style={styles.sectionLabel}>DESCRIPTION</Text>
                             </View>
                             <View style={styles.glassCard}>
-                                <Text style={styles.body}>{data.description || 'No primary telemetry registered.'}</Text>
+                                <MarkdownRenderer text={data.description || 'No primary telemetry registered.'} textStyle={styles.body} />
                             </View>
                         </View>
 

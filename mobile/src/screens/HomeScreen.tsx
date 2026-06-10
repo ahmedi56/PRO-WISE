@@ -15,6 +15,18 @@ import API_URL from '../constants/config';
 import { apiFetch } from '../utils/api';
 import { readJson } from '../utils/apiSettings';
 
+const stripMarkdown = (text: string): string => {
+  if (!text) return '';
+  return text
+    .replace(/\*\*([\s\S]*?)\*\*/g, '$1')
+    .replace(/\*([\s\S]*?)\*/g, '$1')
+    .replace(/^(#{1,6})\s+(.*)$/gm, '$2')
+    .replace(/^\s*[*+-]\s+(.*)$/gm, '$1')
+    .replace(/^\s*\d+\.\s+(.*)$/gm, '$1')
+    .replace(/\r?\n/g, ' ')
+    .trim();
+};
+
 interface Action {
     icon: keyof typeof Ionicons.glyphMap;
     title: string;
@@ -85,7 +97,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text style={[styles.cardMeta, { color: colors.textMuted }]}>{type === 'update' ? 'UPDATED' : 'MATCH'}</Text>
             </View>
             <Text style={[styles.cardTitle, { color: colors.textStrong }]} numberOfLines={1}>{p.name}</Text>
-            <Text style={[styles.cardDesc, { color: colors.text }]} numberOfLines={2}>{p.description || 'Access technical specifications and guides.'}</Text>
+            <Text style={[styles.cardDesc, { color: colors.text }]} numberOfLines={2}>{stripMarkdown(p.description || 'Access technical specifications and guides.')}</Text>
         </TouchableOpacity>
     );
 
