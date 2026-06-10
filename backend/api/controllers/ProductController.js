@@ -496,14 +496,14 @@ module.exports = {
         supportVideos: supportVideos.map(v => ({
           id: v.id,
           videoId: v.videoId,
-          videoUrl: v.videoUrl,
+          videoUrl: v.videoUrl ? TranslationService.getAbsoluteUrl(req, v.videoUrl) : '',
           title: v.title,
           author: v.createdBy ? v.createdBy.name : 'Unknown'
         })),
         supportPDFs: supportPDFs.map(p => ({
           id: p.id,
           title: p.title,
-          fileUrl: p.fileUrl,
+          fileUrl: p.fileUrl ? TranslationService.getAbsoluteUrl(req, p.fileUrl) : '',
           author: p.createdBy ? p.createdBy.name : 'Unknown'
         })),
         approvedContent: approvedContent.map(c => ({

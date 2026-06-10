@@ -185,6 +185,22 @@ export const uploadPDF = createAsyncThunk(
     }
 );
 
+export const uploadVideo = createAsyncThunk(
+    'support/uploadVideo',
+    async (formData: FormData, { rejectWithValue }) => {
+        try {
+            const response = await axios.post(`${API_URL}/support/videos/upload`, formData, {
+                headers: {
+                    ...getAuthHeaders()
+                }
+            });
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to upload video');
+        }
+    }
+);
+
 export const deletePDF = createAsyncThunk(
     'support/deletePDF',
     async (id: string, { rejectWithValue }) => {
@@ -269,6 +285,9 @@ const supportSlice = createSlice({
                 state.success = 'PDF added successfully';
             })
             .addCase(uploadPDF.fulfilled, (state) => {
+                state.loading = false;
+            })
+            .addCase(uploadVideo.fulfilled, (state) => {
                 state.loading = false;
             })
             .addCase(deletePDF.fulfilled, (state, action: PayloadAction<string>) => {

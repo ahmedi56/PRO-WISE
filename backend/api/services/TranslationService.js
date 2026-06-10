@@ -42,6 +42,25 @@ module.exports = {
     const match = urlOrId.match(regex);
     
     return match ? match[1] : urlOrId; // Return ID if match found, else return the original string
+  },
+
+  /**
+   * Convert a relative URL path to a fully qualified absolute URL.
+   * If URL is already absolute or empty, returns it as is.
+   *
+   * @param {Object} req - Sails/Express request object
+   * @param {string} url - The relative URL path
+   * @returns {string} Fully qualified absolute URL
+   */
+  getAbsoluteUrl: function (req, url) {
+    if (!url) { return ''; }
+    if (url.startsWith('http://') || url.startsWith('https://')) { return url; }
+
+    const protocol = req.protocol || 'http';
+    const host = req.get ? req.get('host') : (req.headers && req.headers.host) || 'localhost:1337';
+
+    const cleanPath = url.startsWith('/') ? url : `/${url}`;
+    return `${protocol}://${host}${cleanPath}`;
   }
 
 };

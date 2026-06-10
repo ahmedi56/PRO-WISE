@@ -120,6 +120,8 @@ module.exports.routes = {
   'DELETE /api/support/steps/:id': 'RepairStepController.delete',
 
   // Support Videos
+  'POST /api/support/videos/upload': 'SupportVideoController.upload',
+  'GET /api/support/videos/view/:filename': { skipAssets: false, controller: 'SupportVideoController', action: 'view' },
   'POST /api/support/videos': 'SupportVideoController.create',
   'GET /api/support/videos/:productId': 'SupportVideoController.getByProduct',
   'DELETE /api/support/videos/:id': 'SupportVideoController.delete',
