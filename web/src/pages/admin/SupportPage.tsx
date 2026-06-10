@@ -13,7 +13,6 @@ import {
     createPDF, 
     deletePDF,
     uploadPDF,
-    uploadVideo,
     clearSupportState,
     clearMessages
 } from '../../store/slices/supportSlice';
@@ -45,9 +44,7 @@ export const SupportPage: React.FC = () => {
         videoUrls: '',
         pdfUrls: ''
     });
-    const [videoForm, setVideoForm] = useState({ title: '', videoId: '', videoUrl: '' });
-    const [videoSource, setVideoSource] = useState<'local' | 'link'>('link');
-    const [videoFile, setVideoFile] = useState<File | null>(null);
+    const [videoForm, setVideoForm] = useState({ title: '', videoId: '' });
     const [pdfForm, setPdfForm] = useState({ title: '', fileUrl: '' });
     const [pdfSource, setPdfSource] = useState<'local' | 'link'>('local');
     const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -115,43 +112,9 @@ export const SupportPage: React.FC = () => {
 
     const handleAddVideo = async (e: React.FormEvent) => {
         e.preventDefault();
-        let finalUrl = videoForm.videoUrl;
-        let finalVideoId = videoForm.videoId;
-        try {
-            if (videoSource === 'local' && videoFile) {
-                const formData = new FormData();
-                formData.append('video', videoFile);
-                const uploadResult = await dispatch(uploadVideo(formData));
-                if (uploadVideo.fulfilled.match(uploadResult)) {
-                    finalUrl = (uploadResult.payload as any).fileUrl;
-                    finalVideoId = '';
-                } else return;
-            }
-            const createResult = await dispatch(createVideo({ 
-                product: selectedProductId, 
-                title: videoForm.title, 
-                videoId: finalVideoId, 
-                videoUrl: finalUrl 
-            }));
-            if (createVideo.fulfilled.match(createResult)) {
-                setShowModal(null);
-                setVideoForm({ title: '', videoId: '', videoUrl: '' });
-                setVideoFile(null);
-            }
-        } catch (err) {
-            console.error('Video Add Error:', err);
-        }
-    };
-
-    const handleVideoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setVideoFile(file);
-            if (!videoForm.title) {
-                const fileName = file.name.replace(/\.[^/.]+$/, "");
-                setVideoForm(prev => ({ ...prev, title: fileName }));
-            }
-        }
+        await dispatch(createVideo({ product: selectedProductId, ...videoForm }));
+        setShowModal(null);
+        setVideoForm({ title: '', videoId: '' });
     };
 
     const handleAddPDF = async (e: React.FormEvent) => {
@@ -383,26 +346,12 @@ export const SupportPage: React.FC = () => {
                                 <input className="support-input" type="text" placeholder="e.g. Battery Replacement Tutorial" value={videoForm.title} onChange={e => setVideoForm({...videoForm, title: e.target.value})} required />
                             </div>
                             <div style={{ marginBottom: '1rem' }}>
-                                <label className="label">Source</label>
-                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input type="radio" checked={videoSource === 'local'} onChange={() => setVideoSource('local')} /> Upload File
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                                        <input type="radio" checked={videoSource === 'link'} onChange={() => setVideoSource('link')} /> Paste YouTube URL / ID
-                                    </label>
-                                </div>
-                                {videoSource === 'local' ? (
-                                    <input className="support-input" type="file" accept="video/*" onChange={handleVideoFileChange} required={!videoForm.videoUrl} />
-                                ) : (
-                                    <>
-                                        <input className="support-input" type="text" placeholder="e.g. dQw4w9WgXcQ" value={videoForm.videoId} onChange={e => setVideoForm({...videoForm, videoId: e.target.value})} required />
-                                        <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>The ID from the YouTube URL (youtube.com/watch?v=<strong>THIS_PART</strong>)</p>
-                                    </>
-                                )}
+                                <label className="label">YouTube Video ID</label>
+                                <input className="support-input" type="text" placeholder="e.g. dQw4w9WgXcQ" value={videoForm.videoId} onChange={e => setVideoForm({...videoForm, videoId: e.target.value})} required />
+                                <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>The ID from the YouTube URL (youtube.com/watch?v=<strong>THIS_PART</strong>)</p>
                             </div>
                             <div style={{ display: 'flex', gap: '1rem' }}>
-                                <button type="button" className="btn btn-outline" onClick={() => { setShowModal(null); setVideoFile(null); }}>Cancel</button>
+                                <button type="button" className="btn btn-outline" onClick={() => setShowModal(null)}>Cancel</button>
                                 <button type="submit" className="btn btn-primary">Add Video</button>
                             </div>
                         </form>

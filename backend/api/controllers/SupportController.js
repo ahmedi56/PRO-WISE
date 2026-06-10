@@ -75,14 +75,13 @@ module.exports = {
         videos: videos.map(v => ({ 
           id: v.id, 
           videoId: v.videoId, 
-          videoUrl: v.videoUrl ? TranslationService.getAbsoluteUrl(req, v.videoUrl) : '',
           title: v.title, 
           author: v.createdBy ? v.createdBy.name : 'Unknown' 
         })),
         pdfs: pdfs.map(p => ({ 
           id: p.id, 
           title: p.title, 
-          fileUrl: p.fileUrl ? TranslationService.getAbsoluteUrl(req, p.fileUrl) : '', 
+          fileUrl: p.fileUrl, 
           author: p.createdBy ? p.createdBy.name : 'Unknown' 
         })),
         steps: steps

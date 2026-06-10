@@ -5,23 +5,8 @@
  */
 const path = require('path');
 const fs = require('fs');
-const os = require('os');
 
-const getDesktopDocsPath = () => {
-  if (os.platform() === 'win32') {
-    return 'C:\\Users\\T560\\Desktop\\Pro-wise cont';
-  }
-  const fallbackPath = path.join(os.homedir(), 'Desktop', 'Pro-wise cont');
-  try {
-    if (!fs.existsSync(fallbackPath)) {
-      fs.mkdirSync(fallbackPath, { recursive: true });
-    }
-    return fallbackPath;
-  } catch (e) {
-    return path.join(process.cwd(), '.tmp', 'uploads');
-  }
-};
-const DESKTOP_DOCS_PATH = getDesktopDocsPath();
+const DESKTOP_DOCS_PATH = 'C:\\Users\\T560\\Desktop\\Pro-wise cont';
 
 module.exports = {
 
@@ -69,7 +54,7 @@ module.exports = {
         const filename = path.basename(file.fd);
         // The frontend uses API_URL which already includes '/api'
         // Using a leading slash ensures consistent concatenation
-        const fileUrl = `/api/support/pdfs/view/${filename}`;
+        const fileUrl = `/support/pdfs/view/${filename}`;
 
         sails.log.info('PDF saved to desktop:', filename);
         return res.json({
@@ -149,9 +134,7 @@ module.exports = {
         createdBy
       }).fetch();
 
-      const responsePDF = Object.assign({}, newPDF);
-      responsePDF.fileUrl = TranslationService.getAbsoluteUrl(req, newPDF.fileUrl);
-      return res.status(201).json(responsePDF);
+      return res.status(201).json(newPDF);
     } catch (err) {
       return res.serverError(err);
     }
@@ -165,12 +148,7 @@ module.exports = {
     try {
       const productId = req.params.productId;
       const pdfs = await SupportPDF.find({ product: productId }).sort('createdAt DESC');
-      return res.json(pdfs.map(p => ({ 
-        id: p.id, 
-        title: p.title, 
-        fileUrl: p.fileUrl ? TranslationService.getAbsoluteUrl(req, p.fileUrl) : '',
-        author: p.createdBy ? p.createdBy.name : 'Unknown'
-      })));
+      return res.json(pdfs.map(p => ({ id: p.id, title: p.title, fileUrl: p.fileUrl })));
     } catch (err) {
       return res.serverError(err);
     }
