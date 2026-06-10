@@ -5,6 +5,8 @@
  * @help        :: See https://sailsjs.com/docs/concepts/actions
  */
 
+const { _normalizeFileUrl: normalizeFileUrl } = require('./SupportPDFController');
+
 const resolvePhoneCategory = async (categoryId, manufacturer, companyId, productName) => {
   if (!categoryId) {return null;}
 
@@ -503,7 +505,7 @@ module.exports = {
         supportPDFs: supportPDFs.map(p => ({
           id: p.id,
           title: p.title,
-          fileUrl: p.fileUrl,
+          fileUrl: normalizeFileUrl(p.fileUrl, req),
           author: p.createdBy ? p.createdBy.name : 'Unknown'
         })),
         approvedContent: approvedContent.map(c => ({
@@ -515,7 +517,7 @@ module.exports = {
           estimatedTime: c.estimatedTime,
           answer: c.answer,
           videoId: c.videoId,
-          fileUrl: c.fileUrl,
+          fileUrl: normalizeFileUrl(c.fileUrl, req),
           steps: c.steps,
           media: c.media,
           author: c.createdBy ? c.createdBy.name : 'Unknown'

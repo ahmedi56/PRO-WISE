@@ -72,6 +72,21 @@ const getComponentLabel = (component: any) => {
         : name;
 };
 
+/**
+ * Normalize a media URL to an absolute URL.
+ * If the URL is already absolute (http/https), return as-is.
+ * If relative, prepend the backend base URL derived from API_URL.
+ */
+const resolveMediaUrl = (url: string | undefined | null): string => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    // API_URL is like 'https://prowise-backend.onrender.com/api'
+    const backendBase = API_URL.replace(/\/api\/?$/, '');
+    const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+    const apiPath = normalizedPath.startsWith('/api/') ? normalizedPath : `/api${normalizedPath}`;
+    return `${backendBase}${apiPath}`;
+};
+
 const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = []) => {
     const videos: ClassifiedMedia[] = [];
     const pdfs: ClassifiedMedia[] = [];
@@ -85,10 +100,10 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
                     stepNumber: step.stepNumber,
                 };
                 if (mediaItem.type === 'video') {
-                    videos.push({ ...mediaItem, author: 'Legacy Support', _ctx: context });
+                    videos.push({ ...mediaItem, url: resolveMediaUrl(mediaItem.url), author: 'Legacy Support', _ctx: context });
                 }
                 if (mediaItem.type === 'pdf') {
-                    pdfs.push({ ...mediaItem, author: 'Legacy Support', _ctx: context });
+                    pdfs.push({ ...mediaItem, url: resolveMediaUrl(mediaItem.url), author: 'Legacy Support', _ctx: context });
                 }
             });
         });
@@ -112,7 +127,7 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
             id: pdf.id,
             type: 'pdf',
             title: pdf.title,
-            url: pdf.fileUrl || '',
+            url: resolveMediaUrl(pdf.fileUrl) || '',
             author: pdf.author || 'Internal Support',
             _ctx: { guideTitle: 'Technical Protocol', stepTitle: 'Official Documentation' }
         });

@@ -4,6 +4,8 @@
  * @description :: Server-side actions for handling support content aggregation.
  */
 
+const { _normalizeFileUrl: normalizeFileUrl } = require('./SupportPDFController');
+
 module.exports = {
 
   /**
@@ -81,7 +83,7 @@ module.exports = {
         pdfs: pdfs.map(p => ({ 
           id: p.id, 
           title: p.title, 
-          fileUrl: p.fileUrl, 
+          fileUrl: normalizeFileUrl(p.fileUrl, req), 
           author: p.createdBy ? p.createdBy.name : 'Unknown' 
         })),
         steps: steps

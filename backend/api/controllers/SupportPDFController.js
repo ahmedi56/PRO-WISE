@@ -1,31 +1,69 @@
 /**
  * SupportPDFController
  *
- * @description :: Server-side actions for handling support PDFs on the desktop folder.
+ * @description :: Server-side actions for handling support PDF uploads and serving.
+ *                 Uses a portable upload directory that works on both local dev and Render.
  */
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 
-const DESKTOP_DOCS_PATH = 'C:\\Users\\T560\\Desktop\\Pro-wise cont';
+// Portable upload directory: use env var, or fallback to OS temp dir
+const UPLOADS_PATH = process.env.PROWISE_UPLOADS_PATH
+  || path.join(os.tmpdir(), 'prowise-uploads', 'pdfs');
+
+/**
+ * Build the public base URL for this backend instance.
+ * On Render: uses RENDER_EXTERNAL_URL env var.
+ * Locally: uses req.protocol + req.get('host').
+ */
+function getBaseUrl(req) {
+  if (process.env.RENDER_EXTERNAL_URL) {
+    return process.env.RENDER_EXTERNAL_URL;
+  }
+  // Fallback: build from request
+  const protocol = req.protocol || 'http';
+  const host = req.get('host') || req.headers.host || 'localhost:1337';
+  return `${protocol}://${host}`;
+}
+
+/**
+ * Normalize a fileUrl to an absolute public URL.
+ * - If already absolute (http/https), return as-is.
+ * - If relative (starts with /), prepend the backend base URL.
+ */
+function normalizeFileUrl(fileUrl, req) {
+  if (!fileUrl) return null;
+  if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+    return fileUrl;
+  }
+  const baseUrl = getBaseUrl(req);
+  // Ensure the relative path includes /api prefix
+  const apiPath = fileUrl.startsWith('/api/') ? fileUrl : `/api${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+  return `${baseUrl}${apiPath}`;
+}
 
 module.exports = {
 
+  // Export normalizeFileUrl for use by other controllers
+  _normalizeFileUrl: normalizeFileUrl,
+
   /**
    * POST /api/support/pdfs/upload
-   * Save PDF directly to the desktop folder
+   * Upload a PDF file to the server's portable storage directory.
    */
   upload: async function (req, res) {
     try {
-      // Ensure the desktop directory exists
-      if (!fs.existsSync(DESKTOP_DOCS_PATH)) {
-        fs.mkdirSync(DESKTOP_DOCS_PATH, { recursive: true });
+      // Ensure the upload directory exists
+      if (!fs.existsSync(UPLOADS_PATH)) {
+        fs.mkdirSync(UPLOADS_PATH, { recursive: true });
       }
 
       req.file('pdf').upload({
-        dirname: DESKTOP_DOCS_PATH,
+        dirname: UPLOADS_PATH,
         maxBytes: 50000000, // 50MB limit
         saveAs: function(file, cb) {
-          // Strictly enforce PDF extension and MIME type
+          // Strictly enforce PDF extension
           if (file.filename && !file.filename.toLowerCase().endsWith('.pdf')) {
             return cb(new Error('Only PDF files are allowed.'));
           }
@@ -34,8 +72,8 @@ module.exports = {
         }
       }, function (err, uploadedFiles) {
         if (err) {
-          sails.log.error('PDF Desktop Upload Error:', err);
-          return res.status(500).json({ message: 'Desktop upload error: ' + (err.message || 'Unknown error') });
+          sails.log.error('PDF Upload Error:', err);
+          return res.status(500).json({ message: 'Upload error: ' + (err.message || 'Unknown error') });
         }
 
         if (!uploadedFiles || uploadedFiles.length === 0) {
@@ -43,22 +81,21 @@ module.exports = {
         }
 
         const file = uploadedFiles[0];
-        
-        // Double check MIME type if available from the upload stream
+
+        // Warn on MIME type mismatch (Skipper may not always populate correctly)
         if (file.type && file.type !== 'application/pdf') {
-          // Note: Skipper might not always populate 'type' correctly depending on adapter, 
-          // but we already checked the extension in saveAs.
           sails.log.warn('Uploaded file type mismatch:', file.type);
         }
 
         const filename = path.basename(file.fd);
-        // The frontend uses API_URL which already includes '/api'
-        // Using a leading slash ensures consistent concatenation
-        const fileUrl = `/support/pdfs/view/${filename}`;
 
-        sails.log.info('PDF saved to desktop:', filename);
+        // Build absolute public URL so mobile/web clients can use it directly
+        const baseUrl = getBaseUrl(req);
+        const fileUrl = `${baseUrl}/api/support/pdfs/view/${filename}`;
+
+        sails.log.info('PDF uploaded successfully:', filename);
         return res.json({
-          message: 'File saved to desktop folder successfully',
+          message: 'File uploaded successfully',
           fileUrl: fileUrl,
           filename: filename
         });
@@ -71,7 +108,7 @@ module.exports = {
 
   /**
    * GET /api/support/pdfs/view/:filename
-   * Stream a PDF directly from the desktop folder
+   * Stream a PDF from the upload directory.
    */
   view: async function (req, res) {
     try {
@@ -80,37 +117,40 @@ module.exports = {
         return res.status(400).send('Filename is required');
       }
 
-      const filePath = path.join(DESKTOP_DOCS_PATH, filename);
+      const filePath = path.join(UPLOADS_PATH, filename);
 
-      // Security check: Ensure we are only reading from the intended directory
+      // Security check: prevent path traversal
       const absolutePath = path.resolve(filePath);
-      if (!absolutePath.startsWith(path.resolve(DESKTOP_DOCS_PATH))) {
-        return res.status(403).send('Forbidden: Access denied outside of support docs.');
+      if (!absolutePath.startsWith(path.resolve(UPLOADS_PATH))) {
+        return res.status(403).send('Forbidden: Access denied.');
       }
 
       if (!fs.existsSync(filePath)) {
-        return res.status(404).send('Document not found on desktop.');
+        return res.status(404).json({ 
+          message: 'Document not found. Files on Render are ephemeral and may be lost after redeploy. Consider using external URLs or cloud storage for persistent files.'
+        });
       }
 
       // Set correct content type for PDF
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'inline; filename="' + filename.replace(/"/g, '') + '"');
+      // Allow cross-origin access for mobile
+      res.setHeader('Access-Control-Allow-Origin', '*');
 
-      // Stream the file for high performance
+      // Stream the file
       const readStream = fs.createReadStream(filePath);
       
-      // Handle stream errors
       readStream.on('error', (streamErr) => {
         sails.log.error('PDF Read Stream Error:', streamErr);
         if (!res.headersSent) {
-          res.status(500).send('Error reading document from storage.');
+          res.status(500).send('Error reading document.');
         }
       });
 
       readStream.pipe(res);
     } catch (err) {
       sails.log.error('PDF Streaming Error:', err);
-      return res.status(500).send('Error streaming document from desktop.');
+      return res.status(500).send('Error streaming document.');
     }
   },
 
@@ -142,13 +182,17 @@ module.exports = {
 
   /**
    * GET /api/support/pdfs/:productId
-   * Fetch all documents for a product
+   * Fetch all documents for a product (with normalized URLs)
    */
   getByProduct: async function (req, res) {
     try {
       const productId = req.params.productId;
       const pdfs = await SupportPDF.find({ product: productId }).sort('createdAt DESC');
-      return res.json(pdfs.map(p => ({ id: p.id, title: p.title, fileUrl: p.fileUrl })));
+      return res.json(pdfs.map(p => ({ 
+        id: p.id, 
+        title: p.title, 
+        fileUrl: normalizeFileUrl(p.fileUrl, req)
+      })));
     } catch (err) {
       return res.serverError(err);
     }
@@ -156,7 +200,7 @@ module.exports = {
 
   /**
    * DELETE /api/support/pdfs/:id
-   * Remove a document
+   * Remove a document record and optionally the physical file
    */
   delete: async function (req, res) {
     try {
@@ -167,7 +211,20 @@ module.exports = {
         return res.status(404).json({ message: 'Support document not found' });
       }
 
-      // Optionally delete the physical file too, but we will leave it for now for safety
+      // Try to delete the physical file if it's a local upload
+      if (pdf.fileUrl && !pdf.fileUrl.startsWith('http')) {
+        const filename = path.basename(pdf.fileUrl);
+        const filePath = path.join(UPLOADS_PATH, filename);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            sails.log.info('Deleted physical file:', filename);
+          }
+        } catch (fileErr) {
+          sails.log.warn('Could not delete physical file:', fileErr.message);
+        }
+      }
+
       await SupportPDF.destroyOne({ id });
 
       return res.json({ message: 'Support document successfully removed.' });

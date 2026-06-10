@@ -5,6 +5,7 @@ import ProductSkeleton from '../../components/ui/Skeleton/ProductSkeleton';
 import { colors, spacing, radius, shadows } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import * as WebBrowser from 'expo-web-browser';
+import API_URL from '../../constants/config';
 
 const { width } = Dimensions.get('window');
 const COLUMN_COUNT = 2;
@@ -34,8 +35,15 @@ const ProductMediaScreen = () => {
     }
 
     const handleOpenMedia = (item: any) => {
-        const url = item.videoUrl || item.fileUrl || item.url;
+        let url = item.videoUrl || item.fileUrl || item.url;
         if (url) {
+            // Normalize relative URLs to absolute
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                const backendBase = API_URL.replace(/\/api\/?$/, '');
+                const normalizedPath = url.startsWith('/') ? url : `/${url}`;
+                const apiPath = normalizedPath.startsWith('/api/') ? normalizedPath : `/api${normalizedPath}`;
+                url = `${backendBase}${apiPath}`;
+            }
             WebBrowser.openBrowserAsync(url);
         }
     };
