@@ -12,6 +12,7 @@ import { Product, Guide, Media } from '../../types/product';
 import { RootState } from '../../store';
 import FeedbackSection from '../../components/FeedbackSection';
 import { QRCodeCanvas } from 'qrcode.react';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 function getYoutubeId(urlOrId: string) {
     if (!urlOrId) return '';
@@ -672,9 +673,9 @@ export const ProductDetailPage: React.FC = () => {
                                                             <div className="skeleton-loading" style={{ height: '14px', width: '75%', borderRadius: '4px' }}></div>
                                                         </div>
                                                     ) : (
-                                                        <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.6, color: 'var(--color-text-strong)' }}>
-                                                            {insights[component.selectionKey] || 'Loading insight...'}
-                                                        </p>
+                                                         <div style={{ fontSize: '0.95rem', color: 'var(--color-text-strong)' }}>
+                                                             <MarkdownRenderer text={insights[component.selectionKey] || 'Loading insight...'} />
+                                                         </div>
                                                     )}
                                                 </div>
                                             </div>
@@ -1117,12 +1118,10 @@ export const ProductDetailPage: React.FC = () => {
                                             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.04)',
                                             border: '1px solid #e2e8f0',
                                             fontSize: '0.95rem',
-                                            lineHeight: 1.6,
-                                            color: 'var(--color-text)',
-                                            whiteSpace: 'pre-wrap'
+                                            color: 'var(--color-text)'
                                         }}
                                     >
-                                        {item.text}
+                                        <MarkdownRenderer text={item.text} />
                                     </div>
                                 )
                             ))}

@@ -35,6 +35,7 @@ import { Product, Component } from '../types/product';
 import { Guide, Step, Media } from '../types/common';
 import FeedbackSection from '../components/FeedbackSection';
 import CustomButton from '../components/CustomButton';
+import MarkdownRenderer from '../components/MarkdownRenderer';
 
 const { width } = Dimensions.get('window');
 
@@ -497,9 +498,10 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                                 {loadingInsights[component.selectionKey] ? (
                                                     <ActivityIndicator size="small" color={colors.primary} style={{ alignSelf: 'flex-start', marginTop: 4 }} />
                                                 ) : (
-                                                    <Text style={styles.compSelectedAiText}>
-                                                        {insights[component.selectionKey] || 'Loading insight...'}
-                                                    </Text>
+                                                    <MarkdownRenderer 
+                                                        text={insights[component.selectionKey] || 'Loading insight...'}
+                                                        textStyle={styles.compSelectedAiText}
+                                                    />
                                                 )}
                                             </View>
                                         </View>
