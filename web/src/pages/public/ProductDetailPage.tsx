@@ -485,9 +485,9 @@ export const ProductDetailPage: React.FC = () => {
                 {mainTab === 'overview' && (
                     <div className="fade-in">
                         <section className="card" style={{ padding: '2.5rem', marginBottom: '2rem' }}>
-                            <p style={{ fontSize: '1.1rem', lineHeight: 1.8, color: 'var(--color-text)', margin: '0 0 2.5rem 0' }}>
-                                {product.description || 'No description available for this product.'}
-                            </p>
+                            <div style={{ fontSize: '1.1rem', color: 'var(--color-text)', margin: '0 0 2.5rem 0' }}>
+                                <MarkdownRenderer text={product.description || 'No description available for this product.'} />
+                            </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', background: 'var(--color-surface-raised)', padding: '2rem', borderRadius: 'var(--radius-lg)' }}>
                                 <div>
@@ -807,7 +807,9 @@ export const ProductDetailPage: React.FC = () => {
                                                                      </div>
                                                                      <div style={{ paddingTop: '0.25rem', paddingBottom: '1rem', flex: 1 }}>
                                                                          <h5 style={{ margin: '0 0 0.5rem 0', fontWeight: 700, fontSize: '1.1rem' }}>{step.title}</h5>
-                                                                         <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text)', lineHeight: 1.6 }}>{step.description}</p>
+                                                                         <div style={{ fontSize: '1rem', color: 'var(--color-text)' }}>
+                                                                             <MarkdownRenderer text={step.description} />
+                                                                         </div>
                                                                          
                                                                          {step.media && step.media.length > 0 && (
                                                                              <div style={{ marginTop: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
@@ -841,7 +843,9 @@ export const ProductDetailPage: React.FC = () => {
                                                                      </div>
                                                                      <div style={{ paddingTop: '0.25rem', paddingBottom: '1rem', flex: 1 }}>
                                                                          <h5 style={{ margin: '0 0 0.5rem 0', fontWeight: 700, fontSize: '1.1rem' }}>{step.title}</h5>
-                                                                         <p style={{ margin: 0, fontSize: '1rem', color: 'var(--color-text)', lineHeight: 1.6, marginBottom: step.image ? '1rem' : 0 }}>{step.description}</p>
+                                                                         <div style={{ fontSize: '1rem', color: 'var(--color-text)', marginBottom: step.image ? '1rem' : 0 }}>
+                                                                            <MarkdownRenderer text={step.description} />
+                                                                         </div>
                                                                          
                                                                          {step.image && (
                                                                              <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--color-border)' }}>
@@ -963,7 +967,9 @@ export const ProductDetailPage: React.FC = () => {
                                                                      )}
                                                                  </div>
                                                              </div>
-                                                             <p style={{ margin: 0, color: 'var(--color-text)', lineHeight: 1.6 }}>{faq.answer || faq.description}</p>
+                                                             <div style={{ color: 'var(--color-text)' }}>
+                                                                 <MarkdownRenderer text={faq.answer || faq.description} />
+                                                             </div>
                                                              {faq.author && (
                                                                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
                                                                      Verified Answer by: <span style={{ color: 'var(--color-primary)' }}>{faq.author}</span>

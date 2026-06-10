@@ -5,6 +5,7 @@ import ProductSkeleton from '../../components/ui/Skeleton/ProductSkeleton';
 import { colors, spacing, radius, shadows, typography } from '../../theme';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - (spacing.lg * 2);
@@ -71,9 +72,10 @@ const ProductGuidesScreen = () => {
                     </View>
                 )}
                 <ScrollView style={styles.textWell} showsVerticalScrollIndicator={false}>
-                    <Text style={[styles.guideContent, { color: colors.text }]}>
-                        {item.content || 'Awaiting technical description for this protocol step.'}
-                    </Text>
+                    <MarkdownRenderer
+                        text={item.content || 'Awaiting technical description for this protocol step.'}
+                        textStyle={styles.guideContent}
+                    />
                     <View style={{ height: 20 }} />
                 </ScrollView>
             </View>

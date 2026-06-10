@@ -10,6 +10,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../../store';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import MarkdownRenderer from '../../components/MarkdownRenderer';
 
 const ProductOverviewScreen = () => {
     const { product, loading, error } = useProduct();
@@ -90,9 +91,10 @@ const ProductOverviewScreen = () => {
                     </Text>
                 </View>
                 <View style={[styles.glassCard, { borderColor: colors.border, marginTop: spacing.md }]}>
-                    <Text style={styles.description}>
-                        {product.description || 'This asset is currently under systematic review. No detailed abstract is available at this interval.'}
-                    </Text>
+                    <MarkdownRenderer
+                        text={product.description || 'This asset is currently under systematic review. No detailed abstract is available at this interval.'}
+                        textStyle={styles.description}
+                    />
                 </View>
             </View>
 

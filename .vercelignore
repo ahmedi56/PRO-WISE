@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+backend
+mobile
+LaTeX_Projects
+.tmp
+tmp
+dist
+**/dist
+.expo
+.git
+**/build
