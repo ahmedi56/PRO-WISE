@@ -87,6 +87,17 @@ const validateAndSanitizeComponents = (components) => {
   return componentMatching.validateComponents(components);
 };
 
+const getStrId = (field) => {
+  if (!field) {return '';}
+  if (typeof field === 'object') {
+    if (field.id && typeof field.id === 'string') {
+      return field.id;
+    }
+    return field.toString();
+  }
+  return String(field);
+};
+
 const getAccessContext = async (req) => {
   if (!req.user || !req.user.id) {
     return { roleName: '', companyId: null, user: null };
@@ -97,7 +108,8 @@ const getAccessContext = async (req) => {
   const roleName = (user && user.role && user.role.name ? user.role.name : '').toLowerCase();
   
   // Fallback to DB-stored company if req.user.companyId (session) is missing
-  const companyId = (user && user.company) ? (user.company.id || user.company) : (req.user.companyId || null);
+  const rawCompany = (user && user.company) ? user.company : (req.user.companyId || null);
+  const companyId = getStrId(rawCompany) || null;
 
   return {
     roleName,
@@ -115,9 +127,12 @@ const canAccessProduct = ({ roleName, companyId, product }) => {
     return true;
   }
 
+  const productCompanyId = getStrId(product.company);
+  const userCompanyId = getStrId(companyId);
+
   const isOwnerAdmin = ['company_admin', 'administrator'].includes(roleName)
-    && companyId
-    && String(product.company) === String(companyId);
+    && userCompanyId
+    && productCompanyId === userCompanyId;
 
   return isOwnerAdmin || product.status === 'published';
 };
@@ -136,7 +151,7 @@ module.exports = {
      */
   create: async function (req, res) {
     try {
-      let { name, description, content, manufacturer, modelNumber, category, components } = req.body;
+      let { name, description, content, manufacturer, modelNumber, category, components, status } = req.body;
       let company = req.body.company;
       const { sanitizedComponents, invalidIndexes } = validateAndSanitizeComponents(components);
 
@@ -176,6 +191,11 @@ module.exports = {
         }
       }
 
+      let finalStatus = 'draft';
+      if (status && ['draft', 'published', 'archived', 'pending'].includes(status)) {
+        finalStatus = status;
+      }
+
       const product = await Product.create({
         name,
         description: description || null,
@@ -185,7 +205,7 @@ module.exports = {
         category: finalCategory,
         company: company || null,
         components: sanitizedComponents,
-        status: 'draft',
+        status: finalStatus,
         createdBy: req.user.id
       }).fetch();
 
@@ -433,7 +453,9 @@ module.exports = {
       }
 
       const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName);
-      const isOwnerAdmin = isAdmin && String(product.company?.id || product.company) === String(userCompanyId || '');
+      const productCompanyId = getStrId(product.company);
+      const userCompanyIdStr = getStrId(userCompanyId);
+      const isOwnerAdmin = isAdmin && productCompanyId && productCompanyId === userCompanyIdStr;
       
       if (!isAdmin && product.status !== 'published') {
         return res.status(403).json({ message: 'Forbidden: Product is not published' });
@@ -545,7 +567,7 @@ module.exports = {
      */
   update: async function (req, res) {
     try {
-      const { name, description, content, manufacturer, modelNumber, category, company, components } = req.body;
+      const { name, description, content, manufacturer, modelNumber, category, company, components, status } = req.body;
       const { sanitizedComponents, invalidIndexes } = validateAndSanitizeComponents(components);
 
       const existing = await Product.findOne({ id: req.params.id });
@@ -568,8 +590,9 @@ module.exports = {
 
       // Strict Ownership Check for Company Admins
       if (roleName !== 'super_admin' && companyId) {
-        const productCompanyId = String(existing.company?.id || existing.company);
-        if (productCompanyId !== String(companyId)) {
+        const productCompanyId = getStrId(existing.company);
+        const userCompanyIdStr = getStrId(companyId);
+        if (productCompanyId !== userCompanyIdStr) {
           return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
         }
       }
@@ -609,6 +632,11 @@ module.exports = {
       if (modelNumber !== undefined) {updateData.modelNumber = modelNumber;}
       if (category !== undefined) {updateData.category = finalCategory;}
       if (components !== undefined) {updateData.components = sanitizedComponents;}
+      if (status !== undefined) {
+        if (['draft', 'published', 'archived', 'pending'].includes(status) || (roleName === 'super_admin' && ['rejected'].includes(status))) {
+          updateData.status = status;
+        }
+      }
 
       // 1 & 4. Strict Tenant Isolation
       if ((req.user && req.user.companyId)) {
@@ -653,8 +681,9 @@ module.exports = {
       const { roleName, companyId } = await getAccessContext(req);
       
       if (roleName !== 'super_admin' && companyId) {
-        const productCompanyId = String(product.company?.id || product.company);
-        if (productCompanyId !== String(companyId)) {
+        const productCompanyId = getStrId(product.company);
+        const userCompanyIdStr = getStrId(companyId);
+        if (productCompanyId !== userCompanyIdStr) {
           return res.status(403).json({ message: 'Forbidden: Product does not belong to your company' });
         }
       }
@@ -768,7 +797,9 @@ module.exports = {
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
       const { roleName, companyId } = await getAccessContext(req);
-      if (roleName !== 'super_admin' && companyId && String(existing.company?.id || existing.company) !== String(companyId)) {
+      const productCompanyId = getStrId(existing.company);
+      const userCompanyIdStr = getStrId(companyId);
+      if (roleName !== 'super_admin' && companyId && productCompanyId !== userCompanyIdStr) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -795,7 +826,9 @@ module.exports = {
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
       const { roleName, companyId } = await getAccessContext(req);
-      if (roleName !== 'super_admin' && companyId && String(existing.company?.id || existing.company) !== String(companyId)) {
+      const productCompanyId = getStrId(existing.company);
+      const userCompanyIdStr = getStrId(companyId);
+      if (roleName !== 'super_admin' && companyId && productCompanyId !== userCompanyIdStr) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -822,7 +855,9 @@ module.exports = {
       if (!existing) {return res.status(404).json({ message: 'Product not found' });}
 
       const { roleName, companyId } = await getAccessContext(req);
-      if (roleName !== 'super_admin' && companyId && String(existing.company?.id || existing.company) !== String(companyId)) {
+      const productCompanyId = getStrId(existing.company);
+      const userCompanyIdStr = getStrId(companyId);
+      if (roleName !== 'super_admin' && companyId && productCompanyId !== userCompanyIdStr) {
         return res.status(403).json({ message: 'Forbidden' });
       }
 
@@ -940,7 +975,9 @@ module.exports = {
       if (!product) {return res.status(404).json({ message: 'Product not found' });}
 
       const { roleName, companyId } = await getAccessContext(req);
-      const isOwner = companyId && String(product.company?.id || product.company) === String(companyId);
+      const productCompanyId = getStrId(product.company);
+      const userCompanyIdStr = getStrId(companyId);
+      const isOwner = companyId && productCompanyId === userCompanyIdStr;
 
       if (roleName !== 'super_admin' && !isOwner) {
         return res.status(403).json({ message: 'Forbidden: You do not own this product' });
