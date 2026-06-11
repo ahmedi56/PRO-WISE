@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { 
     View, 
     Text, 
@@ -9,13 +9,16 @@ import {
     Linking, 
     Image,
     Dimensions,
-    Platform
+    Platform,
+    TextInput,
+    Modal
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons as BaseIonicons } from '@expo/vector-icons';
 const Ionicons = BaseIonicons as any;
 import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 // import { motion } from 'framer-motion'; // Removed web-only library from mobile screen
 import MarkdownRenderer from '../components/MarkdownRenderer';
 
@@ -189,6 +192,49 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     const [insights, setInsights] = useState<Record<string, string>>({});
     const [loadingInsights, setLoadingInsights] = useState<Record<string, boolean>>({});
     const [activeTab, setActiveTab] = useState<'manifest' | 'hardware' | 'protocols' | 'videos' | 'docs'>('manifest');
+
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<Array<{ type: 'query' | 'result'; text: string }>>([]);
+    const [searchLoading, setSearchLoading] = useState(false);
+    const scrollViewRef = useRef<ScrollView>(null);
+
+    // Initialize welcome message once product data is loaded
+    useEffect(() => {
+        if (data) {
+            setSearchResults([
+                { type: 'result', text: `Welcome to PRO-WISE Semantic Search. Search for troubleshooting steps, maintenance recommendations, and product documentation for ${formatProductName(data.name, data.manufacturer)}.` }
+            ]);
+        }
+    }, [data]);
+
+    const handleSearch = async () => {
+        const query = searchQuery.trim();
+        if (!query) return;
+
+        setSearchQuery('');
+        setSearchResults(prev => [...prev, { type: 'query', text: query }]);
+        setSearchLoading(true);
+
+        try {
+            const res = await apiFetch(`${API_URL}/ai/search`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    message: query,
+                    productId: id
+                })
+            }, handleUnauthorized);
+            
+            const json = await readJson(res);
+            const reply = json?.data?.response || json?.data?.text || "No relevant results found. Please try a different search query.";
+            setSearchResults(prev => [...prev, { type: 'result', text: reply }]);
+        } catch (error) {
+            console.error('Semantic search error:', error);
+            setSearchResults(prev => [...prev, { type: 'result', text: "The search service is temporarily unavailable. Please try again later." }]);
+        } finally {
+            setSearchLoading(false);
+        }
+    };
 
     const handleUnauthorized = () => dispatch(logout());
 
@@ -657,6 +703,182 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                     </View>
                 )}
             </ScrollView>
+
+            {/* FLOATING SEMANTIC SEARCH BUTTON */}
+            <TouchableOpacity
+                onPress={() => setIsSearchOpen(true)}
+                style={{
+                    position: 'absolute',
+                    bottom: 24,
+                    right: 24,
+                    width: 56,
+                    height: 56,
+                    borderRadius: 28,
+                    backgroundColor: colors.primary,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    elevation: 5,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 6,
+                    zIndex: 1000
+                }}
+            >
+                <Ionicons name="sparkles" size={24} color="#fff" />
+            </TouchableOpacity>
+
+            {/* SEMANTIC SEARCH MODAL */}
+            <Modal
+                visible={isSearchOpen}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setIsSearchOpen(false)}
+            >
+                <View style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(10, 10, 15, 0.8)',
+                    justifyContent: 'flex-end'
+                }}>
+                    <BlurView intensity={30} style={{ flex: 1, justifyContent: 'flex-end' }}>
+                        <View style={{
+                            backgroundColor: colors.surfaceContainer,
+                            borderTopLeftRadius: 24,
+                            borderTopRightRadius: 24,
+                            height: '80%',
+                            borderWidth: 1,
+                            borderColor: 'rgba(255,255,255,0.08)',
+                            overflow: 'hidden'
+                        }}>
+                            {/* Header */}
+                            <LinearGradient
+                                colors={[colors.primary, '#312e81']}
+                                style={{
+                                    padding: 16,
+                                    flexDirection: 'row',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                                    <View style={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: 10,
+                                        backgroundColor: 'rgba(255,255,255,0.15)',
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}>
+                                        <Ionicons name="search" size={18} color="#fff" />
+                                    </View>
+                                    <View>
+                                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Product Knowledge Search</Text>
+                                        <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 10 }}>Semantic Search · RAG</Text>
+                                    </View>
+                                </View>
+                                <TouchableOpacity onPress={() => setIsSearchOpen(false)} style={{ padding: 4 }}>
+                                    <Ionicons name="close" size={24} color="#fff" />
+                                </TouchableOpacity>
+                            </LinearGradient>
+
+                            {/* Messages */}
+                            <ScrollView 
+                                contentContainerStyle={{ padding: 16, gap: 16 }}
+                                ref={scrollViewRef}
+                                onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                            >
+                                {searchResults.map((item, index) => (
+                                    item.type === 'query' ? (
+                                        <View key={index} style={{
+                                            flexDirection: 'row',
+                                            alignSelf: 'flex-end',
+                                            backgroundColor: colors.primary,
+                                            padding: 12,
+                                            borderRadius: 16,
+                                            borderBottomRightRadius: 2,
+                                            maxWidth: '80%'
+                                        }}>
+                                            <Text style={{ color: '#fff', fontSize: 14 }}>{item.text}</Text>
+                                        </View>
+                                    ) : (
+                                        <View key={index} style={{
+                                            backgroundColor: colors.surfaceRaised,
+                                            padding: 14,
+                                            borderRadius: 16,
+                                            borderBottomLeftRadius: 2,
+                                            borderWidth: 1,
+                                            borderColor: colors.border,
+                                            borderLeftWidth: 4,
+                                            borderLeftColor: colors.primary,
+                                            maxWidth: '90%'
+                                        }}>
+                                            <MarkdownRenderer text={item.text} textStyle={{ color: colors.textStrong, fontSize: 14, lineHeight: 20 }} />
+                                        </View>
+                                    )
+                                ))}
+                                {searchLoading && (
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                        backgroundColor: colors.surfaceRaised,
+                                        padding: 14,
+                                        borderRadius: 16,
+                                        borderWidth: 1,
+                                        borderColor: colors.border,
+                                        alignSelf: 'flex-start'
+                                    }}>
+                                        <ActivityIndicator size="small" color={colors.primary} />
+                                        <Text style={{ color: colors.textMuted, fontSize: 12 }}>Searching product manuals...</Text>
+                                    </View>
+                                )}
+                            </ScrollView>
+
+                            {/* Input Area */}
+                            <View style={{
+                                padding: 16,
+                                borderTopWidth: 1,
+                                borderTopColor: colors.border,
+                                backgroundColor: colors.surfaceContainerHigh,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                gap: 12
+                            }}>
+                                <TextInput
+                                    style={{
+                                        flex: 1,
+                                        backgroundColor: colors.surface,
+                                        borderRadius: 12,
+                                        paddingHorizontal: 16,
+                                        paddingVertical: 10,
+                                        fontSize: 14,
+                                        color: colors.textStrong,
+                                        borderWidth: 1,
+                                        borderColor: colors.border
+                                    }}
+                                    placeholder="Search manuals, guides..."
+                                    placeholderTextColor={colors.textMuted}
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                />
+                                <TouchableOpacity 
+                                    onPress={handleSearch}
+                                    style={{
+                                        width: 44,
+                                        height: 44,
+                                        borderRadius: 12,
+                                        backgroundColor: colors.primary,
+                                        justifyContent: 'center',
+                                        alignItems: 'center'
+                                    }}
+                                >
+                                    <Ionicons name="arrow-up" size={20} color="#fff" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </BlurView>
+                </View>
+            </Modal>
         </View>
     );
 };

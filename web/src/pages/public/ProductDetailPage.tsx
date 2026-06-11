@@ -209,10 +209,11 @@ export const ProductDetailPage: React.FC = () => {
         setSearchLoading(true);
 
         try {
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
             const response = await axios.post(`${API_URL}/ai/search`, {
                 message: query,
                 productId: id
-            });
+            }, { headers });
             const reply = response.data?.data?.response || response.data?.data?.text || "No relevant results found. Please try a different search query.";
             setSearchResults(prev => [...prev, { type: 'result', text: reply }]);
         } catch (error) {
