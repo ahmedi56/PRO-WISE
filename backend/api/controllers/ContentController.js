@@ -33,7 +33,9 @@ module.exports = {
 
       const isFaq = type === 'faq';
       const finalAnswer = isCompanyAdmin ? (answer || null) : null;
-      const status = isCompanyAdmin ? 'draft' : 'pending';
+      // FAQs skip approval - they go straight to 'open' status waiting for answer
+      // Admins create draft content that needs approval, customers create FAQ questions directly
+      const status = isFaq ? 'open' : (isCompanyAdmin ? 'draft' : 'pending');
 
       // Extract video ID properly if YouTube URL was provided
       const cleanVideoId = videoId ? sails.services.translationservice.extractVideoId(videoId) : null;
