@@ -143,6 +143,31 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
     (approvedContent || []).forEach((item) => {
         const context = { guideTitle: item.type.toUpperCase(), stepTitle: 'Verified Resource' };
         
+        // Match general attachments and documents
+        if (item.fileUrl && item.type !== 'faq') {
+            pdfs.push({
+                id: item.id,
+                type: 'pdf',
+                title: item.title,
+                url: resolveMediaUrl(item.fileUrl),
+                author: item.author || 'System Verified',
+                _ctx: context
+            });
+        }
+
+        // Match video streams
+        if ((item.videoId || item.videoUrl) && (item.type === 'guide' || item.type === 'tutorial' || item.type === 'video')) {
+            videos.push({
+                id: item.id,
+                type: 'video',
+                url: item.videoUrl || `https://www.youtube.com/watch?v=${item.videoId}`,
+                videoId: item.videoId,
+                title: item.title,
+                author: item.author || 'System Verified',
+                _ctx: context
+            });
+        }
+
         if (item.type === 'faq') {
             faqs.push(item);
         } else if (item.type === 'guide' || item.type === 'tutorial') {
@@ -151,7 +176,7 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
                     ...step,
                     media: (step.media || []).map((m: any) => ({
                         ...m,
-                        url: resolveMediaUrl(m.url)
+                        url: resolveMediaUrl(m.url || m.fileUrl || m.image)
                     }))
                 }));
                 stepsFromContent.push({
@@ -159,19 +184,8 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
                     steps: resolvedSteps
                 });
             }
-            if (item.videoId) {
-                videos.push({
-                    id: item.id,
-                    type: 'video',
-                    url: item.videoUrl || `https://www.youtube.com/watch?v=${item.videoId}`,
-                    videoId: item.videoId,
-                    title: item.title,
-                    author: item.author || 'System Verified',
-                    _ctx: context
-                });
-            }
         } else if (item.type === 'article') {
-            if (item.fileUrl) {
+            if (item.fileUrl && !pdfs.some(p => p.id === item.id)) {
                 pdfs.push({
                     id: item.id,
                     type: 'pdf',
@@ -508,7 +522,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                 <View style={{ gap: spacing.md }}>
                                     {faqs.map((faq, idx) => (
                                         <View key={faq.id || idx} style={styles.protocolBlock}>
-                                            <Text style={styles.protocolTitle}>{faq.title}</Text>
+                                            <Text style={styles.protocolTitle}>{faq.question || faq.title}</Text>
                                             <View style={{ marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }}>
                                                 <MarkdownRenderer text={faq.answer || faq.description} textStyle={{ color: colors.text }} />
                                             </View>
@@ -670,13 +684,33 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                                     <View style={styles.timelineContent}>
                                                         <Text style={styles.stepTitle}>{step.title}</Text>
                                                         <Text style={styles.stepDesc}>{step.description}</Text>
-                                                        {step.media?.filter(m => m.type === 'image').length > 0 && (
-                                                            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stepMedia}>
-                                                                {step.media.filter(m => m.type === 'image').map((img) => (
-                                                                    <Image key={img.id} source={{ uri: resolveMediaUrl(img.url) }} style={styles.stepImage} />
-                                                                ))}
-                                                            </ScrollView>
-                                                        )}
+                                                        {(() => {
+                                                            const urls: string[] = [];
+                                                            if (step.image) {
+                                                                urls.push(step.image);
+                                                            }
+                                                            if (Array.isArray(step.media)) {
+                                                                step.media.forEach((m: any) => {
+                                                                    const u = m.url || m.fileUrl || m.image;
+                                                                    if (u) urls.push(u);
+                                                                });
+                                                            }
+                                                            
+                                                            if (urls.length > 0) {
+                                                                return (
+                                                                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stepMedia}>
+                                                                        {urls.map((url, index) => (
+                                                                            <Image 
+                                                                                key={index} 
+                                                                                source={{ uri: resolveMediaUrl(url) }} 
+                                                                                style={styles.stepImage} 
+                                                                            />
+                                                                        ))}
+                                                                    </ScrollView>
+                                                                );
+                                                            }
+                                                            return null;
+                                                        })()}
                                                     </View>
                                                 </View>
                                             ))}

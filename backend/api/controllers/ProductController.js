@@ -90,8 +90,11 @@ const validateAndSanitizeComponents = (components) => {
 const getStrId = (field) => {
   if (!field) { return ''; }
   if (typeof field === 'object') {
-    if (field.id && typeof field.id === 'string') {
-      return field.id;
+    if (field.id) {
+      return String(field.id);
+    }
+    if (field._id) {
+      return String(field._id);
     }
     return field.toString();
   }
