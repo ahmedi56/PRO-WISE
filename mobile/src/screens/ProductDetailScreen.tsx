@@ -92,11 +92,9 @@ const resolveMediaUrl = (url: string | undefined | null): string => {
     return `${backendBase}${apiPath}`;
 };
 
-const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = [], approvedContent: any[] = []) => {
+const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = []) => {
     const videos: ClassifiedMedia[] = [];
     const pdfs: ClassifiedMedia[] = [];
-    const faqs: any[] = [];
-    const stepsFromContent: any[] = [];
 
     guides.forEach((guide) => {
         (guide.steps || []).forEach((step) => {
@@ -140,51 +138,7 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
         });
     });
 
-    (approvedContent || []).forEach((item) => {
-        const context = { guideTitle: item.type.toUpperCase(), stepTitle: 'Verified Resource' };
-        
-        if (item.type === 'faq') {
-            faqs.push(item);
-        } else if (item.type === 'guide' || item.type === 'tutorial') {
-            if (item.steps && item.steps.length > 0) {
-                const resolvedSteps = item.steps.map((step: any) => ({
-                    ...step,
-                    media: (step.media || []).map((m: any) => ({
-                        ...m,
-                        url: resolveMediaUrl(m.url)
-                    }))
-                }));
-                stepsFromContent.push({
-                    ...item,
-                    steps: resolvedSteps
-                });
-            }
-            if (item.videoId) {
-                videos.push({
-                    id: item.id,
-                    type: 'video',
-                    url: item.videoUrl || `https://www.youtube.com/watch?v=${item.videoId}`,
-                    videoId: item.videoId,
-                    title: item.title,
-                    author: item.author || 'System Verified',
-                    _ctx: context
-                });
-            }
-        } else if (item.type === 'article') {
-            if (item.fileUrl) {
-                pdfs.push({
-                    id: item.id,
-                    type: 'pdf',
-                    title: item.title,
-                    url: resolveMediaUrl(item.fileUrl),
-                    author: item.author || 'System Verified',
-                    _ctx: context
-                });
-            }
-        }
-    });
-
-    return { videos, pdfs, faqs, stepsFromContent };
+    return { videos, pdfs };
 };
 
 const TOP_TABS = [
@@ -193,7 +147,6 @@ const TOP_TABS = [
     { key: 'protocols', label: 'PROTOCOLS', icon: 'layers-outline' } as const,
     { key: 'videos', label: 'VIDEOS', icon: 'videocam-outline' } as const,
     { key: 'docs', label: 'DOCS', icon: 'document-outline' } as const,
-    { key: 'faqs', label: 'FAQS', icon: 'help-circle-outline' } as const,
 ];
 
 type ProductDetailRouteProp = RouteProp<RootStackParamList, 'ProductDetail'>;
@@ -238,7 +191,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     const [selectedComponents, setSelectedComponents] = useState<any[]>([]);
     const [insights, setInsights] = useState<Record<string, string>>({});
     const [loadingInsights, setLoadingInsights] = useState<Record<string, boolean>>({});
-    const [activeTab, setActiveTab] = useState<'manifest' | 'hardware' | 'protocols' | 'videos' | 'docs' | 'faqs'>('manifest');
+    const [activeTab, setActiveTab] = useState<'manifest' | 'hardware' | 'protocols' | 'videos' | 'docs'>('manifest');
 
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -359,8 +312,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
         if (id) fetchProduct();
     }, [id]);
 
-    const { videos, pdfs, faqs, stepsFromContent } = useMemo(() => 
-        classifyMedia(data?.guides, (data as any)?.supportVideos, (data as any)?.supportPDFs, (data as any)?.approvedContent), 
+    const { videos, pdfs } = useMemo(() => 
+        classifyMedia(data?.guides, (data as any)?.supportVideos, (data as any)?.supportPDFs), 
     [data]);
 
 
@@ -623,8 +576,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                 </View>
                                 <Text style={styles.sectionLabel}>OPERATION PROTOCOLS</Text>
                             </View>
-                            {([...(data.guides || []), ...stepsFromContent]).length ? (
-                                [...(data.guides || []), ...stepsFromContent].map((guide) => (
+                            {data.guides?.length ? (
+                                data.guides.map((guide) => (
                                     <View key={guide.id} style={styles.protocolBlock}>
                                         <Text style={styles.protocolTitle}>{guide.title.toUpperCase()}</Text>
                                         <View style={styles.protocolMeta}>
@@ -744,40 +697,6 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                 <View style={styles.emptyCard}>
                                     <Ionicons name="document-outline" size={32} color={colors.textMuted} style={{ opacity: 0.4 }} />
                                     <Text style={styles.emptyText}>No digital transcripts detected.</Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                )}
-
-                {activeTab === 'faqs' && (
-                    <View style={styles.pageContent}>
-                        <View style={styles.sectionWrapper}>
-                            <View style={styles.sectionHeaderRow}>
-                                <View style={styles.sectionIconWell}>
-                                    <Ionicons name="help-circle-outline" size={18} color={colors.primary} />
-                                </View>
-                                <Text style={styles.sectionLabel}>FREQUENTLY ASKED QUESTIONS</Text>
-                            </View>
-                            
-                            {faqs.length > 0 ? (
-                                faqs.map((faq, idx) => (
-                                    <View key={faq.id || idx} style={styles.protocolBlock}>
-                                        <Text style={styles.protocolTitle}>{faq.title}</Text>
-                                        <View style={{ marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }}>
-                                            <MarkdownRenderer text={faq.answer || faq.description} textStyle={{ color: colors.text }} />
-                                        </View>
-                                        {faq.author && (
-                                            <Text style={{ fontSize: 10, color: colors.primary, marginTop: spacing.sm, fontWeight: '700' }}>
-                                                Verified Answer by: {faq.author}
-                                            </Text>
-                                        )}
-                                    </View>
-                                ))
-                            ) : (
-                                <View style={styles.emptyCard}>
-                                    <Ionicons name="help-circle-outline" size={32} color={colors.textMuted} style={{ opacity: 0.4 }} />
-                                    <Text style={styles.emptyText}>No FAQs available for this product.</Text>
                                 </View>
                             )}
                         </View>
