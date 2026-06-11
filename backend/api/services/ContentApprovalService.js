@@ -8,6 +8,48 @@
 module.exports = {
 
   /**
+   * Validates PDF/file URL format
+   */
+  validateFileUrl: function(fileUrl) {
+    if (!fileUrl || typeof fileUrl !== 'string') return false;
+    try {
+      // Check if it's a valid URL
+      new URL(fileUrl);
+      // Check for common PDF/doc extensions
+      const validExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+      const lowerUrl = fileUrl.toLowerCase();
+      return validExtensions.some(ext => lowerUrl.includes(ext)) || lowerUrl.includes('drive.google.com') || lowerUrl.includes('dropbox');
+    } catch (e) {
+      return false;
+    }
+  },
+
+  /**
+   * Validates step quality for guides
+   */
+  validateSteps: function(steps) {
+    if (!steps || !Array.isArray(steps) || steps.length === 0) {
+      return { valid: false, count: 0, quality: 0 };
+    }
+    
+    const validSteps = steps.filter(s => 
+      s.title && s.title.trim().length > 3 && 
+      s.description && s.description.trim().length > 10
+    );
+    
+    const avgStepLength = validSteps.reduce((sum, s) => sum + (s.description.length || 0), 0) / Math.max(validSteps.length, 1);
+    const quality = Math.min(100, Math.round((validSteps.length / steps.length) * 100 + (avgStepLength / 500) * 50));
+    
+    return {
+      valid: validSteps.length === steps.length,
+      count: validSteps.length,
+      total: steps.length,
+      quality: quality,
+      hasImages: steps.some(s => s.image || s.imageUrl)
+    };
+  },
+
+  /**
    * Compares content against a set of rules and returns a score.
    */
   getRuleBasedScore: function(content) {
@@ -36,16 +78,29 @@ module.exports = {
 
     // 2. Structure (0-30)
     if (content.type === 'guide') {
-      if (content.steps && content.steps.length > 0) {
-        checks.structure += 15;
-        const usefulSteps = content.steps.filter(s => s.title && s.description);
-        if (usefulSteps.length === content.steps.length) {
-          checks.structure += 15;
+      const stepValidation = this.validateSteps(content.steps);
+      if (stepValidation.count > 0) {
+        checks.structure += 10;
+        // Award points based on step quality
+        if (stepValidation.valid) {
+          checks.structure += 10; // All steps well-formed
         } else {
-          issues.push('Some guide steps are missing title or description');
+          checks.structure += Math.round((stepValidation.count / stepValidation.total) * 10);
+          issues.push(`${stepValidation.total - stepValidation.count} step(s) have missing or insufficient content`);
+        }
+        // Bonus for step quality
+        if (stepValidation.quality >= 80) {
+          checks.structure += 10;
+          reasons.push(`Strong step quality (${stepValidation.count} well-structured steps)`);
+        } else if (stepValidation.quality >= 60) {
+          checks.structure += 5;
+          reasons.push(`Adequate step quality (${stepValidation.count} steps)`);
+        }
+        if (stepValidation.hasImages) {
+          reasons.push('Steps include reference images');
         }
       } else {
-        issues.push('Guide content must have at least one step');
+        issues.push('Guide content must have at least one step with meaningful content');
       }
     } else {
       checks.structure += 30; // General content doesn't need steps
@@ -65,10 +120,24 @@ module.exports = {
     // 4. Media (0-20) - Check for media array, videoId, or fileUrl
     const hasMediaArray = content.media && content.media.length > 0;
     const hasVideoId = content.videoId && typeof content.videoId === 'string' && content.videoId.length > 0;
-    const hasFileUrl = content.fileUrl && typeof content.fileUrl === 'string' && content.fileUrl.length > 0;
+    const validFileUrl = this.validateFileUrl(content.fileUrl);
     
-    if (hasMediaArray || hasVideoId || hasFileUrl) {
-      checks.media += 20;
+    let mediaQuality = [];
+    if (hasMediaArray) {
+      checks.media += 8;
+      mediaQuality.push(`${content.media.length} media file(s)`);
+    }
+    if (hasVideoId) {
+      checks.media += 8;
+      mediaQuality.push('YouTube video');
+    }
+    if (validFileUrl) {
+      checks.media += 4;
+      mediaQuality.push('PDF/document');
+    }
+    
+    if (mediaQuality.length > 0) {
+      reasons.push(`Media included: ${mediaQuality.join(', ')}`);
     } else {
       issues.push('No media attached to content (add video, PDF, or images)');
     }
@@ -92,6 +161,9 @@ module.exports = {
    * Compactor to limit tokens sent to AI.
    */
   compactContent: function(content) {
+    const stepValidation = this.validateSteps(content.steps);
+    const fileUrlValid = this.validateFileUrl(content.fileUrl);
+    
     return {
       title: content.title,
       description: content.description ? content.description.substring(0, 800) : '',
@@ -100,12 +172,18 @@ module.exports = {
         title: s.title,
         description: s.description ? s.description.substring(0, 250) : ''
       })),
+      stepsMetrics: {
+        count: stepValidation.count,
+        total: stepValidation.total,
+        quality: stepValidation.quality,
+        hasImages: stepValidation.hasImages
+      },
       mediaCount: (content.media || []).length,
       mediaTypes: (content.media || []).map(m => m.type || 'unknown'),
       hasVideoId: !!content.videoId,
-      hasFileUrl: !!content.fileUrl,
+      hasFileUrl: fileUrlValid,
       videoId: content.videoId || null,
-      fileUrl: content.fileUrl || null
+      fileUrl: fileUrlValid ? content.fileUrl : null
     };
   },
 
