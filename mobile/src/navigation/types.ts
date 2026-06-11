@@ -21,6 +21,7 @@ export type MainTabParamList = {
     Home: undefined;
     Shop: undefined;
     Scan: undefined;
+    Notifications: undefined;
     TechnicianPortal: undefined;
     Profile: undefined;
 };

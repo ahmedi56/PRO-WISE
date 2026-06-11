@@ -368,11 +368,60 @@ module.exports = {
       }
 
       const isManual = type === 'content';
-      const approved = await Model.updateOne({ id }).set({
+      const updatePayload = {
         status: isManual ? 'approved' : 'published',
         approvedBy: isManual ? 'admin' : req.user.id,
         needsManualReview: false
-      });
+      };
+
+      const approved = await Model.updateOne({ id }).set(updatePayload);
+
+      // CREATE GUIDE FROM APPROVED CONTENT (Manual Admin Approval)
+      if (type === 'content' && (item.type === 'guide' || item.type === 'article' || item.type === 'tutorial')) {
+        try {
+          const guide = await sails.models.guide.create({
+            product: item.product,
+            title: item.title,
+            difficulty: item.difficulty || 'medium',
+            estimatedTime: item.estimatedTime || null,
+            status: 'published',
+            createdBy: item.createdBy
+          }).fetch();
+
+          // Create steps from content.steps
+          if (Array.isArray(item.steps) && item.steps.length > 0) {
+            for (let i = 0; i < item.steps.length; i++) {
+              const stepData = item.steps[i];
+              const step = await sails.models.step.create({
+                guide: guide.id,
+                title: stepData.title || `Step ${i + 1}`,
+                description: stepData.description || '',
+                stepNumber: i + 1,
+                order: i + 1
+              }).fetch();
+
+              // Attach media if present
+              if (Array.isArray(stepData.media) && stepData.media.length > 0) {
+                for (const mediaItem of stepData.media) {
+                  await sails.models.media.create({
+                    step: step.id,
+                    type: mediaItem.type || 'image',
+                    url: mediaItem.url || '',
+                    title: mediaItem.title || '',
+                    author: mediaItem.author || ''
+                  });
+                }
+              }
+            }
+          }
+
+          // Link the guide to the approved content
+          await Content.updateOne({ id: approved.id }).set({ guideId: guide.id });
+        } catch (guideErr) {
+          sails.log.warn(`Could not create guide for approved content ${id}:`, guideErr);
+          // Continue without failing
+        }
+      }
 
       await logAction(req, {
         action: `${type}.activated`,
@@ -384,10 +433,14 @@ module.exports = {
 
       // Notify creator
       try {
+        const message = type === 'content' 
+          ? `Your ${label} has been approved and is now visible in the app.`
+          : `Your ${type} "${label}" has been approved and is now active.`;
+        
         await Notification.create({
           user: approved.createdBy,
           title: `${type.charAt(0).toUpperCase() + type.slice(1)} Approved`,
-          message: `Your ${type} "${label}" has been approved and is now active.`,
+          message: message,
           type: 'success',
           link: type === 'content' ? '/admin/support' : `/${type}s/${approved.id}`
         });

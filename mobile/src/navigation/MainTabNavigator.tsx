@@ -17,6 +17,7 @@ const { width } = Dimensions.get('window');
 
 import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 import ShopStackNavigator from './ShopStackNavigator';
 import { useTheme } from '../theme';
 
@@ -30,6 +31,7 @@ const ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     Home: 'hardware-chip-outline',
     Shop: 'cube-outline',
     Scan: 'aperture-outline',
+    Notifications: 'notifications-outline',
     TechnicianPortal: 'hammer-outline',
     Profile: 'shield-checkmark-outline',
 };
@@ -38,6 +40,7 @@ const LABELS: Record<string, string> = {
     Home: 'Console',
     Shop: 'Registry',
     Scan: 'Scan',
+    Notifications: 'Alerts',
     TechnicianPortal: 'Tech Portal',
     Profile: 'Operator',
 };
@@ -222,6 +225,11 @@ const MainTabNavigator: React.FC = () => {
                 name="Scan" 
                 component={require('../screens/QRScannerScreen').default} 
                 options={{ title: 'Optical Scan' }} 
+            />
+            <Tab.Screen 
+                name="Notifications" 
+                component={NotificationsScreen as any} 
+                options={{ title: 'Alerts' }} 
             />
             {isApprovedTech && (
                 <Tab.Screen 

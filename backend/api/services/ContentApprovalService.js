@@ -217,9 +217,74 @@ module.exports = {
             finalResult.reasons.push('Auto-approved after review deadline reached.');
           }
           
+          // CREATE GUIDE FROM APPROVED CONTENT
+          try {
+            if (content.type === 'guide' || content.type === 'article' || content.type === 'tutorial') {
+              const guide = await sails.models.guide.create({
+                product: content.product,
+                title: content.title,
+                difficulty: content.difficulty || 'medium',
+                estimatedTime: content.estimatedTime || null,
+                status: 'published',
+                createdBy: content.createdBy
+              }).fetch();
+
+              // Create steps from content.steps
+              if (Array.isArray(content.steps) && content.steps.length > 0) {
+                for (let i = 0; i < content.steps.length; i++) {
+                  const stepData = content.steps[i];
+                  const step = await sails.models.step.create({
+                    guide: guide.id,
+                    title: stepData.title || `Step ${i + 1}`,
+                    description: stepData.description || '',
+                    stepNumber: i + 1,
+                    order: i + 1
+                  }).fetch();
+
+                  // Attach media if present
+                  if (Array.isArray(stepData.media) && stepData.media.length > 0) {
+                    for (const mediaItem of stepData.media) {
+                      await sails.models.media.create({
+                        step: step.id,
+                        type: mediaItem.type || 'image',
+                        url: mediaItem.url || '',
+                        title: mediaItem.title || '',
+                        author: mediaItem.author || ''
+                      });
+                    }
+                  }
+                }
+              }
+
+              updateData.guideId = guide.id;
+            } else if (content.type === 'faq' && content.answer) {
+              // For FAQ content, optionally create a guide too
+              const guide = await sails.models.guide.create({
+                product: content.product,
+                title: content.title,
+                difficulty: 'easy',
+                status: 'published',
+                createdBy: content.createdBy
+              }).fetch();
+              
+              await sails.models.step.create({
+                guide: guide.id,
+                title: 'Answer',
+                description: content.answer,
+                stepNumber: 1,
+                order: 1
+              });
+
+              updateData.guideId = guide.id;
+            }
+          } catch (guideErr) {
+            sails.log.warn(`Could not create guide for content ${content.id}:`, guideErr);
+            // Continue without failing the entire approval
+          }
+
           await sails.models.notification.create({
             title: 'Content Auto-Approved',
-            message: `Your content "${content.title}" was automatically approved by the system.`,
+            message: `Your content "${content.title}" was automatically approved by the system and is now visible in the app.`,
             type: 'success',
             user: content.createdBy,
             link: `/content/${content.id}`
