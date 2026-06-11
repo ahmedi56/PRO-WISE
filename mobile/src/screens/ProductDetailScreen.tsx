@@ -36,7 +36,7 @@ import { Product, Component } from '../types/product';
 import { Guide, Step, Media } from '../types/common';
 import FeedbackSection from '../components/FeedbackSection';
 import CustomButton from '../components/CustomButton';
-import MarkdownRenderer from '../components/MarkdownRenderer';
+
 
 const { width } = Dimensions.get('window');
 
@@ -115,7 +115,7 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
         videos.push({
             id: video.id,
             type: 'video',
-            url: video.videoUrl || '',
+            url: video.videoUrl || (video.videoId ? `https://www.youtube.com/watch?v=${video.videoId}` : ''),
             videoId: video.videoId,
             videoUrl: video.videoUrl,
             title: video.title,
@@ -554,7 +554,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                                         {step.media?.filter(m => m.type === 'image').length > 0 && (
                                                             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.stepMedia}>
                                                                 {step.media.filter(m => m.type === 'image').map((img) => (
-                                                                    <Image key={img.id} source={{ uri: img.url }} style={styles.stepImage} />
+                                                                    <Image key={img.id} source={{ uri: resolveMediaUrl(img.url) }} style={styles.stepImage} />
                                                                 ))}
                                                             </ScrollView>
                                                         )}

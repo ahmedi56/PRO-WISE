@@ -8,17 +8,17 @@
 const { _normalizeFileUrl: normalizeFileUrl } = require('./SupportPDFController');
 
 const resolvePhoneCategory = async (categoryId, manufacturer, companyId, productName) => {
-  if (!categoryId) {return null;}
+  if (!categoryId) { return null; }
 
   const phoneCat = await Category.findOne({ name: 'Phone' }).populate('children');
-  if (!phoneCat) {return categoryId;}
-  
+  if (!phoneCat) { return categoryId; }
+
   const phoneCatId = String(phoneCat.id);
   const inputCatId = typeof categoryId === 'object' && categoryId.id ? String(categoryId.id) : String(categoryId);
-  
+
   const isRootPhone = inputCatId === phoneCatId;
   const isChildOfPhone = phoneCat.children && phoneCat.children.some(c => String(c.id) === inputCatId);
-  
+
   if (!isRootPhone && !isChildOfPhone) {
     return categoryId;
   }
@@ -31,7 +31,7 @@ const resolvePhoneCategory = async (categoryId, manufacturer, companyId, product
     String(manufacturer || '').toLowerCase(),
     String(productName || '').toLowerCase()
   ];
-  
+
   if (companyId) {
     const comp = await Company.findOne({ id: companyId });
     if (comp && comp.name) {
@@ -48,7 +48,7 @@ const resolvePhoneCategory = async (categoryId, manufacturer, companyId, product
         break;
       }
     }
-    if (bestChild) {break;}
+    if (bestChild) { break; }
   }
 
   if (bestChild) {
@@ -63,7 +63,7 @@ const inferManufacturer = (name, currentManufacturer) => {
     return currentManufacturer.trim();
   }
   if (!name) { return null; }
-  
+
   const knownBrands = ['asus', 'apple', 'samsung', 'msi', 'lenovo', 'hp', 'dell', 'acer', 'toshiba', 'sony', 'google'];
   const nameLower = name.toLowerCase();
   for (const brand of knownBrands) {
@@ -88,7 +88,7 @@ const validateAndSanitizeComponents = (components) => {
 };
 
 const getStrId = (field) => {
-  if (!field) {return '';}
+  if (!field) { return ''; }
   if (typeof field === 'object') {
     if (field.id && typeof field.id === 'string') {
       return field.id;
@@ -106,7 +106,7 @@ const getAccessContext = async (req) => {
   // Resolve user and role from DB for accurate context
   const user = await sails.models.user.findOne({ id: req.user.id }).populate('role');
   const roleName = (user && user.role && user.role.name ? user.role.name : '').toLowerCase();
-  
+
   // Fallback to DB-stored company if req.user.companyId (session) is missing
   const rawCompany = (user && user.company) ? user.company : (req.user.companyId || null);
   const companyId = getStrId(rawCompany) || null;
@@ -260,14 +260,14 @@ module.exports = {
       }
 
       const where = {};
-      
+
       // If category is provided, resolve it to an ID (handles slugs and IDs) and its descendant subcategory IDs
       if (category) {
         let catId = category;
         if (!category.match(/^[0-9a-fA-F]{24}$/)) {
           const normalized = category.toLowerCase().trim();
           const singular = normalized.endsWith('s') ? normalized.slice(0, -1) : normalized;
-          
+
           const catObj = await Category.findOne({
             or: [
               { slug: normalized },
@@ -280,13 +280,13 @@ module.exports = {
             catId = catObj.id;
           }
         }
-        
+
         // Find all descendants recursively
         const descendantIds = [];
         const visited = new Set();
         const queue = [catId];
         visited.add(catId);
-        
+
         while (queue.length > 0) {
           const currentId = queue.shift();
           const children = await Category.find({ parent: currentId });
@@ -298,7 +298,7 @@ module.exports = {
             }
           }
         }
-        
+
         if (descendantIds.length > 0) {
           where.category = { in: [catId, ...descendantIds] };
         } else {
@@ -313,7 +313,7 @@ module.exports = {
       if (!userCompanyId && req.user && req.user.id) {
         const dbUserForCompany = await sails.models.user.findOne({ id: req.user.id });
         if (dbUserForCompany && dbUserForCompany.company &&
-            (roleName === 'company_admin' || roleName === 'administrator' || roleName === 'technician')) {
+          (roleName === 'company_admin' || roleName === 'administrator' || roleName === 'technician')) {
           userCompanyId = dbUserForCompany.company;
         }
       }
@@ -346,7 +346,7 @@ module.exports = {
 
       const skip = (parseInt(page) - 1) * parseInt(limit);
       const total = await Product.count(where);
-      
+
       let dbSort = sort;
       if (sort === 'rating DESC' || sort === 'rating ASC' || sort === 'rating') {
         dbSort = 'createdAt DESC'; // Sort by rating manually after enrichment
@@ -370,7 +370,7 @@ module.exports = {
           p.averageRating = pFeedbacks.length ? parseFloat((sum / pFeedbacks.length).toFixed(1)) : 0;
           return p;
         });
-        if (sort === 'rating DESC' || sort === 'rating') {products.sort((a,b) => b.averageRating - a.averageRating);}
+        if (sort === 'rating DESC' || sort === 'rating') { products.sort((a, b) => b.averageRating - a.averageRating); }
       }
 
       return res.json({
@@ -403,9 +403,9 @@ module.exports = {
       if (product && product.guides) {
         // Deep populate steps and their media for each guide
         for (let guide of product.guides) {
-          guide.steps = await Step.find({ 
+          guide.steps = await Step.find({
             guide: guide.id,
-            isPublished: true 
+            isPublished: true
           }).sort([
             { order: 'ASC' },
             { stepNumber: 'ASC' }
@@ -456,7 +456,7 @@ module.exports = {
       const productCompanyId = getStrId(product.company);
       const userCompanyIdStr = getStrId(userCompanyId);
       const isOwnerAdmin = isAdmin && productCompanyId && productCompanyId === userCompanyIdStr;
-      
+
       if (!isAdmin && product.status !== 'published') {
         return res.status(403).json({ message: 'Forbidden: Product is not published' });
       }
@@ -473,7 +473,7 @@ module.exports = {
           // Check if current is a populated object (has name) or just an ID/ObjectId
           const isPopulated = typeof current === 'object' && current !== null && current.name;
           const currentId = isPopulated ? current.id : (typeof current === 'object' ? current.toString() : current);
-          
+
           const catRecord = isPopulated ? current : await Category.findOne({ id: currentId });
           if (catRecord) {
             categoryPath.unshift({ id: catRecord.id, name: catRecord.name });
@@ -493,16 +493,16 @@ module.exports = {
       // Also increment popularity for the category and all its ancestors
       if (product.category) {
         let currentCatId = typeof product.category === 'object' && product.category.id ? product.category.id : (typeof product.category === 'object' ? product.category.toString() : product.category);
-        
+
         // Use a loop to climb up the category tree and increment each parent
         while (currentCatId) {
           const cat = await Category.findOne({ id: currentCatId });
-          if (!cat) {break;}
-          
+          if (!cat) { break; }
+
           await Category.updateOne({ id: currentCatId }).set({
             totalScans: (cat.totalScans || 0) + 1
           });
-          
+
           currentCatId = cat.parent; // Climb up
         }
       }
@@ -512,8 +512,8 @@ module.exports = {
       const sum = feedbacks.reduce((acc, curr) => acc + curr.rating, 0);
       const averageRating = feedbacks.length > 0 ? parseFloat((sum / feedbacks.length).toFixed(1)) : 0;
 
-      return res.json({ 
-        ...product, 
+      return res.json({
+        ...product,
         categoryPath,
         averageRating,
         ratingCount: feedbacks.length,
@@ -609,7 +609,7 @@ module.exports = {
         if (!cat) {
           return res.status(400).json({ message: 'Category not found' });
         }
-        
+
         const testComp = company !== undefined ? company : existing.company;
         finalCategory = await resolvePhoneCategory(finalCategory, finalManufacturer, testComp, testName);
       }
@@ -623,15 +623,15 @@ module.exports = {
       }
 
       const updateData = {};
-      if (name !== undefined) {updateData.name = name;}
-      if (description !== undefined) {updateData.description = description;}
-      if (content !== undefined) {updateData.content = content;}
+      if (name !== undefined) { updateData.name = name; }
+      if (description !== undefined) { updateData.description = description; }
+      if (content !== undefined) { updateData.content = content; }
       if (name !== undefined || manufacturer !== undefined) {
         updateData.manufacturer = finalManufacturer;
       }
-      if (modelNumber !== undefined) {updateData.modelNumber = modelNumber;}
-      if (category !== undefined) {updateData.category = finalCategory;}
-      if (components !== undefined) {updateData.components = sanitizedComponents;}
+      if (modelNumber !== undefined) { updateData.modelNumber = modelNumber; }
+      if (category !== undefined) { updateData.category = finalCategory; }
+      if (components !== undefined) { updateData.components = sanitizedComponents; }
       if (status !== undefined) {
         if (['draft', 'published', 'archived', 'pending'].includes(status) || (roleName === 'super_admin' && ['rejected'].includes(status))) {
           updateData.status = status;
@@ -679,7 +679,7 @@ module.exports = {
       }
 
       const { roleName, companyId } = await getAccessContext(req);
-      
+
       if (roleName !== 'super_admin' && companyId) {
         const productCompanyId = getStrId(product.company);
         const userCompanyIdStr = getStrId(companyId);
@@ -709,8 +709,8 @@ module.exports = {
     try {
       const { id } = req.params;
       const product = await Product.findOne({ id }).populate('category').populate('company');
-      if (!product) {return res.status(404).json({ message: 'Product not found' });}
-      
+      if (!product) { return res.status(404).json({ message: 'Product not found' }); }
+
       const recommendations = await sails.helpers.getSimilarityRecommendations.with({
         productId: id,
         excludeProductId: id,
@@ -794,7 +794,7 @@ module.exports = {
   publish: async function (req, res) {
     try {
       const existing = await Product.findOne({ id: req.params.id });
-      if (!existing) {return res.status(404).json({ message: 'Product not found' });}
+      if (!existing) { return res.status(404).json({ message: 'Product not found' }); }
 
       const { roleName, companyId } = await getAccessContext(req);
       const productCompanyId = getStrId(existing.company);
@@ -823,7 +823,7 @@ module.exports = {
   unpublish: async function (req, res) {
     try {
       const existing = await Product.findOne({ id: req.params.id });
-      if (!existing) {return res.status(404).json({ message: 'Product not found' });}
+      if (!existing) { return res.status(404).json({ message: 'Product not found' }); }
 
       const { roleName, companyId } = await getAccessContext(req);
       const productCompanyId = getStrId(existing.company);
@@ -852,7 +852,7 @@ module.exports = {
   archive: async function (req, res) {
     try {
       const existing = await Product.findOne({ id: req.params.id });
-      if (!existing) {return res.status(404).json({ message: 'Product not found' });}
+      if (!existing) { return res.status(404).json({ message: 'Product not found' }); }
 
       const { roleName, companyId } = await getAccessContext(req);
       const productCompanyId = getStrId(existing.company);
@@ -882,8 +882,8 @@ module.exports = {
     try {
       const { q, limit = 10 } = req.query;
       if (!q) {
-        return res.status(400).json({ 
-          success: false, 
+        return res.status(400).json({
+          success: false,
           message: 'Search query is required',
           code: 'INVALID_QUERY'
         });
@@ -908,8 +908,8 @@ module.exports = {
       });
     } catch (err) {
       sails.log.error('Semantic search error:', err);
-      return res.status(500).json({ 
-        success: false, 
+      return res.status(500).json({
+        success: false,
         message: 'The semantic search service is currently unavailable.',
         code: 'SEARCH_ERROR'
       });
@@ -920,7 +920,7 @@ module.exports = {
    * POST /api/products/backfill-embeddings
    * Reliably regenerate missing embeddings
    */
-  triggerBackfill: async function(req, res) {
+  triggerBackfill: async function (req, res) {
     try {
       const force = req.query.force === 'true';
       const serviceReady = await sails.services.searchservice.ensureServiceReady();
@@ -928,7 +928,7 @@ module.exports = {
         return res.status(503).json({ message: 'Embedding service is not available. Please check GOOGLE_AI_API_KEY connection.' });
       }
 
-      const query = force ? {} : { or: [ { embedding: null }, { searchDocument: null } ] };
+      const query = force ? {} : { or: [{ embedding: null }, { searchDocument: null }] };
       const products = await Product.find(query);
 
       if (products.length === 0) {
@@ -936,7 +936,7 @@ module.exports = {
       }
 
       sails.log.info(`API triggered backfill for ${products.length} products...`);
-      
+
       let successCount = 0;
       let failCount = 0;
 
@@ -952,7 +952,7 @@ module.exports = {
             sails.log.warn(`[✗] Failed to generate embedding for: ${p.name}`);
             failCount++;
           }
-        } catch(err) {
+        } catch (err) {
           sails.log.error(`[!] Error embedding ${p.name}:`, err.message);
           failCount++;
         }
@@ -972,7 +972,7 @@ module.exports = {
   submit: async function (req, res) {
     try {
       const product = await Product.findOne({ id: req.params.id });
-      if (!product) {return res.status(404).json({ message: 'Product not found' });}
+      if (!product) { return res.status(404).json({ message: 'Product not found' }); }
 
       const { roleName, companyId } = await getAccessContext(req);
       const productCompanyId = getStrId(product.company);
@@ -1017,7 +1017,7 @@ module.exports = {
       }
 
       const product = await Product.findOne({ id: req.params.id });
-      if (!product) {return res.status(404).json({ message: 'Product not found' });}
+      if (!product) { return res.status(404).json({ message: 'Product not found' }); }
 
       if (product.status !== 'pending') {
         return res.status(400).json({ message: 'Only pending products can be approved' });
@@ -1054,7 +1054,7 @@ module.exports = {
       }
 
       const product = await Product.findOne({ id: req.params.id });
-      if (!product) {return res.status(404).json({ message: 'Product not found' });}
+      if (!product) { return res.status(404).json({ message: 'Product not found' }); }
 
       if (product.status !== 'pending') {
         return res.status(400).json({ message: 'Only pending products can be rejected' });
@@ -1100,17 +1100,17 @@ module.exports = {
     try {
       const { company, product, limit = 20, skip = 0 } = req.query;
       const criteria = { isHidden: false };
-      if (company) {criteria.company = company;}
-      if (product) {criteria.product = product;}
-      
+      if (company) { criteria.company = company; }
+      if (product) { criteria.product = product; }
+
       const total = await Feedback.count(criteria);
       const feedbacks = await Feedback.find(criteria)
         .populate('user').populate('product')
         .sort('createdAt DESC').limit(parseInt(limit, 10)).skip(parseInt(skip, 10));
 
       const sanitized = feedbacks.map(fb => fb.isAnonymous ? { ...fb, user: { name: 'Anonymous', avatar: null } } : fb);
-      return res.json({ 
-        data: sanitized, 
+      return res.json({
+        data: sanitized,
         meta: {
           total,
           page: Math.floor(parseInt(skip, 10) / parseInt(limit, 10)) + 1,
@@ -1127,7 +1127,7 @@ module.exports = {
     try {
       const { companyId } = req.params;
       const feedbacks = await Feedback.find({ company: companyId, isHidden: false });
-      if (!feedbacks.length) {return res.json({ averageRating: 0, totalCount: 0 });}
+      if (!feedbacks.length) { return res.json({ averageRating: 0, totalCount: 0 }); }
       const sum = feedbacks.reduce((acc, curr) => acc + curr.rating, 0);
       return res.json({ averageRating: parseFloat((sum / feedbacks.length).toFixed(1)), totalCount: feedbacks.length });
     } catch (err) {
@@ -1160,9 +1160,9 @@ module.exports = {
       const feedbacks = await Feedback.find({ product: req.params.id, isHidden: false })
         .populate('user')
         .sort('createdAt DESC');
-      
+
       const sanitized = feedbacks.map(fb => fb.isAnonymous ? { ...fb, user: { name: 'Anonymous', avatar: null } } : fb);
-      return res.json({ 
+      return res.json({
         data: sanitized,
         meta: { total: feedbacks.length }
       });
