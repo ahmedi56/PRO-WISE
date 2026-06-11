@@ -189,7 +189,7 @@ const MainTabNavigator: React.FC = () => {
     return (
         <Tab.Navigator
             tabBar={(props: any) => <CustomTabBar {...props} theme={theme} />}
-            screenOptions={({ route }: any) => ({
+            screenOptions={({ route, navigation }: any) => ({
                 headerStyle: {
                     backgroundColor: colors.bg,
                     borderBottomWidth: 1,
@@ -201,6 +201,14 @@ const MainTabNavigator: React.FC = () => {
                 headerTintColor: colors.textStrong,
                 headerBackground: () => (
                     <BlurView intensity={80} tint={theme.isDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+                ),
+                headerRight: () => (
+                    <TouchableOpacity 
+                        style={{ marginRight: 16, padding: 8 }} 
+                        onPress={() => navigation.navigate('Search')}
+                    >
+                        <Ionicons name="search-outline" size={24} color={colors.textStrong} />
+                    </TouchableOpacity>
                 )
             })}
         >

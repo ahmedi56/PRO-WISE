@@ -49,6 +49,11 @@ const AppNavigator: React.FC = () => {
                         <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
                         <Stack.Screen name="EditProfile" component={EditProfileScreen as any} />
                         <Stack.Screen 
+                            name="Search" 
+                            component={require('../screens/SearchScreen').default} 
+                            options={{ title: 'System Search' }} 
+                        />
+                        <Stack.Screen 
                             name="QRScanner" 
                             component={require('../screens/QRScannerScreen').default} 
                             options={{ title: 'Scan QR Code' }} 

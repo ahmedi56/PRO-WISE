@@ -9,6 +9,7 @@ export type RootStackParamList = {
     ForgotPassword: undefined;
     EditProfile: undefined;
     QRScanner: undefined;
+    Search: undefined;
     ProductDetail: { id: string; product?: import('../types/product').Product };
     PendingApproval: undefined;
     TechnicianApplication: undefined;
