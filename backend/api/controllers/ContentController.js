@@ -35,13 +35,16 @@ module.exports = {
       const finalAnswer = isCompanyAdmin ? (answer || null) : null;
       const status = isCompanyAdmin ? 'draft' : 'pending';
 
+      // Extract video ID properly if YouTube URL was provided
+      const cleanVideoId = videoId ? sails.services.translationservice.extractVideoId(videoId) : null;
+
       const newContent = await Content.create({
         title,
         description,
         type: type || 'general',
         steps: steps || [],
         media: media || [],
-        videoId: videoId || null,
+        videoId: cleanVideoId,
         fileUrl: fileUrl || null,
         difficulty: difficulty || 'medium',
         estimatedTime: estimatedTime || null,
@@ -146,6 +149,10 @@ module.exports = {
         const newAnswer = isStaff ? (req.body.answer !== undefined ? req.body.answer : content.answer) : content.answer;
         const newStatus = (isFaq && newAnswer) ? 'approved' : (content.status === 'approved' ? 'draft' : content.status);
 
+        // Extract video ID properly if YouTube URL was provided
+        const rawVideoId = req.body.videoId !== undefined ? req.body.videoId : content.videoId;
+        const cleanVideoId = rawVideoId ? sails.services.translationservice.extractVideoId(rawVideoId) : null;
+
         updatedData = {
           status: newStatus,
           title: req.body.title || content.title,
@@ -157,7 +164,7 @@ module.exports = {
           estimatedTime: req.body.estimatedTime || content.estimatedTime,
           answer: newAnswer,
           question: isFaq ? (req.body.description || content.description) : null,
-          videoId: req.body.videoId !== undefined ? req.body.videoId : content.videoId,
+          videoId: cleanVideoId,
           fileUrl: req.body.fileUrl !== undefined ? req.body.fileUrl : content.fileUrl,
           product: req.body.product || content.product,
           answeredBy: (isStaff && newAnswer) ? (content.answeredBy || req.user.id) : content.answeredBy

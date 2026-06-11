@@ -62,11 +62,15 @@ module.exports = {
       issues.push('Content contains placeholders or test data');
     }
 
-    // 4. Media (0-20)
-    if (content.media && content.media.length > 0) {
+    // 4. Media (0-20) - Check for media array, videoId, or fileUrl
+    const hasMediaArray = content.media && content.media.length > 0;
+    const hasVideoId = content.videoId && typeof content.videoId === 'string' && content.videoId.length > 0;
+    const hasFileUrl = content.fileUrl && typeof content.fileUrl === 'string' && content.fileUrl.length > 0;
+    
+    if (hasMediaArray || hasVideoId || hasFileUrl) {
       checks.media += 20;
     } else {
-      issues.push('No media attached to content');
+      issues.push('No media attached to content (add video, PDF, or images)');
     }
 
     score = checks.completeness + checks.structure + checks.quality + checks.media;
@@ -97,7 +101,11 @@ module.exports = {
         description: s.description ? s.description.substring(0, 250) : ''
       })),
       mediaCount: (content.media || []).length,
-      mediaTypes: (content.media || []).map(m => m.type || 'unknown')
+      mediaTypes: (content.media || []).map(m => m.type || 'unknown'),
+      hasVideoId: !!content.videoId,
+      hasFileUrl: !!content.fileUrl,
+      videoId: content.videoId || null,
+      fileUrl: content.fileUrl || null
     };
   },
 

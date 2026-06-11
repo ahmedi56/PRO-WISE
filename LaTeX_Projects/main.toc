@@ -1,24 +1,24 @@
 \babel@toc {english}{}\relax 
-\contentsline {chapter}{General Introduction}{x}{chapter*.4}%
-\contentsline {chapter}{\numberline {1}General Presentation of the Project}{1}{chapter.1}%
-\contentsline {section}{\numberline {1.1}Introduction}{1}{section.1.1}%
-\contentsline {section}{\numberline {1.2}Host Organization}{1}{section.1.2}%
-\contentsline {subsection}{\numberline {1.2.1}Company Presentation}{1}{subsection.1.2.1}%
-\contentsline {subsection}{\numberline {1.2.2}Core Activities}{2}{subsection.1.2.2}%
-\contentsline {section}{\numberline {1.3}Preliminary Study}{2}{section.1.3}%
-\contentsline {subsection}{\numberline {1.3.1}Industrial Context}{2}{subsection.1.3.1}%
-\contentsline {subsection}{\numberline {1.3.2}Problem Statement}{2}{subsection.1.3.2}%
-\contentsline {subsection}{\numberline {1.3.3}Analysis of Existing Solutions}{3}{subsection.1.3.3}%
-\contentsline {subsubsection}{Overview of Existing Systems}{3}{subsubsection*.6}%
-\contentsline {paragraph}{The iFixit Platform}{3}{paragraph*.7}%
-\contentsline {paragraph}{The GE Appliances Support Portal}{3}{paragraph*.9}%
-\contentsline {subsubsection}{Comparative Study}{4}{subsubsection*.11}%
-\contentsline {subsubsection}{Comparative Evaluation and Positioning}{4}{subsubsection*.13}%
-\contentsline {section}{\numberline {1.4}Adopted Software Development Methodology}{5}{section.1.4}%
-\contentsline {subsection}{\numberline {1.4.1}Methodological Rationale}{5}{subsection.1.4.1}%
-\contentsline {subsection}{\numberline {1.4.2}The Scrum Framework}{5}{subsection.1.4.2}%
-\contentsline {subsection}{\numberline {1.4.3}Project Roles and Mapping}{6}{subsection.1.4.3}%
-\contentsline {subsection}{\numberline {1.4.4}Scrum Events and Artifacts}{6}{subsection.1.4.4}%
+\contentsline {chapter}{General Introduction}{1}{chapter*.4}%
+\contentsline {chapter}{\numberline {1}General Presentation of the Project}{2}{chapter.1}%
+\contentsline {section}{\numberline {1.1}Introduction}{2}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Host Organization}{2}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Company Presentation}{2}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}Core Activities}{3}{subsection.1.2.2}%
+\contentsline {section}{\numberline {1.3}Preliminary Study}{3}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Industrial Context}{3}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Problem Statement}{3}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Analysis of Existing Solutions}{4}{subsection.1.3.3}%
+\contentsline {subsubsection}{Overview of Existing Systems}{4}{subsubsection*.6}%
+\contentsline {paragraph}{The iFixit Platform}{4}{paragraph*.7}%
+\contentsline {paragraph}{The GE Appliances Support Portal}{4}{paragraph*.9}%
+\contentsline {subsubsection}{Comparative Study}{5}{subsubsection*.11}%
+\contentsline {subsubsection}{Comparative Evaluation and Positioning}{5}{subsubsection*.13}%
+\contentsline {section}{\numberline {1.4}Adopted Software Development Methodology}{6}{section.1.4}%
+\contentsline {subsection}{\numberline {1.4.1}Methodological Rationale}{6}{subsection.1.4.1}%
+\contentsline {subsection}{\numberline {1.4.2}The Scrum Framework}{6}{subsection.1.4.2}%
+\contentsline {subsection}{\numberline {1.4.3}Project Roles and Mapping}{7}{subsection.1.4.3}%
+\contentsline {subsection}{\numberline {1.4.4}Scrum Events and Artifacts}{7}{subsection.1.4.4}%
 \contentsline {section}{\numberline {1.5}UML Modeling Approach}{9}{section.1.5}%
 \contentsline {section}{\numberline {1.6}Conclusion}{9}{section.1.6}%
 \contentsline {chapter}{\numberline {2}Architecture, Tools and Development Environment}{10}{chapter.2}%
@@ -44,95 +44,95 @@
 \contentsline {section}{\numberline {3.3}Refinement of Use Cases}{24}{section.3.3}%
 \contentsline {subsection}{\numberline {3.3.1}Refinement of Sprint 1 Use Cases}{24}{subsection.3.3.1}%
 \contentsline {subsubsection}{Use Case Refinement: Register}{24}{subsubsection*.26}%
-\contentsline {subsubsection}{Use Case Refinement: Authenticate}{24}{subsubsection*.29}%
-\contentsline {subsubsection}{Use Case Refinement: Manage Profile}{24}{subsubsection*.32}%
+\contentsline {subsubsection}{Use Case Refinement: Authenticate}{25}{subsubsection*.29}%
+\contentsline {subsubsection}{Use Case Refinement: Manage Profile}{27}{subsubsection*.32}%
 \contentsline {subsection}{\numberline {3.3.2}Class Diagram}{28}{subsection.3.3.2}%
 \contentsline {subsection}{\numberline {3.3.3}Sequence Diagrams}{28}{subsection.3.3.3}%
 \contentsline {subsubsection}{Sequence Diagram: Authentication}{28}{subsubsection*.36}%
-\contentsline {subsubsection}{Sequence Diagram: Profile Management}{30}{subsubsection*.38}%
-\contentsline {section}{\numberline {3.4}User Interface Overview}{31}{section.3.4}%
-\contentsline {subsection}{\numberline {3.4.1}Web Application Interfaces}{31}{subsection.3.4.1}%
-\contentsline {subsubsection}{Authentication Interfaces}{31}{subsubsection*.40}%
-\contentsline {subsubsection}{Dashboard and Navigation}{31}{subsubsection*.42}%
-\contentsline {subsection}{\numberline {3.4.2}Mobile Application Interfaces}{32}{subsection.3.4.2}%
-\contentsline {subsubsection}{Home Interface}{32}{subsubsection*.44}%
-\contentsline {subsubsection}{Profile Interface}{32}{subsubsection*.46}%
-\contentsline {section}{\numberline {3.5}Conclusion}{33}{section.3.5}%
-\contentsline {chapter}{\numberline {4}Release 2 : Product Management, Guides, and Content approval}{34}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Introduction}{34}{section.4.1}%
-\contentsline {section}{\numberline {4.2}Sprint Backlog -- Content and Catalog Management}{35}{section.4.2}%
-\contentsline {section}{\numberline {4.3}Refinement of Use Cases}{35}{section.4.3}%
-\contentsline {subsection}{\numberline {4.3.1}Refinement of Sprint 2 Use Cases}{35}{subsection.4.3.1}%
-\contentsline {subsubsection}{Use Case Refinement: Manage Products}{35}{subsubsection*.49}%
-\contentsline {subsubsection}{Use Case Refinement: Manage Guides}{35}{subsubsection*.52}%
-\contentsline {subsubsection}{Use Case Refinement: Approve Content}{38}{subsubsection*.55}%
-\contentsline {subsection}{\numberline {4.3.2}Class Diagram}{38}{subsection.4.3.2}%
-\contentsline {subsection}{\numberline {4.3.3}Sequence Diagrams}{40}{subsection.4.3.3}%
-\contentsline {subsubsection}{Sequence Diagram: Product Management Flow}{40}{subsubsection*.59}%
-\contentsline {subsubsection}{Sequence Diagram: Content Creation \& Submission Flow}{41}{subsubsection*.61}%
-\contentsline {section}{\numberline {4.4}User Interface Overview}{42}{section.4.4}%
-\contentsline {subsection}{\numberline {4.4.1}Web Interfaces}{42}{subsection.4.4.1}%
-\contentsline {subsection}{\numberline {4.4.2}Mobile Application Interfaces}{42}{subsection.4.4.2}%
-\contentsline {section}{\numberline {4.5}Conclusion}{43}{section.4.5}%
-\contentsline {chapter}{\numberline {5}Release 3 : User Interactions, Feedback \& Platform Monitoring}{44}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Introduction}{44}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Sprint Backlog -- User Interactions and Monitoring}{45}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Refinement of Use Cases}{45}{section.5.3}%
-\contentsline {subsection}{\numberline {5.3.1}Refinement of Sprint 3 Use Cases}{45}{subsection.5.3.1}%
-\contentsline {subsubsection}{Use Case Refinement: Submit Feedback}{45}{subsubsection*.67}%
-\contentsline {subsubsection}{Use Case Refinement: View Notifications}{45}{subsubsection*.70}%
-\contentsline {subsubsection}{Use Case Refinement: Track Activity Logs}{45}{subsubsection*.73}%
-\contentsline {subsubsection}{Use Case Refinement: View Analytics}{47}{subsubsection*.76}%
-\contentsline {subsection}{\numberline {5.3.2}Class Diagram}{50}{subsection.5.3.2}%
-\contentsline {subsection}{\numberline {5.3.3}Sequence Diagrams}{51}{subsection.5.3.3}%
-\contentsline {subsubsection}{Sequence Diagram: Feedback Submission Flow}{51}{subsubsection*.80}%
-\contentsline {subsubsection}{Sequence Diagram: Notification Dispatch Flow}{51}{subsubsection*.82}%
-\contentsline {section}{\numberline {5.4}User Interface Overview}{53}{section.5.4}%
-\contentsline {subsection}{\numberline {5.4.1}Web Interfaces}{53}{subsection.5.4.1}%
-\contentsline {subsection}{\numberline {5.4.2}Mobile Interfaces}{54}{subsection.5.4.2}%
-\contentsline {section}{\numberline {5.5}Conclusion}{54}{section.5.5}%
-\contentsline {chapter}{\numberline {6}Release 4 : Hybrid Intelligence Layer, Semantic Search \& AI Moderation}{55}{chapter.6}%
-\contentsline {section}{\numberline {6.1}Introduction}{55}{section.6.1}%
-\contentsline {section}{\numberline {6.2}Sprint Backlog -- Intelligent Services}{55}{section.6.2}%
-\contentsline {section}{\numberline {6.3}Comparative Study of AI Models}{56}{section.6.3}%
-\contentsline {subsection}{\numberline {6.3.1}Selection Criteria}{56}{subsection.6.3.1}%
-\contentsline {subsection}{\numberline {6.3.2}Evaluated Models}{56}{subsection.6.3.2}%
-\contentsline {subsection}{\numberline {6.3.3}Final Choice and Performance Calculations}{57}{subsection.6.3.3}%
-\contentsline {subsubsection}{Cost and Performance Analysis}{57}{subsubsection*.89}%
-\contentsline {section}{\numberline {6.4}RAG Architecture and System Integration}{59}{section.6.4}%
-\contentsline {subsection}{\numberline {6.4.1}Semantic Search \& RAG-Based Troubleshooting}{60}{subsection.6.4.1}%
-\contentsline {subsection}{\numberline {6.4.2}Architecture Without RAG (Keyword-Based Approach)}{60}{subsection.6.4.2}%
-\contentsline {subsection}{\numberline {6.4.3}Architecture With RAG (Semantic Search Approach)}{60}{subsection.6.4.3}%
-\contentsline {subsection}{\numberline {6.4.4}Hybrid Compatibility \& Parts Recommendation}{60}{subsection.6.4.4}%
-\contentsline {subsection}{\numberline {6.4.5}Comparison of Approaches: Without RAG vs With RAG}{64}{subsection.6.4.5}%
-\contentsline {subsection}{\numberline {6.4.6}Performance Evaluation: Keyword Search vs RAG}{64}{subsection.6.4.6}%
-\contentsline {section}{\numberline {6.5}Technical Implementation}{64}{section.6.5}%
-\contentsline {subsection}{\numberline {6.5.1}Gemini API Integration and Deployment}{66}{subsection.6.5.1}%
-\contentsline {subsection}{\numberline {6.5.2}Backend API Services Development}{66}{subsection.6.5.2}%
-\contentsline {subsection}{\numberline {6.5.3}Document Indexing \& Vector Database Storage}{66}{subsection.6.5.3}%
-\contentsline {subsection}{\numberline {6.5.4}Refinement of Use Cases}{67}{subsection.6.5.4}%
-\contentsline {subsubsection}{Use Case Refinement: Generate Recommendations}{67}{subsubsection*.96}%
-\contentsline {subsubsection}{Use Case Refinement: Component-Based Recommendation}{68}{subsubsection*.98}%
-\contentsline {subsubsection}{Use Case Refinement: Intelligent Search}{68}{subsubsection*.100}%
-\contentsline {subsubsection}{Use Case Refinement: Generate AI Build Instructions}{69}{subsubsection*.102}%
-\contentsline {subsection}{\numberline {6.5.5}Sequence Diagrams}{69}{subsection.6.5.5}%
-\contentsline {subsection}{\numberline {6.5.6}User Interfaces Overview}{71}{subsection.6.5.6}%
-\contentsline {subsection}{\numberline {6.5.7}Technical Challenges and Solutions}{71}{subsection.6.5.7}%
-\contentsline {section}{\numberline {6.6}Conclusion}{72}{section.6.6}%
-\contentsline {chapter}{\numberline {7}Release 5 : Maintenance Requests \& Technician Workflow}{73}{chapter.7}%
-\contentsline {section}{\numberline {7.1}Introduction}{73}{section.7.1}%
-\contentsline {section}{\numberline {7.2}Sprint Backlog -- Maintenance \& Technician}{74}{section.7.2}%
-\contentsline {section}{\numberline {7.3}Refinement of Use Cases}{74}{section.7.3}%
-\contentsline {subsection}{\numberline {7.3.1}Sprint 5 Use Case Diagrams and Textual Descriptions}{74}{subsection.7.3.1}%
-\contentsline {subsubsection}{Use Case Refinement: Submit Maintenance Request}{74}{subsubsection*.108}%
-\contentsline {subsubsection}{Use Case Refinement: Follow and Manage Maintenance Requests}{76}{subsubsection*.111}%
-\contentsline {subsubsection}{Use Case Refinement: Approve Technician Profile}{78}{subsubsection*.114}%
-\contentsline {subsection}{\numberline {7.3.2}Class Diagram}{80}{subsection.7.3.2}%
-\contentsline {subsection}{\numberline {7.3.3}Sequence Diagrams}{80}{subsection.7.3.3}%
-\contentsline {subsubsection}{Sequence Diagram: Become a Technician Application}{80}{subsubsection*.118}%
-\contentsline {section}{\numberline {7.4}User Interface Overview}{83}{section.7.4}%
-\contentsline {subsection}{\numberline {7.4.1}Web Interfaces}{83}{subsection.7.4.1}%
-\contentsline {subsection}{\numberline {7.4.2}Mobile Interfaces}{83}{subsection.7.4.2}%
-\contentsline {section}{\numberline {7.5}Conclusion}{83}{section.7.5}%
-\contentsline {chapter}{General Conclusion and Perspectives}{85}{chapter*.123}%
+\contentsline {subsubsection}{Sequence Diagram: Profile Management}{29}{subsubsection*.38}%
+\contentsline {section}{\numberline {3.4}User Interface Overview}{29}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Web Application Interfaces}{29}{subsection.3.4.1}%
+\contentsline {subsubsection}{Authentication Interfaces}{29}{subsubsection*.40}%
+\contentsline {subsubsection}{Dashboard and Navigation}{29}{subsubsection*.42}%
+\contentsline {subsection}{\numberline {3.4.2}Mobile Application Interfaces}{33}{subsection.3.4.2}%
+\contentsline {subsubsection}{Home Interface}{33}{subsubsection*.44}%
+\contentsline {subsubsection}{Profile Interface}{33}{subsubsection*.46}%
+\contentsline {section}{\numberline {3.5}Conclusion}{34}{section.3.5}%
+\contentsline {chapter}{\numberline {4}Release 2 : Product Management, Guides, and Content approval}{35}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Introduction}{35}{section.4.1}%
+\contentsline {section}{\numberline {4.2}Sprint Backlog -- Content and Catalog Management}{36}{section.4.2}%
+\contentsline {section}{\numberline {4.3}Refinement of Use Cases}{36}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Refinement of Sprint 2 Use Cases}{36}{subsection.4.3.1}%
+\contentsline {subsubsection}{Use Case Refinement: Manage Products}{36}{subsubsection*.49}%
+\contentsline {subsubsection}{Use Case Refinement: Manage Guides}{36}{subsubsection*.52}%
+\contentsline {subsubsection}{Use Case Refinement: Approve Content}{39}{subsubsection*.55}%
+\contentsline {subsection}{\numberline {4.3.2}Class Diagram}{39}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}Sequence Diagrams}{41}{subsection.4.3.3}%
+\contentsline {subsubsection}{Sequence Diagram: Product Management Flow}{41}{subsubsection*.59}%
+\contentsline {subsubsection}{Sequence Diagram: Content Creation \& Submission Flow}{42}{subsubsection*.61}%
+\contentsline {section}{\numberline {4.4}User Interface Overview}{43}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Web Interfaces}{43}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Mobile Application Interfaces}{43}{subsection.4.4.2}%
+\contentsline {section}{\numberline {4.5}Conclusion}{44}{section.4.5}%
+\contentsline {chapter}{\numberline {5}Release 3 : User Interactions, Feedback \& Platform Monitoring}{45}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Introduction}{45}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Sprint Backlog -- User Interactions and Monitoring}{46}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Refinement of Use Cases}{46}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Refinement of Sprint 3 Use Cases}{46}{subsection.5.3.1}%
+\contentsline {subsubsection}{Use Case Refinement: Submit Feedback}{46}{subsubsection*.67}%
+\contentsline {subsubsection}{Use Case Refinement: View Notifications}{46}{subsubsection*.70}%
+\contentsline {subsubsection}{Use Case Refinement: Track Activity Logs}{46}{subsubsection*.73}%
+\contentsline {subsubsection}{Use Case Refinement: View Analytics}{48}{subsubsection*.76}%
+\contentsline {subsection}{\numberline {5.3.2}Class Diagram}{51}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}Sequence Diagrams}{52}{subsection.5.3.3}%
+\contentsline {subsubsection}{Sequence Diagram: Feedback Submission Flow}{52}{subsubsection*.80}%
+\contentsline {subsubsection}{Sequence Diagram: Notification Dispatch Flow}{52}{subsubsection*.82}%
+\contentsline {section}{\numberline {5.4}User Interface Overview}{54}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}Web Interfaces}{54}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Mobile Interfaces}{55}{subsection.5.4.2}%
+\contentsline {section}{\numberline {5.5}Conclusion}{55}{section.5.5}%
+\contentsline {chapter}{\numberline {6}Release 4 : Hybrid Intelligence Layer, Semantic Search \& AI Moderation}{56}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Introduction}{56}{section.6.1}%
+\contentsline {section}{\numberline {6.2}Sprint Backlog -- Intelligent Services}{56}{section.6.2}%
+\contentsline {section}{\numberline {6.3}Comparative Study of AI Models}{57}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Selection Criteria}{57}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Evaluated Models}{57}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Final Choice and Performance Calculations}{58}{subsection.6.3.3}%
+\contentsline {subsubsection}{Cost and Performance Analysis}{58}{subsubsection*.89}%
+\contentsline {section}{\numberline {6.4}RAG Architecture and System Integration}{60}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Semantic Search \& RAG-Based Troubleshooting}{61}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}Architecture Without RAG (Keyword-Based Approach)}{61}{subsection.6.4.2}%
+\contentsline {subsection}{\numberline {6.4.3}Architecture With RAG (Semantic Search Approach)}{61}{subsection.6.4.3}%
+\contentsline {subsection}{\numberline {6.4.4}Hybrid Compatibility \& Parts Recommendation}{61}{subsection.6.4.4}%
+\contentsline {subsection}{\numberline {6.4.5}Comparison of Approaches: Without RAG vs With RAG}{65}{subsection.6.4.5}%
+\contentsline {subsection}{\numberline {6.4.6}Performance Evaluation: Keyword Search vs RAG}{65}{subsection.6.4.6}%
+\contentsline {section}{\numberline {6.5}Technical Implementation}{65}{section.6.5}%
+\contentsline {subsection}{\numberline {6.5.1}Gemini API Integration and Deployment}{67}{subsection.6.5.1}%
+\contentsline {subsection}{\numberline {6.5.2}Backend API Services Development}{67}{subsection.6.5.2}%
+\contentsline {subsection}{\numberline {6.5.3}Document Indexing \& Vector Database Storage}{67}{subsection.6.5.3}%
+\contentsline {subsection}{\numberline {6.5.4}Refinement of Use Cases}{68}{subsection.6.5.4}%
+\contentsline {subsubsection}{Use Case Refinement: Generate Recommendations}{68}{subsubsection*.96}%
+\contentsline {subsubsection}{Use Case Refinement: Component-Based Recommendation}{69}{subsubsection*.98}%
+\contentsline {subsubsection}{Use Case Refinement: Intelligent Search}{69}{subsubsection*.100}%
+\contentsline {subsubsection}{Use Case Refinement: Generate AI Build Instructions}{70}{subsubsection*.102}%
+\contentsline {subsection}{\numberline {6.5.5}Sequence Diagrams}{70}{subsection.6.5.5}%
+\contentsline {subsection}{\numberline {6.5.6}User Interfaces Overview}{72}{subsection.6.5.6}%
+\contentsline {subsection}{\numberline {6.5.7}Technical Challenges and Solutions}{72}{subsection.6.5.7}%
+\contentsline {section}{\numberline {6.6}Conclusion}{73}{section.6.6}%
+\contentsline {chapter}{\numberline {7}Release 5 : Maintenance Requests \& Technician Workflow}{74}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Introduction}{74}{section.7.1}%
+\contentsline {section}{\numberline {7.2}Sprint Backlog -- Maintenance \& Technician}{75}{section.7.2}%
+\contentsline {section}{\numberline {7.3}Refinement of Use Cases}{75}{section.7.3}%
+\contentsline {subsection}{\numberline {7.3.1}Sprint 5 Use Case Diagrams and Textual Descriptions}{75}{subsection.7.3.1}%
+\contentsline {subsubsection}{Use Case Refinement: Submit Maintenance Request}{75}{subsubsection*.108}%
+\contentsline {subsubsection}{Use Case Refinement: Follow and Manage Maintenance Requests}{77}{subsubsection*.111}%
+\contentsline {subsubsection}{Use Case Refinement: Approve Technician Profile}{79}{subsubsection*.114}%
+\contentsline {subsection}{\numberline {7.3.2}Class Diagram}{81}{subsection.7.3.2}%
+\contentsline {subsection}{\numberline {7.3.3}Sequence Diagrams}{81}{subsection.7.3.3}%
+\contentsline {subsubsection}{Sequence Diagram: Become a Technician Application}{81}{subsubsection*.118}%
+\contentsline {section}{\numberline {7.4}User Interface Overview}{84}{section.7.4}%
+\contentsline {subsection}{\numberline {7.4.1}Web Interfaces}{84}{subsection.7.4.1}%
+\contentsline {subsection}{\numberline {7.4.2}Mobile Interfaces}{85}{subsection.7.4.2}%
+\contentsline {section}{\numberline {7.5}Conclusion}{85}{section.7.5}%
+\contentsline {chapter}{General Conclusion and Perspectives}{86}{chapter*.123}%
 \contentsline {chapter}{Webography}{88}{chapter*.124}%
