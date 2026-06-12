@@ -11,7 +11,8 @@ import {
     Dimensions,
     Platform,
     TextInput,
-    Modal
+    Modal,
+    Alert
 } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import { useDispatch, useSelector } from 'react-redux';

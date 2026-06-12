@@ -80,7 +80,7 @@ const AppNavigator: React.FC = () => {
             <StackNavigator screenOptions={screenOptions}>
                 {token ? (
                     <>
-                        <CustomStackScreenGroup navigation={navigation} token={token} />
+                        <CustomStackScreenGroup />
                     </>
                 ) : (
                     <>
@@ -95,7 +95,7 @@ const AppNavigator: React.FC = () => {
 };
 
 // Helper component to house Stack Screens to keep JSX clean
-const CustomStackScreenGroup: React.FC<{ navigation: any; token: string }> = () => {
+const CustomStackScreenGroup: React.FC = () => {
     return (
         <>
             <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
