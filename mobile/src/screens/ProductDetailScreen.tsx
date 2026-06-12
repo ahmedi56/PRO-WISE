@@ -93,6 +93,22 @@ const resolveMediaUrl = (url: string | undefined | null): string => {
     return `${backendBase}${apiPath}`;
 };
 
+const resolveVideoUrl = (videoUrl: string | undefined | null, videoId: string | undefined | null): string => {
+    if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
+        return videoUrl;
+    }
+    if (videoUrl && videoUrl.trim() !== '') {
+        return resolveMediaUrl(videoUrl);
+    }
+    if (videoId) {
+        if (videoId.startsWith('http://') || videoId.startsWith('https://')) {
+            return videoId;
+        }
+        return `https://www.youtube.com/watch?v=${videoId}`;
+    }
+    return '';
+};
+
 const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], supportPDFs: Media[] = [], approvedContent: any[] = []) => {
     const videos: ClassifiedMedia[] = [];
     const pdfs: ClassifiedMedia[] = [];
@@ -121,9 +137,9 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
         videos.push({
             id: video.id,
             type: 'video',
-            url: resolveMediaUrl(video.videoUrl) || (video.videoId ? `https://www.youtube.com/watch?v=${video.videoId}` : ''),
+            url: resolveVideoUrl(video.videoUrl, video.videoId),
             videoId: video.videoId,
-            videoUrl: resolveMediaUrl(video.videoUrl),
+            videoUrl: video.videoUrl,
             title: video.title,
             author: video.author || 'Internal Support',
             _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Video' }
@@ -161,7 +177,7 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
             videos.push({
                 id: item.id,
                 type: 'video',
-                url: resolveMediaUrl(item.videoUrl) || `https://www.youtube.com/watch?v=${item.videoId}`,
+                url: resolveVideoUrl(item.videoUrl, item.videoId),
                 videoId: item.videoId,
                 title: item.title,
                 author: item.author || 'System Verified',
