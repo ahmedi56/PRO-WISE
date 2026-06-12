@@ -1,5 +1,0 @@
-1.el diagrams screen shots 
-fix the app issues 
-presentatin 
-screen shots 
-deploiement 

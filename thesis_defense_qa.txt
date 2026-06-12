@@ -1,0 +1,173 @@
+# PRO-WISE Thesis Defense Question & Answer Bank
+
+This document contains 50 questions categorized into five key areas of a thesis defense committee evaluation, along with simple, spoken-style, and professional English answers.
+
+---
+
+## SECTION 1: RESEARCH QUESTION (10 Q&A)
+
+1. Q: What is the primary research problem addressed in this work?
+   A: The difficulty users and technicians face in retrieving precise, context-specific hardware maintenance information from long, complex manuals.
+
+2. Q: Why is this research problem significant today?
+   A: With hardware complexity rising and device lifespans decreasing, providing rapid repair guides reduces electronic waste and hardware downtime.
+
+3. Q: What is the main thesis or core hypothesis of your work?
+   A: Integrating generative AI with local product specifications via Retrieval-Augmented Generation yields more accurate troubleshooting steps than general-purpose AI.
+
+4. Q: How does your work fill the gap in current hardware support systems?
+   A: Traditional systems use simple keyword searches; ours provides intelligent synthesis and role-based step generation tailored to user expertise.
+
+5. Q: Who is the target audience for your solution?
+   A: Hardware owners seeking self-service repair, professional field technicians, and system administrators managing maintenance workflows.
+
+6. Q: What are the main research objectives you set out to achieve?
+   A: To design a responsive mobile application, build a scalable backend, and implement an offline-resilient semantic search algorithm.
+
+7. Q: How does your work contribute to the theory of human-computer interaction in maintenance?
+   A: It demonstrates how in-context AI-generated instructions reduce cognitive load during manual physical assembly and troubleshooting tasks.
+
+8. Q: Did you focus on a specific type of hardware in your research?
+   A: We focused on consumer electronics and enterprise IT hardware, as they have rich component hierarchies and clear maintenance guidelines.
+
+9. Q: How do you define "successful troubleshooting" in the context of your app?
+   A: Resolving the hardware fault in minimal steps, verified by positive user feedback and log completion.
+
+10. Q: What makes your approach superior to just searching Google or asking ChatGPT?
+    A: Our system grounds the AI in validated local product databases, eliminating hallucinations and ensuring safety constraints.
+
+---
+
+## SECTION 2: METHODOLOGY, ANALYSIS, AND RESULTS (10 Q&A)
+
+11. Q: What methodology did you use to evaluate search accuracy?
+    A: We compared in-memory cosine similarity search results against traditional database keyword queries using user relevance feedback.
+
+12. Q: Explain the steps in your Retrieval-Augmented Generation (RAG) pipeline.
+    A: First, retrieve manual steps; second, embed the search query; third, rank steps using cosine similarity; and fourth, pass context to Gemini.
+
+13. Q: How did you select the threshold for your cosine similarity matching?
+    A: Through empirical testing, we set the similarity threshold at 0.60 to balance retrieving relevant data and filtering out noise.
+
+14. Q: How did you validate that your fallback mechanisms work?
+    A: We simulated API connection failures and verified that the system successfully delivered local static guides without crashing.
+
+15. Q: What data did you use to train or seed the system initially?
+    A: We compiled a dataset of standard product specifications, common troubleshooting guides, and corresponding vector embeddings.
+
+16. Q: How did you evaluate the performance of your mobile application?
+    A: We monitored render times, memory utilization on Android, and network latency under simulated slow network conditions.
+
+17. Q: What were the main quantitative findings from your search evaluations?
+    A: RAG semantic search improved the relevant guide retrieval rate by over forty percent compared to standard SQL search.
+
+18. Q: How did you handle user authorization in your API security methodology?
+    A: We utilized JWT tokens with Redux state storage, securing routes based on user roles: Customer, Technician, and Admin.
+
+19. Q: How did you test the stability of the React Navigation component?
+    A: We performed automated integration testing across state transitions and resolved stack navigation layout mount crashes.
+
+20. Q: How did you analyze customer feedback in your backend?
+    A: We built an AI feedback analyzer that scores sentiment and extracts key actionable suggestions for administrators.
+
+---
+
+## SECTION 3: TECHNICAL CHOICES AND TOOLS (10 Q&A)
+
+21. Q: Why did you choose React Native for the mobile frontend?
+    A: It allows us to compile native iOS and Android apps from a single TypeScript codebase, speeding up development.
+
+22. Q: What led to the selection of Node.js and Sails.js for the backend?
+    A: Sails.js provides a robust MVC structure, automated database mapping, and built-in support for API policies.
+
+23. Q: Why did you select Google Gemini over OpenAI's models?
+    A: Gemini offers competitive reasoning performance, cost-effective API rates, and native support for structured JSON generation.
+
+24. Q: Why did you implement in-memory similarity calculations instead of a vector database?
+    A: For our dataset size, in-memory calculations are highly efficient, reduce API roundtrips, and keep operational costs at zero.
+
+25. Q: What is the purpose of Redux Toolkit in your mobile application?
+    A: It provides a clean, centralized state management system for user authentication, product catalogs, and session states.
+
+26. Q: Why did you choose SQLite/PostgreSQL for relational storage?
+    A: Relational structures match our database model, linking categories, products, components, and maintenance logs perfectly.
+
+27. Q: Why did you use Expo WebBrowser instead of a custom web view?
+    A: Expo WebBrowser opens links in safe, system-native browser overlays, ensuring cookie security and better UX.
+
+28. Q: What tool did you use for the Android build pipeline and why?
+    A: We used Expo EAS Build because it automates remote keystore management and compiles production-ready APKs.
+
+29. Q: How did you ensure consistent design styling on mobile?
+    A: We created a centralized theme file containing semantic colors, spacing tokens, and typography sizes.
+
+30. Q: Why did you use Sails' built-in pub/sub system?
+    A: To easily broadcast real-time notifications to technicians when a new maintenance request is submitted.
+
+---
+
+## SECTION 4: LIMITATIONS OF THE WORK (10 Q&A)
+
+31. Q: What is the biggest limitation of your search system?
+    A: The in-memory cosine similarity ranking does not scale well if the database grows to millions of steps.
+
+32. Q: What limits the offline usability of your mobile app?
+    A: While static guides are cached, AI-powered semantic search and new request submissions require an active internet connection.
+
+33. Q: How does model latency affect the user experience?
+    A: Generating detailed troubleshooting guides via Gemini API takes two to three seconds, which can feel slow to users.
+
+34. Q: What is a major limitation of your feedback analysis tool?
+    A: It relies on unstructured comments, meaning extremely short or vague feedback cannot be analyzed accurately.
+
+35. Q: What are the constraints of using Expo's managed workflow?
+    A: It limits direct integration of custom native Java or Swift libraries without writing Expo config plugins.
+
+36. Q: How does database hosting on free tiers impact your API?
+    A: Databases hosted on free tiers spin down after inactivity, causing initial request delays of up to fifty seconds.
+
+37. Q: What limitation exists in your component insight generation?
+    A: It is highly dependent on the text details in the specifications; missing specs lead to generic insights.
+
+38. Q: How do you handle hardware-specific data formatting limitations?
+    A: The system requires manually structured input, meaning we cannot ingest raw, unstructured PDF manuals directly yet.
+
+39. Q: What is a limitation regarding role management?
+    A: Admins must manually approve technician requests, which creates a slight bottleneck in user onboarding.
+
+40. Q: Why is the vector search limited to top-5 results?
+    A: To fit within the LLM prompt's token constraints while keeping API processing fast and context concise.
+
+---
+
+## SECTION 5: FUTURE DIRECTIONS (10 Q&A)
+
+41. Q: How do you plan to resolve the scalability limits of vector search?
+    A: We plan to migrate from in-memory arrays to a database-backed vector store like Pgvector or Pinecone.
+
+42. Q: How will you improve the offline capabilities of the app?
+    A: By implementing a local SQLite database that syncs all media assets and using a lightweight, on-device model.
+
+43. Q: What is the next step for automated manual ingestion?
+    A: Building an AI document parser that automatically extracts steps, parts, and structures directly from raw PDFs.
+
+44. Q: How do you plan to leverage real-time communication in the future?
+    A: Integrating video call features and real-time messaging using WebSockets to connect customers directly with technicians.
+
+45. Q: Do you plan to support augmented reality (AR) in your mobile app?
+    A: Yes, we intend to overlay 3D assembly animations onto hardware components using AR overlays.
+
+46. Q: How will you expand the analytics dashboard?
+    A: By adding predictive maintenance metrics, highlighting components with high failure rates using regression models.
+
+47. Q: How can you optimize token usage and model response times?
+    A: By fine-tuning a smaller, dedicated open-source LLM, such as LLaMA-3-8B, hosted on our own infrastructure.
+
+48. Q: Do you plan to monetize or commercialize this platform?
+    A: Yes, we plan to offer it as a SaaS platform for hardware manufacturers to host their official support apps.
+
+49. Q: How will you improve automated testing in the future?
+    A: By writing full end-to-end testing suites using Maestro for mobile and Playwright for the web dashboard.
+
+50. Q: How will you handle user privacy in future updates?
+    A: We will introduce end-to-end encryption for chat communications and implement strict compliance with GDPR standards.

@@ -960,14 +960,24 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                                         <TouchableOpacity 
                                             key={vid.id || idx} 
                                             style={styles.nodeBtn}
-                                            onPress={() => vid.url && WebBrowser.openBrowserAsync(vid.url)}
+                                            onPress={async () => {
+                                                if (vid.url) {
+                                                    try {
+                                                        // Attempt to open native application (e.g. YouTube app)
+                                                        await Linking.openURL(vid.url);
+                                                    } catch (err) {
+                                                        // Fallback to web browser overlay
+                                                        await WebBrowser.openBrowserAsync(vid.url);
+                                                    }
+                                                }
+                                            }}
                                         >
                                             <View style={styles.nodeIcon}>
                                                 <Ionicons name={isYouTube ? "logo-youtube" : "play-circle"} size={24} color={isYouTube ? "#FF0000" : colors.primary} />
                                             </View>
                                             <View style={styles.nodeText}>
-                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                                    <Text style={styles.nodeTitle}>{vid.title}</Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                                    <Text style={[styles.nodeTitle, { flexShrink: 1 }]} numberOfLines={1}>{vid.title}</Text>
                                                     {isYouTube && <Badge tone="danger">YOUTUBE</Badge>}
                                                 </View>
                                                 <Text style={styles.nodeSub}>{vid._ctx.guideTitle} • {vid.author}</Text>
