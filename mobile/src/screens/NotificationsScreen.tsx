@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useFocusEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -165,7 +166,7 @@ const NotificationsScreen: React.FC = () => {
         style={styles.deleteButton}
         onPress={() => handleDeleteNotification(item.id)}
       >
-        <Ionicons name="close-circle-outline" size={20} color={colors.textSecondary} />
+        <Ionicons name="close-circle-outline" size={20} color={colors.textMuted} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -213,7 +214,7 @@ const NotificationsScreen: React.FC = () => {
 
       {notifications.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="mail-outline" size={48} color={colors.textSecondary} />
+          <Ionicons name="mail-outline" size={48} color={colors.textMuted} />
           <Text style={styles.emptyText}>No notifications yet</Text>
         </View>
       ) : (
@@ -245,7 +246,7 @@ const NotificationsScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.bg,
   },
   header: {
     flexDirection: 'row',
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeText: {
-    color: colors.background,
+    color: colors.bg,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -295,7 +296,7 @@ const styles = StyleSheet.create({
   notificationItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: colors.cardBg,
+    backgroundColor: colors.surfaceContainer,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -321,13 +322,13 @@ const styles = StyleSheet.create({
   },
   notificationMessage: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     lineHeight: 18,
     marginBottom: spacing.xs,
   },
   notificationTime: {
     fontSize: 11,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     fontStyle: 'italic',
   },
   deleteButton: {
@@ -341,7 +342,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: spacing.md,
     fontSize: 16,
-    color: colors.textSecondary,
+    color: colors.textMuted,
   },
   errorText: {
     marginTop: spacing.md,
@@ -357,7 +358,7 @@ const styles = StyleSheet.create({
   emptyText: {
     marginTop: spacing.md,
     fontSize: 16,
-    color: colors.textSecondary,
+    color: colors.textMuted,
   },
   footer: {
     paddingVertical: spacing.lg,
