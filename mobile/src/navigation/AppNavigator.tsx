@@ -79,7 +79,46 @@ const AppNavigator: React.FC = () => {
             <StackNavigator screenOptions={screenOptions}>
                 {token ? (
                     <>
-                        <CustomStackScreenGroup />
+                        <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
+                        <Stack.Screen name="EditProfile" component={EditProfileScreen as any} />
+                        <Stack.Screen 
+                            name="Search" 
+                            component={require('../screens/SearchScreen').default} 
+                            options={{ title: 'System Search' }} 
+                        />
+                        <Stack.Screen 
+                            name="QRScanner" 
+                            component={require('../screens/QRScannerScreen').default} 
+                            options={{ title: 'Scan QR Code' }} 
+                        />
+                        <Stack.Screen 
+                            name="ProductDetail" 
+                            component={require('../screens/ProductDetailScreen').default} 
+                        />
+                        <Stack.Screen 
+                            name="TechnicianApplication" 
+                            component={require('../screens/TechnicianApplicationScreen').default} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name="TechnicianPortal" 
+                            component={require('../screens/TechnicianPortalScreen').default} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name="ProductForm" 
+                            component={require('../screens/ProductFormScreen').default} 
+                        />
+                        <Stack.Screen 
+                            name="MaintenanceHistory" 
+                            component={require('../screens/MaintenanceHistoryScreen').default} 
+                            options={{ headerShown: false }}
+                        />
+                        <Stack.Screen 
+                            name="MaintenanceRequest" 
+                            component={require('../screens/MaintenanceRequestScreen').default} 
+                            options={{ headerShown: false }}
+                        />
                     </>
                 ) : (
                     <>
@@ -90,54 +129,6 @@ const AppNavigator: React.FC = () => {
                 )}
             </StackNavigator>
         </NavContainer>
-    );
-};
-
-// Helper component to house Stack Screens to keep JSX clean
-const CustomStackScreenGroup: React.FC = () => {
-    return (
-        <>
-            <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
-            <Stack.Screen name="EditProfile" component={EditProfileScreen as any} />
-            <Stack.Screen 
-                name="Search" 
-                component={require('../screens/SearchScreen').default} 
-                options={{ title: 'System Search' }} 
-            />
-            <Stack.Screen 
-                name="QRScanner" 
-                component={require('../screens/QRScannerScreen').default} 
-                options={{ title: 'Scan QR Code' }} 
-            />
-            <Stack.Screen 
-                name="ProductDetail" 
-                component={require('../screens/ProductDetailScreen').default} 
-            />
-            <Stack.Screen 
-                name="TechnicianApplication" 
-                component={require('../screens/TechnicianApplicationScreen').default} 
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-                name="TechnicianPortal" 
-                component={require('../screens/TechnicianPortalScreen').default} 
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-                name="ProductForm" 
-                component={require('../screens/ProductFormScreen').default} 
-            />
-            <Stack.Screen 
-                name="MaintenanceHistory" 
-                component={require('../screens/MaintenanceHistoryScreen').default} 
-                options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-                name="MaintenanceRequest" 
-                component={require('../screens/MaintenanceRequestScreen').default} 
-                options={{ headerShown: false }}
-            />
-        </>
     );
 };
 
