@@ -121,9 +121,9 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
         videos.push({
             id: video.id,
             type: 'video',
-            url: video.videoUrl || (video.videoId ? `https://www.youtube.com/watch?v=${video.videoId}` : ''),
+            url: resolveMediaUrl(video.videoUrl) || (video.videoId ? `https://www.youtube.com/watch?v=${video.videoId}` : ''),
             videoId: video.videoId,
-            videoUrl: video.videoUrl,
+            videoUrl: resolveMediaUrl(video.videoUrl),
             title: video.title,
             author: video.author || 'Internal Support',
             _ctx: { guideTitle: 'Native Support', stepTitle: 'Public Video' }
@@ -161,7 +161,7 @@ const classifyMedia = (guides: Guide[] = [], supportVideos: Media[] = [], suppor
             videos.push({
                 id: item.id,
                 type: 'video',
-                url: item.videoUrl || `https://www.youtube.com/watch?v=${item.videoId}`,
+                url: resolveMediaUrl(item.videoUrl) || `https://www.youtube.com/watch?v=${item.videoId}`,
                 videoId: item.videoId,
                 title: item.title,
                 author: item.author || 'System Verified',

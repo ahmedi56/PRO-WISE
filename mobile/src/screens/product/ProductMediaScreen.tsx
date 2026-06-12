@@ -35,7 +35,7 @@ const ProductMediaScreen = () => {
     }
 
     const handleOpenMedia = (item: any) => {
-        let url = item.videoUrl || item.fileUrl || item.url;
+        let url = item.videoUrl || item.fileUrl || item.url || (item.videoId ? `https://www.youtube.com/watch?v=${item.videoId}` : '');
         if (url) {
             // Normalize relative URLs to absolute
             if (!url.startsWith('http://') && !url.startsWith('https://')) {
