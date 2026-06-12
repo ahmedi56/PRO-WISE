@@ -58,7 +58,6 @@ const AppNavigator: React.FC = () => {
                         },
                         Scan: 'scan',
                         Notifications: 'notifications',
-                        TechnicianPortal: 'technician/portal',
                         Profile: 'profile',
                     }
                 },
@@ -67,7 +66,7 @@ const AppNavigator: React.FC = () => {
                 QRScanner: 'scan-qr',
                 ProductDetail: 'products/:id',
                 TechnicianApplication: 'technician/apply',
-                TechnicianPortal: 'technician/portal-full',
+                TechnicianPortal: 'technician/portal',
                 ProductForm: 'products/:id/edit',
                 MaintenanceHistory: 'maintenance/history',
                 MaintenanceRequest: 'maintenance/request',
