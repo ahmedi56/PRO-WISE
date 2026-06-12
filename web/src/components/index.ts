@@ -12,4 +12,5 @@ export * from './ErrorBoundary';
 export * from './PermissionGate';
 export { default as PermissionProtectedRoute } from './PermissionProtectedRoute';
 export { default as CompanyAdminRoute } from './CompanyAdminRoute';
+export { default as StrictCompanyAdminRoute } from './StrictCompanyAdminRoute';
 export * from './NotificationDropdown';

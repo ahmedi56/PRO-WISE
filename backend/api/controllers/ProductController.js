@@ -434,7 +434,7 @@ module.exports = {
       // Fetch pending FAQs for Q&A workflow
       const pendingContent = await Content.find({
         product: req.params.id,
-        status: 'pending',
+        status: ['open', 'pending'],
         type: 'faq'
       }).populate('createdBy');
 

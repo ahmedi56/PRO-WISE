@@ -32,7 +32,6 @@ export const AdminLayout: React.FC = () => {
         { to: "/admin/support", icon: "help-buoy-outline", label: "Support Content" },
         { to: "/admin/feedback", icon: "chatbubbles-outline", label: "Feedback" },
         { to: "/admin/qr-generate", icon: "qr-code-outline", label: "QR Codes" },
-        { to: "/admin/analytics", icon: "analytics-outline", label: "Analytics" },
     ];
 
     return (

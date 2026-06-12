@@ -221,7 +221,23 @@ const FeedbackSection: React.FC<FeedbackSectionProps> = ({
                                     </div>
                                     {renderStars(fb.rating)}
                                 </div>
-                                <p style={{ margin: 0, lineHeight: '1.6' }}>"{fb.comment}"</p>
+                                <p style={{ margin: 0, lineHeight: '1.6', marginBottom: fb.response ? '1rem' : 0 }}>"{fb.comment}"</p>
+                                {fb.response && (
+                                    <div style={{ 
+                                        marginTop: '1rem',
+                                        padding: '1rem', 
+                                        backgroundColor: 'rgba(255,255,255,0.03)', 
+                                        borderRadius: 'var(--radius-md)',
+                                        borderLeft: '4px solid var(--color-primary)'
+                                    }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 700, marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                            Official Response
+                                        </div>
+                                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--color-text-strong)', lineHeight: '1.5' }}>
+                                            {fb.response}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </Card>
                     ))}

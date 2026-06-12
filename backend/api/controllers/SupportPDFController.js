@@ -33,7 +33,9 @@ function getBaseUrl(req) {
  * - If relative (starts with /), prepend the backend base URL.
  */
 function normalizeFileUrl(fileUrl, req) {
-  if (!fileUrl) return null;
+  if (!fileUrl) {
+    return null;
+  }
   if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
     return fileUrl;
   }
@@ -63,21 +65,22 @@ module.exports = {
         dirname: UPLOADS_PATH,
         maxBytes: 50000000, // 50MB limit
         saveAs: function(file, cb) {
-          // Strictly enforce PDF extension
-          if (file.filename && !file.filename.toLowerCase().endsWith('.pdf')) {
-            return cb(new Error('Only PDF files are allowed.'));
+          // Strictly enforce PDF, DOC, and DOCX extensions
+          const ext = file.filename ? file.filename.toLowerCase() : '';
+          if (ext && !ext.endsWith('.pdf') && !ext.endsWith('.doc') && !ext.endsWith('.docx')) {
+            return cb(new Error('Only PDF, DOC, and DOCX files are allowed.'));
           }
           const safeName = Date.now() + '-' + file.filename.replace(/[^a-zA-Z0-9.-]/g, '-').toLowerCase();
           cb(null, safeName);
         }
       }, function (err, uploadedFiles) {
         if (err) {
-          sails.log.error('PDF Upload Error:', err);
+          sails.log.error('File Upload Error:', err);
           return res.status(500).json({ message: 'Upload error: ' + (err.message || 'Unknown error') });
         }
 
         if (!uploadedFiles || uploadedFiles.length === 0) {
-          return res.status(400).json({ message: 'No file was received. Please ensure you selected a valid PDF.' });
+          return res.status(400).json({ message: 'No file was received. Please ensure you selected a valid file.' });
         }
 
         const file = uploadedFiles[0];
@@ -131,8 +134,17 @@ module.exports = {
         });
       }
 
-      // Set correct content type for PDF
-      res.setHeader('Content-Type', 'application/pdf');
+      // Set correct content type based on extension
+      const lowerName = filename.toLowerCase();
+      if (lowerName.endsWith('.pdf')) {
+        res.setHeader('Content-Type', 'application/pdf');
+      } else if (lowerName.endsWith('.doc')) {
+        res.setHeader('Content-Type', 'application/msword');
+      } else if (lowerName.endsWith('.docx')) {
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      } else {
+        res.setHeader('Content-Type', 'application/octet-stream');
+      }
       res.setHeader('Content-Disposition', 'inline; filename="' + filename.replace(/"/g, '') + '"');
       // Allow cross-origin access for mobile
       res.setHeader('Access-Control-Allow-Origin', '*');

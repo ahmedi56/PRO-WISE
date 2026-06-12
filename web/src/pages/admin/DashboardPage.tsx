@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { PageHeader, Spinner, EmptyState, IonIcon } from '../../components/index';
 import { analyticsService } from '../../services/analyticsService';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 export const DashboardPage: React.FC = () => {
     const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { user } = useSelector((state: RootState) => state.auth);
+    const company = user?.company;
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -14,7 +18,6 @@ export const DashboardPage: React.FC = () => {
                 const data = response.summary || response || {};
                 setStats({
                     products: data.products?.total || 0,
-                    feedback: data.feedback?.total || 0,
                     views: data.products?.scans || 0
                 });
             } catch (err: any) {
@@ -46,16 +49,6 @@ export const DashboardPage: React.FC = () => {
 
                 <div className="card" style={{ padding: '1.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-warning-light)', color: 'var(--color-warning)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <IonIcon name="chatbubbles-outline" style={{ fontSize: '20px' }} />
-                        </div>
-                        <h3 style={{ fontSize: 'var(--text-lg)', fontWeight: 600 }}>Feedback Received</h3>
-                    </div>
-                    <div style={{ fontSize: '1.875rem', fontWeight: 800, color: 'var(--color-text-strong)' }}>{stats?.feedback || 0}</div>
-                </div>
-
-                <div className="card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--color-success-light)', color: 'var(--color-success)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <IonIcon name="eye-outline" style={{ fontSize: '20px' }} />
                         </div>
@@ -65,10 +58,45 @@ export const DashboardPage: React.FC = () => {
                 </div>
             </div>
 
-            <div className="card" style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 600, marginBottom: '1rem' }}>Recent Activity</h3>
-                <EmptyState icon="time-outline" title="No Recent Activity" description="There has been no recent activity on your products." />
-            </div>
+            {company && (
+                <div className="card" style={{ padding: '2rem' }}>
+                    <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, marginBottom: '1.5rem', borderBottom: '1px solid var(--sidebar-border)', paddingBottom: '0.75rem', color: 'var(--color-text-strong)' }}>
+                        Company Information
+                    </h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                        <div>
+                            <span style={{ display: 'block', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Company Name</span>
+                            <span style={{ fontSize: 'var(--text-lg)', fontWeight: 600, color: 'var(--color-text-strong)' }}>{company.name}</span>
+                        </div>
+                        {company.description && (
+                            <div>
+                                <span style={{ display: 'block', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Description</span>
+                                <span style={{ color: 'var(--color-text)', lineHeight: 1.6 }}>{company.description}</span>
+                            </div>
+                        )}
+                        {company.address && (
+                            <div>
+                                <span style={{ display: 'block', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Address</span>
+                                <span style={{ color: 'var(--color-text)' }}>{company.address}</span>
+                            </div>
+                        )}
+                        {company.website && (
+                            <div>
+                                <span style={{ display: 'block', fontSize: 'var(--text-xs)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Website</span>
+                                <a 
+                                    href={company.website.startsWith('http') ? company.website : `https://${company.website}`} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    style={{ color: 'var(--color-primary)', textDecoration: 'none', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+                                >
+                                    {company.website}
+                                    <IonIcon name="open-outline" style={{ fontSize: '16px' }} />
+                                </a>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

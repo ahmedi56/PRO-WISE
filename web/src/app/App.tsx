@@ -8,7 +8,7 @@ import { AppDispatch, RootState } from '../store';
 import { MainLayout, AdminLayout, AuthLayout } from '../layout';
 import { 
     ProtectedRoute, AdminRoute, SuperAdminRoute, 
-    PermissionProtectedRoute, CompanyAdminRoute, 
+    PermissionProtectedRoute, CompanyAdminRoute, StrictCompanyAdminRoute, 
     ErrorBoundary 
 } from '../components/index';
 
@@ -134,7 +134,7 @@ const App: React.FC = () => {
 
                         {/* Mixed / Permission Based */}
                         <Route path="companies" element={<SuperAdminRoute><CompaniesPage /></SuperAdminRoute>} />
-                        <Route path="dashboard" element={<AdminRoute><DashboardPage /></AdminRoute>} />
+                        <Route path="dashboard" element={<StrictCompanyAdminRoute><DashboardPage /></StrictCompanyAdminRoute>} />
                         
                         <Route path="products" element={<PermissionProtectedRoute permission="products.manage"><ProductsPage /></PermissionProtectedRoute>} />
                         <Route path="products/new" element={<PermissionProtectedRoute permission="products.manage"><ProductFormPage /></PermissionProtectedRoute>} />
@@ -147,7 +147,7 @@ const App: React.FC = () => {
                         <Route path="repair-support" element={<Navigate to="/admin/support" replace />} />
                         
                         <Route path="feedback" element={<CompanyAdminRoute><FeedbackPage /></CompanyAdminRoute>} />
-                        <Route path="analytics" element={<CompanyAdminRoute><AnalyticsPage /></CompanyAdminRoute>} />
+                        <Route path="analytics" element={<Navigate to="/home" replace />} />
                         <Route path="qr-generate/:id?" element={<PermissionProtectedRoute permission="qr.generate"><QRGeneratorPage /></PermissionProtectedRoute>} />
                     </Route>
 

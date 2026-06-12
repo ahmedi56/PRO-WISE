@@ -41,6 +41,43 @@ export const ContentFormPage: React.FC = () => {
     const [initialLoading, setInitialLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [attachmentType, setAttachmentType] = useState<'url' | 'file'>('url');
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploadingFile, setUploadingFile] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            setSelectedFile(e.target.files[0]);
+        }
+    };
+
+    const handleFileUpload = async () => {
+        if (!selectedFile) return;
+        setUploadingFile(true);
+        setError(null);
+
+        const uploadData = new FormData();
+        uploadData.append('pdf', selectedFile);
+
+        try {
+            const res = await axios.post(`${API_URL}/support/pdfs/upload`, uploadData, {
+                headers: {
+                    ...headers,
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+            if (res.data && res.data.fileUrl) {
+                setFormData(prev => ({ ...prev, fileUrl: res.data.fileUrl }));
+                setSelectedFile(null);
+            }
+        } catch (err: any) {
+            console.error('File upload failed:', err);
+            setError(err.response?.data?.message || err.response?.data?.error || 'Failed to upload file. Please try again.');
+        } finally {
+            setUploadingFile(false);
+        }
+    };
+
     useEffect(() => {
         const fetchOptions = async () => {
             try {
@@ -499,14 +536,127 @@ export const ContentFormPage: React.FC = () => {
                                     required
                                 />
                             </div>
-                            <InputField
-                                id="content-file"
-                                label="Technical PDF Attachment (Optional)"
-                                placeholder="https://..."
-                                value={formData.fileUrl}
-                                onChange={e => setFormData({ ...formData, fileUrl: e.target.value })}
-                                icon="attach"
-                            />
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <label className="pw-label">Technical Attachment (Optional)</label>
+                                <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.5rem' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAttachmentType('url')}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: '1px solid ' + (attachmentType === 'url' ? 'var(--color-primary)' : 'var(--sidebar-border)'),
+                                            backgroundColor: attachmentType === 'url' ? 'var(--color-primary-light)' : 'transparent',
+                                            color: attachmentType === 'url' ? 'var(--color-primary)' : 'var(--color-text)',
+                                            cursor: 'pointer',
+                                            fontWeight: 600,
+                                            fontSize: 'var(--text-sm)'
+                                        }}
+                                    >
+                                        Paste URL
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setAttachmentType('file')}
+                                        style={{
+                                            padding: '0.5rem 1rem',
+                                            borderRadius: 'var(--radius-md)',
+                                            border: '1px solid ' + (attachmentType === 'file' ? 'var(--color-primary)' : 'var(--sidebar-border)'),
+                                            backgroundColor: attachmentType === 'file' ? 'var(--color-primary-light)' : 'transparent',
+                                            color: attachmentType === 'file' ? 'var(--color-primary)' : 'var(--color-text)',
+                                            cursor: 'pointer',
+                                            fontWeight: 600,
+                                            fontSize: 'var(--text-sm)'
+                                        }}
+                                    >
+                                        Upload From Device
+                                    </button>
+                                </div>
+
+                                {attachmentType === 'url' ? (
+                                    <InputField
+                                        id="content-file-url"
+                                        label="Document URL"
+                                        placeholder="https://example.com/document.pdf"
+                                        value={formData.fileUrl}
+                                        onChange={e => setFormData({ ...formData, fileUrl: e.target.value })}
+                                        icon="link"
+                                    />
+                                ) : (
+                                    <div style={{ 
+                                        padding: '1.5rem', 
+                                        border: '2px dashed var(--sidebar-border)', 
+                                        borderRadius: 'var(--radius-md)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '1rem',
+                                        backgroundColor: 'var(--color-bg)'
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--color-text-muted)' }}>
+                                            <IonIcon name="document-attach-outline" style={{ fontSize: '24px' }} />
+                                            <span style={{ fontSize: 'var(--text-sm)' }}>Supported files: PDF, DOC, DOCX</span>
+                                        </div>
+                                        <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx"
+                                            onChange={handleFileChange}
+                                            style={{ display: 'none' }}
+                                            id="file-upload-input"
+                                        />
+                                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                            <label 
+                                                htmlFor="file-upload-input"
+                                                className="btn btn-secondary"
+                                                style={{ 
+                                                    cursor: 'pointer', 
+                                                    padding: '0.5rem 1.25rem', 
+                                                    borderRadius: 'var(--radius-md)',
+                                                    border: '1px solid var(--sidebar-border)',
+                                                    backgroundColor: 'var(--color-surface)',
+                                                    fontWeight: 600,
+                                                    fontSize: 'var(--text-sm)',
+                                                    textAlign: 'center'
+                                                }}
+                                            >
+                                                Select File
+                                            </label>
+                                            {selectedFile && (
+                                                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--color-text-strong)', fontWeight: 500 }}>
+                                                    {selectedFile.name}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {selectedFile && (
+                                            <Button
+                                                type="button"
+                                                variant="primary"
+                                                size="sm"
+                                                loading={uploadingFile}
+                                                onClick={handleFileUpload}
+                                                icon={<IonIcon name="cloud-upload-outline" />}
+                                            >
+                                                Upload selected file
+                                            </Button>
+                                        )}
+                                        {formData.fileUrl && (
+                                            <div style={{ width: '100%', borderTop: '1px solid var(--sidebar-border)', paddingTop: '1rem', marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <span style={{ fontSize: 'var(--text-xs)', color: 'var(--color-success)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                                    <IonIcon name="checkmark-circle" /> Uploaded:
+                                                </span>
+                                                <a 
+                                                    href={formData.fileUrl} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    style={{ fontSize: 'var(--text-xs)', color: 'var(--color-primary)', textDecoration: 'underline', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                                                >
+                                                    {formData.fileUrl}
+                                                </a>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
