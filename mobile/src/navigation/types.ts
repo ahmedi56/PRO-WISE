@@ -15,6 +15,8 @@ export type RootStackParamList = {
     TechnicianApplication: undefined;
     TechnicianPortal: undefined;
     ProductForm: { id?: string };
+    MaintenanceHistory: undefined;
+    MaintenanceRequest: { productName?: string; companyId?: string };
 };
 
 export type MainTabParamList = {

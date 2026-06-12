@@ -41,42 +41,46 @@ const AppNavigator: React.FC = () => {
         return null;
     }
 
+    const linking = {
+        prefixes: ['prowise://', 'https://prowise-app.com'],
+        config: {
+            screens: {
+                Main: {
+                    screens: {
+                        Home: 'home',
+                        Shop: {
+                            path: 'shop',
+                            screens: {
+                                Categories: 'categories',
+                                SubCategory: 'category/:categoryId',
+                                CompanyProducts: 'company-products/:companyId',
+                            }
+                        },
+                        Scan: 'scan',
+                        Notifications: 'notifications',
+                        TechnicianPortal: 'technician/portal',
+                        Profile: 'profile',
+                    }
+                },
+                EditProfile: 'profile/edit',
+                Search: 'search',
+                QRScanner: 'scan-qr',
+                ProductDetail: 'products/:id',
+                TechnicianApplication: 'technician/apply',
+                TechnicianPortal: 'technician/portal-full',
+                ProductForm: 'products/:id/edit',
+                MaintenanceHistory: 'maintenance/history',
+                MaintenanceRequest: 'maintenance/request',
+            }
+        }
+    };
+
     return (
-        <NavContainer>
+        <NavContainer linking={linking}>
             <StackNavigator screenOptions={screenOptions}>
                 {token ? (
                     <>
-                        <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
-                        <Stack.Screen name="EditProfile" component={EditProfileScreen as any} />
-                        <Stack.Screen 
-                            name="Search" 
-                            component={require('../screens/SearchScreen').default} 
-                            options={{ title: 'System Search' }} 
-                        />
-                        <Stack.Screen 
-                            name="QRScanner" 
-                            component={require('../screens/QRScannerScreen').default} 
-                            options={{ title: 'Scan QR Code' }} 
-                        />
-                        <Stack.Screen 
-                            name="ProductDetail" 
-                            component={require('../screens/ProductDetailScreen').default} 
-                        />
-                        <Stack.Screen 
-                            name="TechnicianApplication" 
-                            component={require('../screens/TechnicianApplicationScreen').default} 
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen 
-                            name="TechnicianPortal" 
-                            component={require('../screens/TechnicianPortalScreen').default} 
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen 
-                            name="ProductForm" 
-                            component={require('../screens/ProductFormScreen').default} 
-                        />
-                        <Stack.Screen name="Register" component={RegisterScreen as any} />
+                        <CustomStackScreenGroup navigation={navigation} token={token} />
                     </>
                 ) : (
                     <>
@@ -87,6 +91,54 @@ const AppNavigator: React.FC = () => {
                 )}
             </StackNavigator>
         </NavContainer>
+    );
+};
+
+// Helper component to house Stack Screens to keep JSX clean
+const CustomStackScreenGroup: React.FC<{ navigation: any; token: string }> = () => {
+    return (
+        <>
+            <Stack.Screen name="Main" component={MainTabNavigator as any} options={{ headerShown: false }} />
+            <Stack.Screen name="EditProfile" component={EditProfileScreen as any} />
+            <Stack.Screen 
+                name="Search" 
+                component={require('../screens/SearchScreen').default} 
+                options={{ title: 'System Search' }} 
+            />
+            <Stack.Screen 
+                name="QRScanner" 
+                component={require('../screens/QRScannerScreen').default} 
+                options={{ title: 'Scan QR Code' }} 
+            />
+            <Stack.Screen 
+                name="ProductDetail" 
+                component={require('../screens/ProductDetailScreen').default} 
+            />
+            <Stack.Screen 
+                name="TechnicianApplication" 
+                component={require('../screens/TechnicianApplicationScreen').default} 
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="TechnicianPortal" 
+                component={require('../screens/TechnicianPortalScreen').default} 
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="ProductForm" 
+                component={require('../screens/ProductFormScreen').default} 
+            />
+            <Stack.Screen 
+                name="MaintenanceHistory" 
+                component={require('../screens/MaintenanceHistoryScreen').default} 
+                options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+                name="MaintenanceRequest" 
+                component={require('../screens/MaintenanceRequestScreen').default} 
+                options={{ headerShown: false }}
+            />
+        </>
     );
 };
 

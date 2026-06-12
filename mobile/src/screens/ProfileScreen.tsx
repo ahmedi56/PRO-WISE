@@ -142,6 +142,20 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
                     </TouchableOpacity>
                 )}
 
+                {!isApprovedTech && (
+                    <TouchableOpacity 
+                        style={styles.actionItem} 
+                        onPress={() => (navigation as any).navigate('MaintenanceHistory')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.actionIconWell}>
+                            <Ionicons name="construct-outline" size={20} color={colors.textStrong} />
+                        </View>
+                        <Text style={styles.actionText}>Maintenance Requests</Text>
+                        <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                    </TouchableOpacity>
+                )}
+
                 {techStatus === 'none' && (roleName.toLowerCase() === 'user' || roleName.toLowerCase() === 'client') && (
                     <TouchableOpacity 
                         style={styles.actionItem} 

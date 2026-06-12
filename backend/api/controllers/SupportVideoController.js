@@ -1,8 +1,4 @@
-/**
- * SupportVideoController
- *
- * @description :: Server-side actions for handling support videos.
- */
+const { _normalizeFileUrl: normalizeFileUrl } = require('./SupportPDFController');
 
 module.exports = {
 
@@ -21,7 +17,7 @@ module.exports = {
       }
 
       // Robust extraction of videoId if provided
-      const cleanVideoId = videoId ? TranslationService.extractVideoId(videoId) : '';
+      const cleanVideoId = videoId ? sails.services.translationservice.extractVideoId(videoId) : '';
 
       const newVideo = await SupportVideo.create({
         product,
@@ -49,7 +45,7 @@ module.exports = {
       return res.json(videos.map(v => ({ 
         id: v.id, 
         videoId: v.videoId, 
-        videoUrl: v.videoUrl,
+        videoUrl: v.videoUrl ? normalizeFileUrl(v.videoUrl, req) : '',
         title: v.title,
         author: v.createdBy ? v.createdBy.name : 'Unknown'
       })));

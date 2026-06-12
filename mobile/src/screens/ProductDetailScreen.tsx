@@ -240,10 +240,214 @@ const Badge: React.FC<{ children: React.ReactNode; tone?: 'success' | 'danger' |
     );
 };
 
+interface FAQWidgetProps {
+    productId: string;
+    faqs: any[];
+    pendingContent: any[];
+    token: string;
+    isStaff: boolean;
+    onRefresh: () => void;
+}
+
+const FAQWidget: React.FC<FAQWidgetProps> = ({ productId, faqs, pendingContent, token, isStaff, onRefresh }) => {
+    const [newQuestion, setNewQuestion] = useState('');
+    const [submittingQuestion, setSubmittingQuestion] = useState(false);
+    const [answerText, setAnswerText] = useState<Record<string, string>>({});
+    const [submittingAnswer, setSubmittingAnswer] = useState<Record<string, boolean>>({});
+
+    const handleAskQuestion = async () => {
+        const query = newQuestion.trim();
+        if (!query) return;
+
+        try {
+            setSubmittingQuestion(true);
+            const res = await apiFetch(`${API_URL}/content`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    title: query,
+                    description: query,
+                    type: 'faq',
+                    product: productId
+                })
+            });
+
+            if (!res.ok) {
+                const errJson = await res.json();
+                throw new Error(errJson.message || 'Failed to submit question');
+            }
+
+            setNewQuestion('');
+            Alert.alert('Question Submitted', 'Your question is registered and will be visible once answered.');
+            onRefresh();
+        } catch (err: any) {
+            Alert.alert('Submit Error', err.message || 'Failed to register question.');
+        } finally {
+            setSubmittingQuestion(false);
+        }
+    };
+
+    const handleAnswerQuestion = async (faqId: string) => {
+        const answer = answerText[faqId]?.trim();
+        if (!answer) {
+            Alert.alert('Empty Answer', 'Please enter an answer before submitting.');
+            return;
+        }
+
+        try {
+            setSubmittingAnswer(prev => ({ ...prev, [faqId]: true }));
+            const res = await apiFetch(`${API_URL}/content/${faqId}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    answer
+                })
+            });
+
+            if (!res.ok) {
+                const errJson = await res.json();
+                throw new Error(errJson.message || 'Failed to submit answer');
+            }
+
+            setAnswerText(prev => ({ ...prev, [faqId]: '' }));
+            Alert.alert('Answer Registered', 'Your answer has been successfully published.');
+            onRefresh();
+        } catch (err: any) {
+            Alert.alert('Answer Error', err.message || 'Failed to submit answer.');
+        } finally {
+            setSubmittingAnswer(prev => ({ ...prev, [faqId]: false }));
+        }
+    };
+
+    return (
+        <View style={{ marginTop: spacing.xl }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md }}>
+                <View style={{
+                    width: 32, height: 32, borderRadius: radius.sm,
+                    backgroundColor: colors.primaryLight, justifyContent: 'center', alignItems: 'center',
+                }}>
+                    <Ionicons name="help-circle-outline" size={18} color={colors.primary} />
+                </View>
+                <Text style={{ color: colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 1.5, flex: 1 }}>FREQUENTLY ASKED QUESTIONS</Text>
+            </View>
+
+            {/* Existing FAQs */}
+            {faqs.length > 0 ? (
+                <View style={{ gap: spacing.md }}>
+                    {faqs.map((faq, idx) => (
+                        <View key={faq.id || idx} style={{
+                            marginBottom: spacing.md, 
+                            backgroundColor: colors.surfaceContainer, 
+                            padding: spacing.lg, 
+                            borderRadius: radius.lg, 
+                            borderWidth: 1, 
+                            borderColor: colors.border
+                        }}>
+                            <Text style={{ color: colors.textStrong, fontSize: 16, fontWeight: '800', marginBottom: 8 }}>{faq.question || faq.title}</Text>
+                            <View style={{ marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }}>
+                                <MarkdownRenderer text={faq.answer || faq.description} textStyle={{ color: colors.text }} />
+                            </View>
+                            {faq.author && (
+                                <Text style={{ fontSize: 10, color: colors.primary, marginTop: spacing.sm, fontWeight: '700' }}>
+                                    Verified Answer by: {faq.author}
+                                </Text>
+                            )}
+                        </View>
+                    ))}
+                </View>
+            ) : (
+                <Text style={{ color: colors.textMuted, fontSize: 13, fontStyle: 'italic', paddingVertical: spacing.md }}>No FAQ telemetry available.</Text>
+            )}
+
+            {/* Ask Question Box */}
+            <View style={{
+                backgroundColor: colors.surfaceContainer,
+                borderRadius: radius.lg,
+                borderWidth: 1,
+                borderColor: colors.border,
+                padding: spacing.lg,
+                marginTop: spacing.md
+            }}>
+                <Text style={{ color: colors.textStrong, fontSize: 14, fontWeight: '700', marginBottom: spacing.sm }}>Ask a Question</Text>
+                <TextInput
+                    style={{
+                        backgroundColor: colors.bg,
+                        borderColor: colors.border,
+                        borderWidth: 1,
+                        borderRadius: radius.md,
+                        padding: spacing.md,
+                        color: colors.textStrong,
+                        minHeight: 60,
+                        fontSize: 14,
+                        textAlignVertical: 'top',
+                        marginBottom: spacing.md
+                    }}
+                    placeholder="Enter your question details here..."
+                    placeholderTextColor={colors.textMuted}
+                    value={newQuestion}
+                    onChangeText={setNewQuestion}
+                    multiline
+                />
+                <CustomButton
+                    title="Submit Question"
+                    onPress={handleAskQuestion}
+                    loading={submittingQuestion}
+                    size="small"
+                />
+            </View>
+
+            {/* Staff Moderation & Answering Box */}
+            {isStaff && pendingContent && pendingContent.length > 0 && (
+                <View style={{ marginTop: spacing.xl }}>
+                    <Text style={{ color: colors.accent, fontSize: 11, fontWeight: '900', letterSpacing: 1.5, marginBottom: spacing.md }}>UNANSWERED QUESTIONS</Text>
+                    {pendingContent.map((faq) => (
+                        <View key={faq.id} style={{
+                            backgroundColor: 'rgba(139, 92, 246, 0.05)',
+                            borderColor: 'rgba(139, 92, 246, 0.2)',
+                            borderWidth: 1,
+                            borderRadius: radius.lg,
+                            padding: spacing.lg,
+                            marginBottom: spacing.md
+                        }}>
+                            <Text style={{ color: colors.textStrong, fontSize: 14, fontWeight: '700', marginBottom: 2 }}>{faq.title || faq.description}</Text>
+                            <Text style={{ fontSize: 11, color: colors.textMuted, marginBottom: spacing.md }}>Submitted by: {faq.author || 'User'}</Text>
+                            
+                            <TextInput
+                                style={{
+                                    backgroundColor: colors.bg,
+                                    borderColor: colors.border,
+                                    borderWidth: 1,
+                                    borderRadius: radius.md,
+                                    padding: spacing.md,
+                                    color: colors.textStrong,
+                                    minHeight: 50,
+                                    fontSize: 13,
+                                    textAlignVertical: 'top',
+                                    marginBottom: spacing.sm
+                                }}
+                                placeholder="Type answer for this customer question..."
+                                placeholderTextColor={colors.textMuted}
+                                value={answerText[faq.id] || ''}
+                                onChangeText={(val) => setAnswerText(prev => ({ ...prev, [faq.id]: val }))}
+                                multiline
+                            />
+                            <CustomButton
+                                title="Publish Answer"
+                                onPress={() => handleAnswerQuestion(faq.id)}
+                                loading={submittingAnswer[faq.id] || false}
+                                size="small"
+                                variant="primary"
+                            />
+                        </View>
+                    ))}
+                </View>
+            )}
+        </View>
+    );
+};
+
 const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, navigation }) => {
     const { id, product } = route.params || {};
     const dispatch = useDispatch<AppDispatch>();
-    const { token } = useSelector((state: RootState) => state.auth);
+    const { token, user } = useSelector((state: RootState) => state.auth);
     
     const [data, setData] = useState<Product | null>(product || null);
     const [loading, setLoading] = useState(true);
@@ -258,6 +462,12 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
     const [searchResults, setSearchResults] = useState<Array<{ type: 'query' | 'result'; text: string }>>([]);
     const [searchLoading, setSearchLoading] = useState(false);
     const scrollViewRef = useRef<ScrollView>(null);
+
+    const role = user?.role || (user as any)?.Role;
+    const roleName = (typeof role === 'object' ? role?.name : role) || '';
+    const isApprovedTech = user?.isTechnician && user?.technicianStatus === 'approved';
+    const isAdmin = ['super_admin', 'administrator', 'company_admin'].includes(roleName.toLowerCase());
+    const isStaff = isApprovedTech || isAdmin;
 
     // Initialize welcome message once product data is loaded
     useEffect(() => {
@@ -355,20 +565,21 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
         }
     }, [data?.name, data?.manufacturer, navigation]);
 
+    const fetchProduct = async () => {
+        try {
+            setLoading(true);
+            const res = await apiFetch(`${API_URL}/products/${id}`, {}, handleUnauthorized);
+            const json = await readJson(res);
+            if (!res.ok) throw new Error(json?.message || 'Asset retrieval failed');
+            setData(json);
+        } catch (err: any) {
+            setError(err.message || 'Asset manifest unreachable');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchProduct = async () => {
-            try {
-                setLoading(true);
-                const res = await apiFetch(`${API_URL}/products/${id}`, {}, handleUnauthorized);
-                const json = await readJson(res);
-                if (!res.ok) throw new Error(json?.message || 'Asset retrieval failed');
-                setData(json);
-            } catch (err: any) {
-                setError(err.message || 'Asset manifest unreachable');
-            } finally {
-                setLoading(false);
-            }
-        };
         if (id) fetchProduct();
     }, [id]);
 
@@ -455,6 +666,27 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                             </View>
                             <View style={styles.glassCard}>
                                 <MarkdownRenderer text={data.description || 'No primary telemetry registered.'} textStyle={styles.body} />
+                                <TouchableOpacity 
+                                    style={{
+                                        marginTop: spacing.md,
+                                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                        borderWidth: 1,
+                                        borderColor: 'rgba(59, 130, 246, 0.3)',
+                                        borderRadius: radius.md,
+                                        padding: spacing.md,
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: 8
+                                    }}
+                                    onPress={() => (navigation as any).navigate('MaintenanceRequest', { 
+                                        productName: data.name,
+                                        companyId: typeof data.company === 'object' ? data.company?.id : data.company 
+                                    })}
+                                >
+                                    <Ionicons name="construct-outline" size={18} color={colors.primary} />
+                                    <Text style={{ color: colors.primary, fontWeight: '700', fontSize: 13 }}>REQUEST MAINTENANCE</Text>
+                                </TouchableOpacity>
                             </View>
                         </View>
 
@@ -511,31 +743,14 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route, naviga
                         </View>
 
                         {/* ── FAQ Section ── */}
-                        {faqs.length > 0 && (
-                            <View style={styles.sectionWrapper}>
-                                <View style={styles.sectionHeaderRow}>
-                                    <View style={styles.sectionIconWell}>
-                                        <Ionicons name="help-circle-outline" size={18} color={colors.primary} />
-                                    </View>
-                                    <Text style={styles.sectionLabel}>FREQUENTLY ASKED QUESTIONS</Text>
-                                </View>
-                                <View style={{ gap: spacing.md }}>
-                                    {faqs.map((faq, idx) => (
-                                        <View key={faq.id || idx} style={styles.protocolBlock}>
-                                            <Text style={styles.protocolTitle}>{faq.question || faq.title}</Text>
-                                            <View style={{ marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.md }}>
-                                                <MarkdownRenderer text={faq.answer || faq.description} textStyle={{ color: colors.text }} />
-                                            </View>
-                                            {faq.author && (
-                                                <Text style={{ fontSize: 10, color: colors.primary, marginTop: spacing.sm, fontWeight: '700' }}>
-                                                    Verified Answer by: {faq.author}
-                                                </Text>
-                                            )}
-                                        </View>
-                                    ))}
-                                </View>
-                            </View>
-                        )}
+                        <FAQWidget
+                            productId={data.id}
+                            faqs={faqs}
+                            pendingContent={(data as any).pendingContent || []}
+                            token={token}
+                            isStaff={isStaff}
+                            onRefresh={fetchProduct}
+                        />
                     </View>
                 )}
 
