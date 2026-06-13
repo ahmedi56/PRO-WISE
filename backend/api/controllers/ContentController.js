@@ -538,14 +538,36 @@ module.exports = {
   // Get all content with visibility rules
   find: async function (req, res) {
     try {
-      const companyId = req.user.companyId || req.user.company;
-      // Admin/Technician can see their own
-      const myContents = await Content.find({
-        or: [
-          { company: companyId },
-          { createdBy: req.user.id }
-        ]
-      }).populate('company').populate('createdBy');
+      // Resolve user role and company from the database for accurate filtering
+      const dbUser = await User.findOne({ id: req.user.id }).populate('role');
+      const roleName = (dbUser && dbUser.role && dbUser.role.name ? dbUser.role.name : '').toLowerCase();
+      const isSuperAdmin = roleName === 'super_admin';
+
+      // Resolve company: prefer DB record over JWT token
+      let companyId = req.user.companyId || req.user.company;
+      if (!companyId && dbUser && dbUser.company) {
+        companyId = typeof dbUser.company === 'object' ? dbUser.company.id : dbUser.company;
+      }
+
+      let myContents;
+      if (isSuperAdmin) {
+        // Super Admin sees ALL content across all companies
+        myContents = await Content.find({}).populate('company').populate('createdBy');
+      } else if (companyId) {
+        // Company admin/technician: see content from their company OR created by them
+        myContents = await Content.find({
+          or: [
+            { company: companyId },
+            { createdBy: req.user.id }
+          ]
+        }).populate('company').populate('createdBy');
+      } else {
+        // Fallback: only see own content
+        myContents = await Content.find({
+          createdBy: req.user.id
+        }).populate('company').populate('createdBy');
+      }
+
       return res.json({
         data: myContents,
         meta: { total: myContents.length }
