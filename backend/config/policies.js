@@ -182,7 +182,8 @@ module.exports.policies = {
     'getPending': ['isAuthenticated', 'isSuperAdmin'],
     'approve': ['isAuthenticated', 'isSuperAdmin'],
     'reject': ['isAuthenticated', 'isSuperAdmin'],
-    'runMigration': true
+    'runMigration': true,
+    'inspectDb': true
   },
   
   // ─── AI routes ──────────────────────────────────────────

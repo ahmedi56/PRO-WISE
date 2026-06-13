@@ -778,6 +778,24 @@ module.exports = {
       sails.log.error('Migration endpoint error:', err);
       return res.status(500).json({ error: err.message || err });
     }
+  },
+
+  inspectDb: async function(req, res) {
+    try {
+      const db = sails.getDatastore().manager;
+      const content = await db.collection('content').findOne({ _id: new require('mongodb').ObjectId('6a2af350eab5fb5c55838fb7') });
+      const guides = await db.collection('guide').find({ product: '6a29c8921ef03976e854d715' }).toArray();
+      
+      const guidesWithSteps = [];
+      for (const g of guides) {
+        const steps = await db.collection('step').find({ guide: g._id }).toArray();
+        guidesWithSteps.push({ ...g, steps });
+      }
+
+      return res.json({ content, guides: guidesWithSteps });
+    } catch(err) {
+      return res.serverError(err);
+    }
   }
 
 };
