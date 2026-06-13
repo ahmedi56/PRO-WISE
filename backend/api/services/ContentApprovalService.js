@@ -305,7 +305,7 @@ module.exports = {
           
           // CREATE GUIDE FROM APPROVED CONTENT
           try {
-            if (content.type === 'guide' || content.type === 'article' || content.type === 'tutorial') {
+            if (content.type === 'guide' || content.type === 'article' || content.type === 'tutorial' || content.type === 'general') {
               const guide = await sails.models.guide.create({
                 product: content.product,
                 title: content.title,

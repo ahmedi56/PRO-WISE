@@ -386,7 +386,7 @@ module.exports = {
       const approved = await Model.updateOne({ id }).set(updatePayload);
 
       // CREATE GUIDE FROM APPROVED CONTENT (Manual Admin Approval)
-      if (type === 'content' && (item.type === 'guide' || item.type === 'article' || item.type === 'tutorial')) {
+      if (type === 'content' && (item.type === 'guide' || item.type === 'article' || item.type === 'tutorial' || item.type === 'general')) {
         try {
           const guide = await sails.models.guide.create({
             product: item.product,
