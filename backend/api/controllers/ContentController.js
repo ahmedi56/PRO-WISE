@@ -653,16 +653,17 @@ module.exports = {
     try {
       const logs = [];
 
-      // 1. Find all approved content missing a guideId
-      const guidableTypes = ['guide', 'article', 'tutorial', 'general'];
-      const approvedContents = await Content.find({
-        status: 'approved',
-        or: [
-          { guideId: { exists: false } },
-          { guideId: null }
-        ],
-        type: guidableTypes
+      // Fetch all approved contents
+      const approvedContentsAll = await Content.find({
+        status: 'approved'
       });
+
+      logs.push(`Retrieved ${approvedContentsAll.length} total approved content records.`);
+
+      const guidableTypes = ['guide', 'article', 'tutorial', 'general'];
+      const approvedContents = approvedContentsAll.filter(c => 
+        guidableTypes.includes(c.type) && (!c.guideId || c.guideId === null)
+      );
 
       logs.push(`Found ${approvedContents.length} approved content records missing guideId.`);
 
@@ -718,15 +719,9 @@ module.exports = {
       }
 
       // 2. Handle approved FAQs missing guideId
-      const approvedFAQs = await Content.find({
-        status: 'approved',
-        type: 'faq',
-        answer: { '!=': null },
-        or: [
-          { guideId: { exists: false } },
-          { guideId: null }
-        ]
-      });
+      const approvedFAQs = approvedContentsAll.filter(c => 
+        c.type === 'faq' && c.answer && (!c.guideId || c.guideId === null)
+      );
 
       logs.push(`Found ${approvedFAQs.length} approved FAQ records missing guideId.`);
 
@@ -773,10 +768,6 @@ module.exports = {
       for (const guide of allGuides) {
         const stepCount = await Step.count({ guide: guide.id });
         if (stepCount === 0) {
-          // If a guide has 0 steps and there's another guide with the same title or it is just empty, we can clean it up
-          // Check if this guide was created as a seed (e.g. status was draft/published but no steps)
-          // To be safe, let's delete it if there is a content record or another guide with steps, or if it is just a 0-step guide.
-          // Let's delete it so it doesn't show as empty card in UI.
           await Guide.destroyOne({ id: guide.id });
           logs.push(`  Deleted empty Guide "${guide.title}" (id=${guide.id}) with 0 steps.`);
         }
@@ -785,7 +776,7 @@ module.exports = {
       return res.json({ success: true, logs });
     } catch (err) {
       sails.log.error('Migration endpoint error:', err);
-      return res.serverError(err);
+      return res.status(500).json({ error: err.message || err });
     }
   }
 
