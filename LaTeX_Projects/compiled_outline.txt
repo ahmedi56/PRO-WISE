@@ -1,0 +1,102 @@
+Total Pages: 108
+Level 1: General Introduction -> Page 15
+Level 1: General Presentation of the Project -> Page 16
+Level 2: Introduction -> Page 16
+Level 2: Host Organization -> Page 16
+Level 3: Company Presentation -> Page 16
+Level 3: Core Activities -> Page 16
+Level 2: Preliminary Study -> Page 17
+Level 3: Industrial Context -> Page 17
+Level 3: Problem Statement -> Page 17
+Level 3: Analysis of Existing Solutions -> Page 18
+Level 2: Adopted Software Development Methodology -> Page 22
+Level 3: Methodological Rationale -> Page 22
+Level 3: The Scrum Framework -> Page 22
+Level 3: Project Roles and Mapping -> Page 22
+Level 3: Scrum Events and Artifacts -> Page 23
+Level 2: UML Modeling Approach -> Page 25
+Level 2: Conclusion -> Page 25
+Level 1: Architecture, Tools and Development Environment -> Page 26
+Level 2: Introduction -> Page 26
+Level 2: Requirements Capture -> Page 26
+Level 3: Actors Identification -> Page 26
+Level 3: Functional Requirements -> Page 27
+Level 3: Non-Functional Requirements -> Page 27
+Level 3: Product Backlog -> Page 28
+Level 2: Diagrams -> Page 31
+Level 3: Global Use Case Diagram -> Page 31
+Level 3: Global Class Diagram -> Page 34
+Level 3: Application Architecture -> Page 34
+Level 2: Tools and Development Environment -> Page 36
+Level 3: Hardware Environment -> Page 36
+Level 3: Technical Environment -> Page 36
+Level 2: Conclusion -> Page 37
+Level 1: Release 1 : Authentication and User Management -> Page 38
+Level 2: Introduction -> Page 38
+Level 2: Sprint Backlog – Authentication and User Management -> Page 38
+Level 2: Refinement of Use Cases -> Page 39
+Level 3: Refinement of Sprint 1 Use Cases -> Page 39
+Level 3: Class Diagram -> Page 43
+Level 3: Sequence Diagrams -> Page 43
+Level 2: User Interface Overview -> Page 45
+Level 3: Web Application Interfaces -> Page 46
+Level 3: Mobile Application Interfaces -> Page 48
+Level 2: Conclusion -> Page 48
+Level 1: Release 2 : Product Management, Guides, and Content approval -> Page 50
+Level 2: Introduction -> Page 50
+Level 2: Sprint Backlog – Content and Catalog Management -> Page 50
+Level 2: Refinement of Use Cases -> Page 51
+Level 3: Refinement of Sprint 2 Use Cases -> Page 51
+Level 3: Class Diagram -> Page 54
+Level 3: Sequence Diagrams -> Page 56
+Level 2: User Interface Overview -> Page 57
+Level 3: Web Interfaces -> Page 58
+Level 3: Mobile Application Interfaces -> Page 58
+Level 2: Conclusion -> Page 59
+Level 1: Release 3 : User Interactions, Feedback & Platform Monitoring -> Page 60
+Level 2: Introduction -> Page 60
+Level 2: Sprint Backlog – User Interactions and Monitoring -> Page 60
+Level 2: Refinement of Use Cases -> Page 61
+Level 3: Refinement of Sprint 3 Use Cases -> Page 61
+Level 3: Class Diagram -> Page 66
+Level 3: Sequence Diagrams -> Page 67
+Level 2: User Interface Overview -> Page 69
+Level 3: Web Interfaces -> Page 69
+Level 3: Mobile Interfaces -> Page 70
+Level 2: Conclusion -> Page 70
+Level 1: Release 4 : Hybrid Intelligence Layer, Semantic Search & AI Moderation -> Page 71
+Level 2: Introduction -> Page 71
+Level 2: Sprint Backlog – Intelligent Services -> Page 71
+Level 2: Comparative Study of AI Models -> Page 72
+Level 3: Selection Criteria -> Page 72
+Level 3: Evaluated Models -> Page 72
+Level 3: Final Choice and Performance Calculations -> Page 73
+Level 2: RAG Architecture and System Integration -> Page 75
+Level 3: Semantic Search & RAG-Based Troubleshooting -> Page 75
+Level 3: Architecture Without RAG (Keyword-Based Approach) -> Page 76
+Level 3: Architecture With RAG (Semantic Search Approach) -> Page 76
+Level 3: Hybrid Compatibility & Parts Recommendation -> Page 76
+Level 3: Comparison of Approaches: Without RAG vs With RAG -> Page 80
+Level 3: Performance Evaluation: Keyword Search vs RAG -> Page 80
+Level 2: Technical Implementation -> Page 80
+Level 3: Gemini API Integration and Deployment -> Page 80
+Level 3: Backend API Services Development -> Page 82
+Level 3: Document Indexing & Vector Database Storage -> Page 82
+Level 3: Refinement of Use Cases -> Page 83
+Level 3: Sequence Diagrams -> Page 85
+Level 3: User Interfaces Overview -> Page 85
+Level 3: Technical Challenges and Solutions -> Page 87
+Level 2: Conclusion -> Page 88
+Level 1: Release 5 : Maintenance Requests & Technician Workflow -> Page 89
+Level 2: Introduction -> Page 89
+Level 2: Sprint Backlog – Maintenance & Technician -> Page 89
+Level 2: Refinement of Use Cases -> Page 90
+Level 3: Sprint 5 Use Case Diagrams and Textual Descriptions -> Page 90
+Level 3: Class Diagram -> Page 96
+Level 3: Sequence Diagrams -> Page 96
+Level 2: User Interface Overview -> Page 96
+Level 3: Web Interfaces -> Page 99
+Level 3: Mobile Interfaces -> Page 99
+Level 2: Conclusion -> Page 99
+Level 1: General Conclusion and Perspectives -> Page 101
+Level 1: Webography -> Page 104

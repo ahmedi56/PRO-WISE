@@ -1,0 +1,541 @@
+--- DUMP OF PAGES 30 to 37 of C:\Users\T560\Desktop\raje3ou belahi\main.pdf ---
+
+=== PAGE 30 ===
+Chapter 2. Architecture, Tools and Development Environment
+ID
+Feature / Epic
+Description
+Priority
+11
+Content Approval System
+Validation workflow for content pub-
+lication
+High
+12
+Feedback System
+User ratings and comments
+Medium
+13
+Recommendation System
+Similarity-based product and com-
+ponent
+recommendations
+using
+product metadata and embeddings
+Medium
+14
+Similar Products
+Display of related products within
+product pages
+Medium
+15
+Search System
+Semantic search for products and
+content using Gemini embeddings
+and cosine similarity ranking
+Medium
+16
+Technician Module
+Upgrade users to technicians with
+service profiles
+High
+17
+Maintenance Services
+Creation and follow-up of repair re-
+quests between users and techni-
+cians
+Medium
+18
+Analytics System
+Tracking of system usage and activ-
+ity
+Medium
+19
+Activity Logs
+Recording system actions for moni-
+toring
+Medium
+20
+Notification System
+User notifications for updates and
+actions
+Medium
+Continued on next page
+15
+
+
+=== PAGE 31 ===
+Chapter 2. Architecture, Tools and Development Environment
+ID
+Feature / Epic
+Description
+Priority
+21
+UI/UX Redesign
+Improvement of web and mobile in-
+terfaces
+Medium
+22
+Mobile Application
+Development of mobile experience
+High
+23
+Web Admin Dashboard
+Administrative interfaces for system
+management
+High
+24
+Performance Optimization
+Optimization of system performance
+Medium
+25
+Testing and Bug Fixing
+Ensuring system stability and relia-
+bility
+High
+26
+Security Enhancements
+Implementation of secure APIs and
+validation
+High
+27
+Documentation (PFE)
+Final report and technical documen-
+tation
+High
+Priority Level Legend:
+• High: Critical priority, addressing core functionalities and system
+security.
+• Medium: Moderate priority, covering auxiliary features, optimization,
+and enhancements.
+2.3
+Diagrams
+2.3.1
+Global Use Case Diagram
+The global use case diagram in Figure 2.1 maps out how each actor
+interacts with our system’s services. We define four main roles:
+16
+
+
+=== PAGE 32 ===
+Chapter 2. Architecture, Tools and Development Environment
+• Customer: Browses products, writes ratings, and submits ticketing
+requests.
+• Technician: Resolves customer support tickets, edits troubleshoot-
+ing guides, and uses Gemini drafts to write manuals.
+• Company Admin: Manages the brand catalog, registers employ-
+ees, and manually checks submitted guides.
+• AI-System: An automated background worker (powered by Gem-
+ini) that runs semantic searches, auto-approves quality drafts, and
+translates texts without manual admin oversight.
+17
+
+
+=== PAGE 33 ===
+Chapter 2. Architecture, Tools and Development Environment
+PRO-WISE System
+Client
+Manage Profile
+ Manage Maintenance
+Requests
+Approve Content
+Company Admin
+Manage Users 
+Approve Technician
+Profile
+Register Company
+Account
+Review Feedback
+<<include>>
+Authenticate
+<<include>>
+<<include>>
+<<include>>
+<<include>>
+<<include>>
+Manage Content
+<<include>>
+Super Admin
+Technician
+Scan QR Code
+Manage Categories
+<<include>>
+Component-Based
+Recommendation
+Submit Feedback 
+Submit
+Maintenance
+Request
+Gemini
+Intelligent Search
+Generate AI Build
+Instructions
+Generate
+Recommendations
+<<include>>
+Register
+<<include>>
+Manage Products
+<<include>>
+View Notifications
+View Analytics
+Track Activity Logs
+<<include>>
+<<include>>
+<<include>>
+<<include>>
+<<include>>
+Figure 2.1: Global use case diagram of PRO-WISE
+2.3.2
+Global Class Diagram
+The global class diagram in Figure 2.2 shows the database schema for
+the PRO-WISE system. It highlights our MongoDB models (auth, catalog
+management, feedback, and maintenance tickets), detailing fields, data
+18
+
+
+=== PAGE 34 ===
+Chapter 2. Architecture, Tools and Development Environment
+types, and relationships.
+<<enumeration>>
+RequestStatus
+PENDING 
+ASSIGNED 
+IN_PROGRESS 
+COMPLETED 
+CANCELLED 
+User
++id : UUID
++fullName : String
++password: String
++username: String 
++email : String
++phone : String
++role : UserRole
++status : UserStatus
++isTechnician : Boolean
++technicianStatus : String
++ companyId : String
++login()
++logout()
++updateProfile()
+Product
++ id : String
++ name : String
++ manufacturer : String
++ modelNumber : String 
++description: String
++ status : ProductStatus 
++ qrCodeUrl : String
++ totalScans : Number
++ components : JSON 
++ categoryId : String
++ companyId : String
++ createdBy : UUID
++ approvedBy : UUID
++ semanticSearch(query)
++ getRecommendations()
++ buildInstruction()
+MaintenanceRequest
++ id : String
++ productName : String
++ issueDescription : String
++ urgency : String
++ status : String
++ userId : UUID
++ technicianId : UUID
++ companyId : String
++ assignTechnician()
++ closeRequest() 
+FAQ
++answer : String
+Provides
+reviewedBy
+Category
+ + id : String
++ name : String
++ slug : String 
++ icon : String 
++ summary : String 
++ description : String
++ image : JSON 
++ level : Number 
++ tags : String[] 
++ visibility : String 
++ sortOrder : Number 
++ totalScans : Number 
++ parentId : String
+ + create() 
++ update()
++ delete()
++ getPopular() 
+writes
+*
+1
+0..*
+1
+0..*
+AuditLog
+  + id : String
++ action : String
++ actorRole : String
++ target : String
++ targetType : String
++ targetLabel : String
++ ipAddress : String 
++ userAgent : String
++ severity : AuditSeverity 
++ details : JSON
++ createdAt : Number
++ updatedAt : Number
++ userId : UUID
++ companyId : String
+Company
+ + id : String
++ name : String
++ description : String
++ logo : String
++ website : String
++ status : CompanyStatus
++ createdAt : Number
+ Content
++ id: string
++ title: string
++ description: string
+needsManualReview : Boolean 
+rejectionReason : String 
+reviewMode : String 
+autoReview : JSON 
++ productId : String
++ createdBy : UUID
++ companyId : String
++ create(): Content
++ update(): Content
++ submit(): boolean
++ approve(): boolean
++ reject(): boolean
+Component
+ + name : String
++ partNumber : String
++ description : String
+Notification
+ + id : String
++ title : String
++ message : String
++ type : NotificationType
++ read : Boolean
++ link : String
++ userId : UUID
+<<enumeration>>
+ContentStatus
+DRAFT 
+PENDING 
+APPROVED 
+REJECTED 
+<<enumeration>>
+UserRole
+SUPER_ADMIN 
+COMPANY_ADMIN 
+TECHNICIAN 
+CUSTOMER 
+SupportPDF
++ fileUrl : String
+SupportVideo 
++videoId : String
++videoUrl : String
+RepairGuide
+ + difficulty : DifficultyLevel
+ + estimatedTime : String
++ isPublished : Boolean
+RepairStep
+ + id : String
++ stepNumber : Integer
++ images : JSON
++ videos : JSON
++ pdfs : JSON
++ estimatedTime : String
++guideId
+1
+*
+QR Code
+ + id : String
++ code : String
++ createdAt : Number
++ productId : String
+categorizedAs
+owns
+identifiedBy
+creates
+assignedTo
+relatesTo
+performedBy
+contains
+scheduled
+*
+1
+*
+1
+1
+*
+1
+*
+*
+1
+1
+1
+*
+1
+1..0
+*
+*
+1
+*
+manages
+1
+memberof
+loggedFor
+evaluates
+authoredBy
+1..0
+1
+*
+1
+1
+1..0
+1
+Appointment
+ + id : String
++ scheduledDate : DateTime
++ status : AppointmentStatus 
++ location : String
+Feedback
+ + id : String
++ rating : Number
++ comment : String
++ response : String
++ isHidden : Boolean
++ isAnonymous : Boolean
++ userId : UUID
++ companyId : String
++ productId : String
+Technicianreview
+ + id : String
++ productName : String
++ issueDescription : String
++ urgency : String
++ status : String
++ userId : UUID
++ technicianProfile : JSON
++ technicianId : UUID
++ companyId : String
+*
+*
+*
+1
+receives 
+Figure 2.2: Global class diagram of the system
+2.3.3
+Application Architecture
+We built the codebase inside a monorepo containing three applications.
+The backend REST API runs on Node.js [1] and Sails.js [2], communicat-
+ing with MongoDB [3] using the sails-mongo driver. The web dashboard
+is built with React [4], Vite [5], and TypeScript [6], using Redux Toolkit [7]
+to manage app state. The mobile client utilizes React Native [9] and
+Expo [8], handles QR code scanning using the camera API [12], and
+navigates screens via React Navigation.
+19
+
+
+=== PAGE 35 ===
+Chapter 2. Architecture, Tools and Development Environment
+React Web Client
+(Vite, TS, Re-
+dux, Axios)
+React Native Client
+(Expo, Re-
+dux, Camera)
+Sails.js Back-
+end API
+(Node.js REST
+API, Services)
+MongoDB
+Database
+(Data Per-
+sistence)
+Google
+Gemini API
+(LLM & Vector
+Search)
+Figure 2.3: Application architecture of the PRO-WISE platform
+20
+
+
+=== PAGE 36 ===
+Chapter 2. Architecture, Tools and Development Environment
+2.4
+Tools and Development Environment
+2.4.1
+Hardware Environment
+The development was carried out using a personal computer with the
+following specifications:
+• Processor: Intel Core i5-6300U CPU @ 2.40GHz
+• RAM: 16 GB DDR3
+• Storage: 512 GB SSD
+• OS: Windows 10 Pro 64-bit
+2.4.2
+Technical Environment
+We selected a modern software stack to keep the platform fast, secure,
+and easy to maintain.
+21
+
+
+=== PAGE 37 ===
+Chapter 2. Architecture, Tools and Development Environment
+Table 2.2: Technologies and tools used in the PRO-WISE platform
+Logo
+Technology / Tool
+Role in the project
+React
+Development of the dynamic web client
+interface.
+React Native / Expo
+Development and testing of the cross-
+platform mobile application.
+Sails.js
+Backend REST API, controllers, ser-
+vices, and business logic.
+MongoDB
+NoSQL database used for persistent
+and flexible data storage.
+Google
+Gemini
+API
+[11]
+AI services for semantic search, rec-
+ommendations, and generated assis-
+tance.
+Git [26]
+Version control and source code his-
+tory management.
+Visual
+Studio
+Code [27]
+Main source code editor used during
+implementation.
+Overleaf [28]
+LaTeX writing, formatting, and report
+preparation support.
+Draw.io [29]
+Creation of UML diagrams and techni-
+cal architecture illustrations.
+2.5
+Conclusion
+In this chapter, we reviewed the project’s technical specifications, struc-
+tural design, UML models, and local setup. With these blueprints ready,
+we started building the core features.
+In the next chapter, we walk
+through Release 1, detailing the authentication system, password hash-
+ing, and user roles.
+22
+
+

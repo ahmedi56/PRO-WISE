@@ -957,7 +957,7 @@ export const ProductDetailPage: React.FC = () => {
                                                                  </h5>
                                                                  <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                                      {canEdit && (
-                                                                         <Button size="sm" variant="secondary" onClick={() => handleEditAnswer(faq.id, faq.answer || faq.description)}>
+                                                                         <Button size="sm" variant="secondary" onClick={() => handleEditAnswer(faq.id, faq.answer || '')}>
                                                                              Edit Answer
                                                                          </Button>
                                                                      )}
@@ -968,12 +968,26 @@ export const ProductDetailPage: React.FC = () => {
                                                                      )}
                                                                  </div>
                                                              </div>
-                                                             <div style={{ color: 'var(--color-text)' }}>
-                                                                 <MarkdownRenderer text={faq.answer || faq.description} />
+                                                             <div style={{ color: 'var(--color-text)', fontStyle: 'italic', fontSize: '0.95rem' }}>
+                                                                 "{faq.description}"
                                                              </div>
-                                                             {faq.author && (
-                                                                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>
-                                                                     Verified Answer by: <span style={{ color: 'var(--color-primary)' }}>{faq.author}</span>
+                                                             {faq.answer && (
+                                                                 <div style={{ 
+                                                                     marginTop: '0.5rem',
+                                                                     padding: '1rem', 
+                                                                     backgroundColor: 'rgba(255,255,255,0.03)', 
+                                                                     borderRadius: 'var(--radius-md)',
+                                                                     borderLeft: '4px solid var(--color-primary)'
+                                                                 }}>
+                                                                     <div style={{ fontSize: '0.75rem', color: 'var(--color-primary)', fontWeight: 700, marginBottom: '0.25rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                                         Answer
+                                                                     </div>
+                                                                     <div style={{ color: 'var(--color-text-strong)', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                                                                         <MarkdownRenderer text={faq.answer} />
+                                                                     </div>
+                                                                     <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', fontWeight: 600, marginTop: '0.5rem' }}>
+                                                                         Answered by: <span style={{ color: 'var(--color-primary)' }}>{faq.answeredByName || 'Verified Expert'}</span>
+                                                                     </div>
                                                                  </div>
                                                              )}
                                                          </div>

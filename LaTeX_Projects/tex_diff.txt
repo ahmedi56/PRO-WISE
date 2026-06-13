@@ -1,0 +1,268 @@
+--- main_backup_user.tex
++++ main.tex
+@@ -110,36 +110,36 @@
+ % ===================== HEADER =====================
+ {\large \textbf{HIGHER INSTITUTE OF COMPUTER SCIENCE\\
+-AND COMMUNICATION TECHNOLOGIES -- HAMMAM SOUSSE}}\\[0.3cm]
+-
+-\vspace{0.5cm}
++AND COMMUNICATION TECHNOLOGIES -- SOUSSE}}\\[0.2cm]
++
++\vspace{0.3cm}
+ 
+ % ===================== LOGO =====================
+-\includegraphics[width=3.5cm]{isitcom.PNG}\\[0.7cm]
++\includegraphics[width=3cm]{isitcom.PNG}\\[0.4cm]
+ 
+ % ===================== MAIN TITLE =====================
+-{\Large \textbf{Final Year Internship Report}}\\[0.4cm]
++{\Large \textbf{Final Year Internship Report}}\\[0.3cm]
+ 
+ {\small Submitted in partial fulfillment of the requirements for the degree of}\\
+-{\small \textbf{Bachelor in Computer Science}}\\[0.2cm]
+-
+-{\small Specialization: Computer Science and Multimedia}\\[0.8cm]
++{\small \textbf{Bachelor of Computer Science}}\\[0.15cm]
++
++{\small Specialization: Computer Science and Multimedia}\\[0.5cm]
+ 
+ % ===================== PROJECT TITLE =====================
+ \setlength{\fboxrule}{1pt}
+-\setlength{\fboxsep}{10pt}
++\setlength{\fboxsep}{8pt}
+ 
+ \fcolorbox{black}{gray!10}{
+ \parbox{0.7\textwidth}{
+ \centering
+-\textbf{PRO-WISE PLATFORM}\\[0.2cm]
++\textbf{PRO-WISE PLATFORM}\\[0.15cm]
+ \small QR-Based Product Assistance System
+ }
+ }
+ 
+-\vspace{0.8cm}
++\vspace{0.5cm}
+ 
+ % ===================== AUTHORS =====================
+-{\small \textbf{Presented by:}}\\[0.3cm]
+-Ahmed Abderrahmen Jatlaoui\\[0.6cm]
++{\small \textbf{Presented by:}}\\[0.2cm]
++Ahmed Abderrahmen Jatlaoui\\[0.4cm]
+ 
+ % ===================== SUPERVISORS =====================
+@@ -147,13 +147,13 @@
+ \small
+ \textbf{Academic Supervisor:} Mr. Abdelweheb Gueddess\\
+-\textbf{Industrial Supervisor:} Mr. Mohamed Ben Ameur
++\textbf{Industrial Supervisor:} Mr. Raouf Bouneb
+ \end{flushleft}
+ 
+-\vspace{0.5cm}
++\vspace{0.3cm}
+ 
+ % ===================== COMPANY =====================
+-{\small \textbf{Host Company}}\\[0.3cm]
+-
+-\includegraphics[width=4.5cm]{accelerant.PNG}\\[0.7cm]
++{\small \textbf{Host Company}}\\[0.2cm]
++
++\includegraphics[width=3.5cm]{accelerant.PNG}\\[0.3cm]
+ \textbf{Accelerant}
+ 
+@@ -162,10 +162,10 @@
+ 
+ % ===================== YEAR =====================
+-{\small Academic Year: 2025/2026}\\[0.3cm]
++{\small Academic Year: 2025/2026}\\[0.2cm]
+ 
+ % ===================== FOOTER =====================
+ \begin{center}
+ \footnotesize
+-Higher Institute of Computer Science and Communication Technologies, Hammam Sousse\\
++Higher Institute of Computer Science and Communication Technologies, Sousse\\
+ Tel/Fax: +216 73 37 15 71 / +216 73 36 44 11
+ \end{center}
+@@ -174,5 +174,5 @@
+ 
+ % ===================== DEDICATION =====================
+-\clearpage
++\cleardoublepage
+ \thispagestyle{empty}
+ 
+@@ -186,29 +186,61 @@
+ \large
+ 
+-I dedicate this work to the people who have always supported me throughout my academic journey.
++This report is my final submission to end my learning. Firstly, I wish to acknowledge my gratitude and dedicate this piece of work to all those who have supported me during the implementation of this project.
++
++\vspace{0.8cm}
++
++Mom and dad, thank you for your love and sacrifices. It was your unchanging support that gave me the fortitude to see things through at times when my studies were most difficult.
++
++\vspace{0.8cm}
++
++To my family, for never doubting me and for the motivation you provided to get me across the line with my engineering degree.
++
++\vspace{0.8cm}
++
++I am grateful to my teachers for the knowledge and guidance you have shown me over the years. Thank you for your role in my development as a student.
++
++\vspace{0.8cm}
++
++And to my friends, for the long hours we put in studying side by side, for lending a hand and for some good times along the way.
++
++\vspace{0.8cm}
++
++To wrap up, I am also very grateful to those who have given me words of encouragement or have provided some technical advice when I was in the need of it. Thank you all very much
++
++\vfill
++
++
++
++
++% ===================== ACKNOWLEDGMENT =====================
++\cleardoublepage
++\thispagestyle{empty}
++
++\begin{center}
++{\LARGE \textbf{Acknowledgment}}
++\end{center}
+ 
+ \vspace{1cm}
+ 
+-\textbf{To my parents,}
+-
+-For their unconditional love, continuous support, and sacrifices. Your encouragement has been my greatest strength.
++\linespread{1.3}\selectfont
++\large
++
++First of all, I genuinely appreciate all the efforts of the people who have assisted me during this project.
+ 
+ \vspace{1cm}
+ 
+-\textbf{To my family,}
+-
+-For their constant motivation and belief in my abilities.
++My first and greatest thanks go to my academic supervisor, \textbf{Mr. Abdelweheb Gueddess}, for his priceless help, unlimited advices, and always insightful inputs.
+ 
+ \vspace{1cm}
+ 
+-\textbf{To my friends,}
+-
+-For their support, collaboration, and unforgettable moments during this journey.
++Besides that, I am most grateful to my industrial supervisor, \textbf{Mr. Raouf Bouneb}, for the support, guidance, and cheer he gave me.
+ 
+ \vspace{1cm}
+ 
+-\textbf{To everyone who contributed, directly or indirectly,}
+-
+-This work would not have been possible without your help and encouragement.
++Many thanks to the Accelerant team for giving me a professional and inspiring atmosphere.
++
++\vspace{1cm}
++
++Last but not least, I am very grateful to my family and friends for their ongoing support and motivation.
+ 
+ \vfill
+@@ -219,44 +251,6 @@
+ 
+ 
+-% ===================== ACKNOWLEDGMENT =====================
+-\clearpage
+-\thispagestyle{empty}
+-
+-\begin{center}
+-{\LARGE \textbf{Acknowledgment}}
+-\end{center}
+-
+-\vspace{1cm}
+-
+-\linespread{1.3}\selectfont
+-\large
+-
+-I would like to express my sincere gratitude to all the people who contributed to the successful completion of this project.
+-
+-\vspace{1cm}
+-
+-First and foremost, I would like to thank my academic supervisor, \textbf{Mr. Abdelweheb Gueddess}, for his valuable guidance, continuous support, and constructive feedback.
+-
+-\vspace{1cm}
+-
+-I would also like to thank my industrial supervisor, \textbf{Mr. Mohamed Ben Ameur}, for his support, advice, and encouragement.
+-
+-\vspace{1cm}
+-
+-My sincere thanks go to the team at \textbf{Accelerant} for providing a professional and motivating environment.
+-
+-\vspace{1cm}
+-
+-Finally, I would like to thank my family and friends for their continuous support and encouragement.
+-
+-\vfill
+-
+-\begin{flushright}
+-\Large \textbf{Ahmed Jatlaoui}
+-\end{flushright}
+-
+-
+ % ===================== ABSTRACT =====================
+-\clearpage
++\cleardoublepage
+ \thispagestyle{empty}
+ 
+@@ -296,5 +290,5 @@
+ 
+ % ===================== TABLE OF CONTENTS =====================
+-\clearpage
++\cleardoublepage
+ \pagenumbering{roman}
+ 
+@@ -304,5 +298,5 @@
+ 
+ % ===================== LIST OF FIGURES =====================
+-\clearpage
++\cleardoublepage
+ \listoffigures
+ \thispagestyle{plain}
+@@ -310,5 +304,5 @@
+ 
+ % ===================== LIST OF TABLES =====================
+-\clearpage
++\cleardoublepage
+ \listoftables
+ \thispagestyle{plain}
+@@ -326,5 +320,5 @@
+ 
+ % ===================== START CHAPTERS =====================
+-\clearpage
++\cleardoublepage
+ \pagenumbering{arabic}
+ 
+@@ -2042,12 +2036,21 @@
+  \end{figure}
+ 
++The become a technician page allows users to submit their application to upgrade their role, as shown in Figure~\ref{fig:web_become_tech}.
++
++\begin{figure}[!htbp]
++ \centering
++ \includegraphics[width=0.8\textwidth]{images/Become a technician .PNG}
++ \caption{Web interface -- Become a technician application page}
++ \label{fig:web_become_tech}
++ \end{figure}
++
+ \subsection{Mobile Interfaces}
+ 
+-The mobile interface shown in Figure~\ref{fig:mobile_matching} highlights the workspace where technicians browse pending tickets, claim jobs, and report progress.
+-
+-\begin{figure}[!htbp]
+-\centering
+-\includegraphics[width=0.5\textwidth]{images/mobile_matching.png}
+-\caption{Mobile interface -- Maintenance requests and technician job dashboard}
++The mobile interface shown in Figure~\ref{fig:mobile_matching} highlights the technician portal where verified technicians browse pending tickets and claim jobs.
++
++\begin{figure}[!htbp]
++\centering
++\includegraphics[width=0.5\textwidth]{images/technician Protal.jpeg}
++\caption{Mobile interface -- Technician portal job dashboard}
+ \label{fig:mobile_matching}
+ \end{figure}

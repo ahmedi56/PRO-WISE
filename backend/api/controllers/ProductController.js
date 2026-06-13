@@ -429,7 +429,7 @@ module.exports = {
       const approvedContent = await Content.find({
         product: req.params.id,
         status: 'approved'
-      }).populate('createdBy');
+      }).populate('createdBy').populate('answeredBy');
 
       // Fetch pending FAQs for Q&A workflow
       const pendingContent = await Content.find({
@@ -545,7 +545,9 @@ module.exports = {
           fileUrl: normalizeFileUrl(c.fileUrl, req),
           steps: c.steps,
           media: c.media,
-          author: c.createdBy ? c.createdBy.name : 'Unknown'
+          author: c.createdBy ? c.createdBy.name : 'Unknown',
+          answeredBy: c.answeredBy ? (c.answeredBy.id || c.answeredBy) : null,
+          answeredByName: c.answeredBy ? c.answeredBy.name : null
         })),
         pendingContent: filteredPendingContent.map(c => ({
           id: c.id,

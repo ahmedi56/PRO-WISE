@@ -1,0 +1,173 @@
+=== TARGET PDF ===
+--- Physical Page 17 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [76.2 - 90.5]: 1.2.2 Core Activities
+  [107.2 - 121.5]: The company operates across three main areas:
+  [140.4 - 154.8]: • Full-Stack Software Development: Engineering tailor-made web
+  [163.8 - 178.1]: and mobile applications leveraging modern backend and frontend
+  [187.1 - 201.4]: technology stacks.
+  [220.4 - 234.7]: • Digital Transformation Services: Modernizing legacy workflows
+  [243.7 - 258.0]: and paper-based procedures into automated, digital systems.
+  [276.9 - 291.3]: • Enterprise System Integration: Designing and connecting dis-
+  [300.3 - 314.6]: tributed software components through secure and scalable API ar-
+  [323.6 - 337.9]: chitectures.
+  [367.9 - 385.1]: 1.3 Preliminary Study
+  [407.8 - 422.1]: 1.3.1 Industrial Context
+  [438.8 - 453.1]: Modern hardware products and machinery require fast, digital-first sup-
+  [462.1 - 476.5]: port channels. Customers want quick answers, but technical assistance
+  [485.4 - 499.8]: remains fragmented. Most repair manuals are buried in static PDFs,
+  [508.7 - 523.1]: legacy web portals, or physical paper guides. When a machine breaks
+  [532.0 - 546.4]: down, users struggle to find simple, direct instructions.
+  [572.1 - 586.4]: 1.3.2 Problem Statement
+  [603.1 - 617.5]: Traditional help-desk systems make support frustrating for users and ex-
+  [626.4 - 640.8]: pensive for brands. We identified four main pain points:
+  [659.7 - 674.1]: • Siloed Content: Repair manuals, video tutorials, and troubleshoot-
+  [683.0 - 697.4]: ing articles are hosted on separate websites, making search diffi-
+  [706.3 - 720.7]: cult.
+  [777.5 - 789.5]: 2
+--- Physical Page 18 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [71.8 - 86.1]: • Dense Technical Books: Physical user guides are long and hard
+  [95.1 - 109.4]: to navigate, pushing customers to ignore them and ask for human
+  [118.4 - 132.8]: assistance immediately.
+  [151.7 - 166.0]: • Overloaded Call Centers: Because customers lack self-service
+  [175.0 - 189.3]: tools, they call hotlines or schedule home visits for simple issues,
+  [198.3 - 212.7]: driving up operating costs.
+  [231.6 - 245.9]: • Lack of Device Context: Support portals do not know which prod-
+  [254.9 - 269.2]: uct model the user has, forcing them to manually search for serial
+  [278.2 - 292.6]: numbers.
+  [318.3 - 332.6]: 1.3.3 Analysis of Existing Solutions
+  [348.9 - 360.9]: Overview of Existing Systems
+  [378.1 - 392.5]: The iFixit Platform iFixit [13] is a well-known community wiki for fixing
+  [401.4 - 415.8]: gadgets and machines. It includes an AI assistant named FixBot that
+  [424.8 - 439.1]: helps diagnose issues. However, since it is a public platform, it lacks the
+  [448.1 - 462.4]: multi-tenant brand isolation and official approval workflows that compa-
+  [471.4 - 485.7]: nies require to control their support data.
+  [665.3 - 677.3]: Figure 1.2: iFixit platform interface
+  [707.9 - 722.2]: The GE Appliances Support Portal GE Appliances [14] offers digital man-
+  [731.2 - 745.5]: uals and technician bookings through its SmartHQ ecosystem. While it
+  [777.5 - 789.5]: 3
+--- Physical Page 19 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [71.8 - 86.1]: includes AI chat tools for home diagnostics, the system is strictly pro-
+  [95.1 - 109.4]: prietary. Other hardware manufacturers cannot use this ecosystem to
+  [118.4 - 132.8]: support their own products.
+  [311.6 - 323.6]: Figure 1.3: GE Appliances support platform
+  [351.4 - 363.4]: Comparative Study
+  [380.6 - 395.0]: To place our project in the market, we compared these existing systems
+  [403.9 - 418.3]: using five core functional metrics.
+  [434.0 - 446.0]: Table 1.1: Comparative study of existing solutions
+  [465.0 - 475.8]: Functional Criterion iFixit GE Appliances
+  [487.4 - 498.2]: Primary Access Method Manual Search Serial / Model Lookup
+  [504.4 - 515.2]: AI-Assisted Support Yes (FixBot App) Yes (SmartHQ App)
+  [521.3 - 532.2]: Content Moderation Model Wiki / Community Official / Brand-Specific
+  [538.3 - 549.2]: Multi-Tenant SaaS Architecture No No
+  [555.3 - 566.1]: Service Ticketing Integration No Brand Repair Scheduling
+  [597.8 - 609.7]: Comparative Evaluation and Positioning
+  [627.0 - 641.3]: Looking at Table 1.1, we see a clear gap in how product support is han-
+  [650.3 - 664.6]: dled today. Community-driven platforms like iFixit have plenty of data,
+  [673.6 - 687.9]: but they lack the privacy and brand control that enterprises require. On
+  [696.9 - 711.2]: the other hand, proprietary systems like GE Appliances are highly se-
+  [720.2 - 734.5]: cure but closed off, meaning other brands cannot use them.
+  [777.5 - 789.5]: 4
+--- Physical Page 20 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [71.8 - 86.1]: To bridge this gap, we built PRO-WISE as a multi-tenant, cloud-based
+  [95.1 - 109.4]: SaaS platform. Here is how it stands out:
+  [128.4 - 142.7]: • Direct QR Scanning: Scanning a product QR code drops users
+  [151.7 - 166.0]: straight into a customized troubleshooting space, skipping standard
+  [175.0 - 189.3]: search engines entirely.
+  [208.3 - 222.6]: • Smart Moderation: We combine official developer-written guides
+  [231.6 - 245.9]: with real-time AI screening to keep technical documentation safe
+  [254.9 - 269.2]: and accurate.
+  [288.2 - 302.5]: • Built-in Gemini Assistant: We plugged in a RAG pipeline powered
+  [311.5 - 325.8]: by the Google Gemini API so users can chat with their manuals in
+  [334.8 - 349.1]: natural language.
+  [368.1 - 382.4]: • Connected Help Desk: When self-service troubleshooting fails,
+  [391.4 - 405.7]: users can file a ticket to send the issue directly to a technician.
+  [428.7 - 440.7]: How PRO-WISE Works End-to-End
+  [457.9 - 472.3]: We designed PRO-WISE to link physical machines with smart digital
+  [481.2 - 495.6]: services. Figure 1.4 shows how users and administrators interact with
+  [504.5 - 518.9]: the system components.
+  [777.5 - 789.5]: 5
+--- Physical Page 21 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [384.1 - 396.1]: Figure 1.4: PRO-WISE platform operational workflow and high-level architecture
+  [423.9 - 438.2]: Here is the operational workflow step-by-step:
+  [457.1 - 471.5]: 1. Scanning the QR Code: A customer scans the product’s QR sticker
+  [480.4 - 494.8]: using their phone’s camera web or mobile view.
+  [513.7 - 528.1]: 2. Extracting the ID: The app pulls the unique identifier from the QR
+  [537.0 - 551.4]: code and requests the backend server via HTTPS.
+  [570.3 - 584.7]: 3. Data Fetching: The backend queries MongoDB for the product’s
+  [593.6 - 608.0]: details, PDF steps, and pre-computed text embeddings.
+  [626.9 - 641.2]: 4. Semantic Querying: If the user asks a question, the backend vec-
+  [650.2 - 664.5]: tors the text, runs a similarity lookup in MongoDB, and passes the
+  [673.5 - 687.9]: context to Google Gemini to get an exact answer.
+  [706.8 - 721.1]: 5. Rendering the App: The backend returns the guides, parts listing,
+  [730.1 - 744.4]: and AI replies, showing a clean workspace to the user.
+  [777.5 - 789.5]: 6
+--- Physical Page 22 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [71.8 - 86.1]: 6. Filing a Ticket: If the problem persists, the user submits a help
+  [95.1 - 109.4]: request, which sends a notification and routes the ticket to available
+  [118.4 - 132.8]: technicians.
+  [162.7 - 179.9]: 1.4 Adopted Software Development Methodology
+  [202.6 - 217.0]: 1.4.1 Methodological Rationale
+  [233.6 - 248.0]: Building a multi-tenant platform with a mobile client, web dashboard, and
+  [257.0 - 271.3]: custom RAG search is complex. We chose an Agile approach because
+  [280.3 - 294.6]: we needed to adapt quickly to requirement changes. Working f el cycles
+  [303.6 - 317.9]: helped us build and test features piece by piece, getting feedback from
+  [326.9 - 341.2]: our advisors early and often.
+  [366.9 - 381.3]: 1.4.2 The Scrum Framework
+  [398.0 - 412.3]: To stay organized and deliver real features regularly, we used the Scrum
+  [421.3 - 435.6]: framework [16]. We divided our 10-week timeline into five two-week
+  [444.6 - 458.9]: sprints. Since this was a solo project, we had to adapt the roles: my
+  [467.9 - 482.2]: advisors stepped in as Product Owners to help prioritize features, while
+  [491.2 - 505.6]: I wore both the Scrum Master and Developer hats to write code and
+  [514.5 - 528.9]: manage the lifecycle.
+  [554.6 - 568.9]: 1.4.3 Project Roles and Mapping
+  [585.6 - 599.9]: For this academic graduation project (PFE), we mapped the standard
+  [608.9 - 623.3]: Scrum roles as follows:
+  [642.2 - 656.5]: • Product Owner: Handled jointly by both academic and industry ad-
+  [665.5 - 679.8]: visors. They were responsible for setting requirements and ranking
+  [688.8 - 703.2]: features in order of importance.
+  [722.1 - 736.4]: • Scrum Master: Managed project timelines and cleared technical
+  [745.4 - 759.7]: obstacles.
+  [777.5 - 789.5]: 7
+--- Physical Page 23 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [71.8 - 86.1]: • Development Team: Handled entirely by the student developer,
+  [95.1 - 109.4]: covering everything from database schemas and API coding to fron-
+  [118.4 - 132.8]: tend layout design, Gemini integration, and unit testing.
+  [158.3 - 172.7]: 1.4.4 Scrum Events and Artifacts
+  [189.4 - 203.7]: We used standard Scrum practices to organize our sprints:
+  [221.9 - 236.3]: • Product Backlog: The complete, ordered list of features required
+  [245.3 - 259.6]: for the final system.
+  [278.3 - 292.7]: • Sprint Backlog: The specific tasks we committed to finish within
+  [301.6 - 316.0]: the active two-week cycle.
+  [334.7 - 349.0]: • Sprints: Two-week development windows dedicated to building and
+  [358.0 - 372.3]: verifying specific releases.
+  [391.0 - 405.4]: • Reviews & Retrospectives: Quick evaluations at the end of each
+  [414.3 - 428.7]: sprint to check progress, test features, and plan adjustments for the
+  [437.6 - 452.0]: next cycle.
+  [470.2 - 484.6]: Figure 1.5 shows how we adapted the Scrum lifecycle to build PRO-
+  [493.5 - 507.9]: WISE.
+  [743.3 - 755.3]: Figure 1.5: Scrum process workflow applied to PRO-WISE development
+  [777.5 - 789.5]: 8
+--- Physical Page 24 ---
+  [32.4 - 44.4]: Chapter 1. General Presentation of the Project
+  [71.8 - 86.1]: The project schedule and sprint distribution are summarized in Fig-
+  [95.1 - 109.4]: ure 1.6.
+  [389.2 - 401.2]: Figure 1.6: Gantt chart of the PRO-WISE project planning
+  [436.0 - 453.3]: 1.5 UML Modeling Approach
+  [473.4 - 487.7]: We used UML diagrams [17] to plan out the system before writing code.
+  [496.7 - 511.0]: Designing these models helped us match backlog stories directly to
+  [520.0 - 534.4]: backend Sails.js endpoints and database structures. We focused on
+  [543.3 - 557.7]: three main types of diagrams:
+  [576.6 - 591.0]: • Use Case Diagrams: These show who is using the app and what
+  [599.9 - 614.3]: actions they are allowed to perform.
+  [633.2 - 647.5]: • Class Diagrams: These model our MongoDB database schemas
+  [656.5 - 670.9]: and the relationships between collections.
+  [689.8 - 704.1]: • Sequence Diagrams: These trace the exact order of API requests,
+  [713.1 - 727.4]: middleware checks, and database updates between the UI and Sails.js.
+  [777.5 - 789.5]: 9

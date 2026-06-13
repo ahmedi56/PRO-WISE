@@ -1,0 +1,36 @@
+\babel@toc {english}{}\relax 
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {1.1}{\ignorespaces Comparative study of existing solutions}}{5}{table.caption.12}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {2.1}{\ignorespaces Product Backlog of PRO-WISE Platform}}{13}{table.caption.16}%
+\contentsline {table}{\numberline {2.2}{\ignorespaces Product Backlog of PRO-WISE Platform -- continued}}{14}{table.caption.17}%
+\contentsline {table}{\numberline {2.3}{\ignorespaces Technologies and tools used in the PRO-WISE platform}}{21}{table.caption.24}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {3.1}{\ignorespaces User stories for Release 1 (Authentication and User Management)}}{24}{table.caption.25}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Textual description of the Register use case}}{25}{table.caption.28}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Textual description of the Authenticate use case}}{26}{table.caption.31}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Textual description of the Manage Profile use case}}{28}{table.caption.34}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {4.1}{\ignorespaces User stories for Release 2 (Content and Catalog Management)}}{36}{table.caption.48}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Textual description of the Manage Products use case}}{37}{table.caption.51}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Textual description of the Manage Guides use case}}{38}{table.caption.54}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Textual description of the Approve Content use case}}{39}{table.caption.57}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {5.1}{\ignorespaces User stories for Release 3 (User Interactions and Monitoring)}}{46}{table.caption.66}%
+\contentsline {table}{\numberline {5.2}{\ignorespaces Textual description of the Submit Feedback use case}}{47}{table.caption.69}%
+\contentsline {table}{\numberline {5.3}{\ignorespaces Textual description of the View Notifications use case}}{48}{table.caption.72}%
+\contentsline {table}{\numberline {5.4}{\ignorespaces Textual description of the Track Activity Logs use case}}{49}{table.caption.75}%
+\contentsline {table}{\numberline {5.5}{\ignorespaces Textual description of the View Analytics use case}}{50}{table.caption.78}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {6.1}{\ignorespaces User stories for Release 4 (Intelligent Services)}}{57}{table.caption.86}%
+\contentsline {table}{\numberline {6.2}{\ignorespaces Comparison between BAAI/bge-small-en and Google Gemini API}}{58}{table.caption.87}%
+\contentsline {table}{\numberline {6.3}{\ignorespaces Comparison of search approaches: Without RAG vs With RAG}}{65}{table.caption.93}%
+\contentsline {table}{\numberline {6.4}{\ignorespaces Textual description of the Generate Recommendations use case}}{69}{table.caption.97}%
+\contentsline {table}{\numberline {6.5}{\ignorespaces Textual description of the Component-Based Recommendation use case}}{69}{table.caption.99}%
+\contentsline {table}{\numberline {6.6}{\ignorespaces Textual description of the Intelligent Search use case}}{70}{table.caption.101}%
+\contentsline {table}{\numberline {6.7}{\ignorespaces Textual description of the Generate AI Build Instructions use case}}{70}{table.caption.103}%
+\addvspace {10\p@ }
+\contentsline {table}{\numberline {7.1}{\ignorespaces User stories for Release 5 (Maintenance \& Technician)}}{75}{table.caption.107}%
+\contentsline {table}{\numberline {7.2}{\ignorespaces Textual description of the Submit Maintenance Request use case}}{77}{table.caption.110}%
+\contentsline {table}{\numberline {7.3}{\ignorespaces Textual description of the Follow and Manage Maintenance Requests use case}}{79}{table.caption.113}%
+\contentsline {table}{\numberline {7.4}{\ignorespaces Textual description of the Approve Technician Profile use case}}{81}{table.caption.116}%
