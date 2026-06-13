@@ -783,18 +783,28 @@ module.exports = {
   inspectDb: async function(req, res) {
     try {
       const db = sails.getDatastore().manager;
-      const content = await db.collection('content').findOne({ _id: new require('mongodb').ObjectId('6a2af350eab5fb5c55838fb7') });
-      const guides = await db.collection('guide').find({ product: '6a29c8921ef03976e854d715' }).toArray();
+      if (!db) {
+        return res.json({ error: 'sails.getDatastore().manager is undefined' });
+      }
       
-      const guidesWithSteps = [];
-      for (const g of guides) {
-        const steps = await db.collection('step').find({ guide: g._id }).toArray();
-        guidesWithSteps.push({ ...g, steps });
+      let content = null;
+      let guidesWithSteps = [];
+
+      try {
+        const { ObjectId } = require('mongodb');
+        content = await db.collection('content').findOne({ _id: new ObjectId('6a2af350eab5fb5c55838fb7') });
+        const guides = await db.collection('guide').find({ product: '6a29c8921ef03976e854d715' }).toArray();
+        for (const g of guides) {
+          const steps = await db.collection('step').find({ guide: g._id }).toArray();
+          guidesWithSteps.push({ ...g, steps });
+        }
+      } catch (innerErr) {
+        return res.json({ error: 'Inner error: ' + innerErr.message + '\n' + innerErr.stack });
       }
 
       return res.json({ content, guides: guidesWithSteps });
     } catch(err) {
-      return res.serverError(err);
+      return res.json({ error: 'Outer error: ' + err.message });
     }
   }
 
