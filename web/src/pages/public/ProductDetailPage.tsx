@@ -792,7 +792,12 @@ export const ProductDetailPage: React.FC = () => {
                                          {(product.guides && product.guides.length > 0) || stepsFromContent.length > 0 ? (
                                              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                                  {/* Legacy Guides */}
-                                                 {product.guides?.filter((guide: any) => guide.steps && guide.steps.length > 0).map((guide: any) => (
+                                                 {product.guides?.filter((guide: any) => 
+                                                     guide.steps && 
+                                                     guide.steps.length > 0 && 
+                                                     !guide.title.toLowerCase().includes('question about') &&
+                                                     !guide.title.toLowerCase().startsWith('question ')
+                                                 ).map((guide: any) => (
                                                      <div key={guide.id} style={{ background: 'var(--color-surface-raised)', borderRadius: 'var(--radius-lg)', padding: '2rem', border: '1px solid var(--color-border)' }}>
                                                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                                                              <h4 style={{ margin: 0, fontWeight: 800, fontSize: '1.2rem' }}>{guide.title}</h4>
