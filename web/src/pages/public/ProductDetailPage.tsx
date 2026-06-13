@@ -1215,7 +1215,7 @@ export const ProductDetailPage: React.FC = () => {
                                     boxShadow: '0 4px 10px rgba(99, 102, 241, 0.2)',
                                     transition: 'transform 0.2s, background-color 0.2s'
                                 }}
-                                onMouseOver={e => e.currentTarget.style.backgroundColor = 'var(--color-primary-dark)'}
+                                onMouseOver={e => e.currentTarget.style.backgroundColor = 'var(--color-primary-hover)'}
                                 onMouseOut={e => e.currentTarget.style.backgroundColor = 'var(--color-primary)'}
                             >
                                 <IonIcon name="search" style={{ fontSize: '1.1rem' }} />
@@ -1231,7 +1231,7 @@ export const ProductDetailPage: React.FC = () => {
                         width: '60px',
                         height: '60px',
                         borderRadius: '50%',
-                        background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-dark))',
+                        background: 'linear-gradient(135deg, var(--color-primary), var(--color-primary-hover))',
                         color: '#fff',
                         border: 'none',
                         cursor: 'pointer',
