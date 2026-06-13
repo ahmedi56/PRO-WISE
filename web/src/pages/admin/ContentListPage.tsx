@@ -130,7 +130,7 @@ export const ContentListPage: React.FC = () => {
     const filteredContent = content.filter(item => {
         const matchesProduct = selectedProduct === 'all' || 
             (typeof item.product === 'object' ? item.product?.id === selectedProduct : item.product === selectedProduct);
-        const matchesType = selectedType === 'all' || item.type === selectedType;
+        const matchesType = selectedType === 'all' || item.type === selectedType || (selectedType === 'guide' && item.type === 'general');
         return matchesProduct && matchesType;
     });
 
@@ -238,7 +238,7 @@ export const ContentListPage: React.FC = () => {
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                                 <div style={{ fontWeight: 700, color: 'var(--color-text-strong)' }}>{item.title}</div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <Badge tone="primary" style={{ fontSize: '10px', padding: '0 4px' }}>{item.type || 'article'}</Badge>
+                                                    <Badge tone="primary" style={{ fontSize: '10px', padding: '0 4px' }}>{item.type === 'general' ? 'guide' : (item.type || 'article')}</Badge>
                                                 </div>
                                             </div>
                                         </td>

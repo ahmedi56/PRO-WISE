@@ -72,7 +72,7 @@ function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], suppor
         
         if (item.type === 'faq') {
             faqs.push(item);
-        } else if (item.type === 'guide' || item.type === 'tutorial') {
+        } else if (item.type === 'guide' || item.type === 'tutorial' || item.type === 'general') {
             if (item.steps && item.steps.length > 0) {
                 stepsFromContent.push(item);
             }
