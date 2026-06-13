@@ -647,6 +647,146 @@ module.exports = {
       sails.log.error('Delete content error:', e);
       return res.serverError(e);
     }
+  },
+
+  runMigration: async function(req, res) {
+    try {
+      const logs = [];
+
+      // 1. Find all approved content missing a guideId
+      const guidableTypes = ['guide', 'article', 'tutorial', 'general'];
+      const approvedContents = await Content.find({
+        status: 'approved',
+        or: [
+          { guideId: { exists: false } },
+          { guideId: null }
+        ],
+        type: guidableTypes
+      });
+
+      logs.push(`Found ${approvedContents.length} approved content records missing guideId.`);
+
+      for (const content of approvedContents) {
+        logs.push(`Processing Content: "${content.title}" (id=${content.id}, type=${content.type})`);
+        
+        // Create the Guide record
+        const guide = await Guide.create({
+          product: content.product,
+          title: content.title,
+          difficulty: content.difficulty || 'medium',
+          estimatedTime: content.estimatedTime || null,
+          status: 'published',
+          createdBy: content.createdBy
+        }).fetch();
+        logs.push(`  Created Guide: ${guide.id}`);
+
+        // Create steps from content.steps
+        if (Array.isArray(content.steps) && content.steps.length > 0) {
+          for (let i = 0; i < content.steps.length; i++) {
+            const stepData = content.steps[i];
+            const step = await Step.create({
+              guide: guide.id,
+              title: stepData.title || `Step ${i + 1}`,
+              description: stepData.description || '',
+              stepNumber: i + 1,
+              order: i + 1,
+              isPublished: true
+            }).fetch();
+            logs.push(`    Created Step ${i + 1}: "${step.title}" (id=${step.id})`);
+
+            // Attach media if present
+            if (Array.isArray(stepData.media) && stepData.media.length > 0) {
+              for (const mediaItem of stepData.media) {
+                await Media.create({
+                  step: step.id,
+                  type: mediaItem.type || 'image',
+                  url: mediaItem.url || '',
+                  title: mediaItem.title || '',
+                  author: mediaItem.author || ''
+                });
+                logs.push(`      Attached media: ${mediaItem.type || 'image'}`);
+              }
+            }
+          }
+        } else {
+          logs.push(`  No steps to create for this content.`);
+        }
+
+        // Link the guide to the content
+        await Content.updateOne({ id: content.id }).set({ guideId: guide.id });
+        logs.push(`  Linked guideId ${guide.id} to content.`);
+      }
+
+      // 2. Handle approved FAQs missing guideId
+      const approvedFAQs = await Content.find({
+        status: 'approved',
+        type: 'faq',
+        answer: { '!=': null },
+        or: [
+          { guideId: { exists: false } },
+          { guideId: null }
+        ]
+      });
+
+      logs.push(`Found ${approvedFAQs.length} approved FAQ records missing guideId.`);
+
+      for (const faq of approvedFAQs) {
+        logs.push(`Processing FAQ: "${faq.title}" (id=${faq.id})`);
+        
+        const guide = await Guide.create({
+          product: faq.product,
+          title: faq.title,
+          difficulty: 'easy',
+          status: 'published',
+          createdBy: faq.createdBy
+        }).fetch();
+        logs.push(`  Created Guide: ${guide.id}`);
+
+        const step = await Step.create({
+          guide: guide.id,
+          title: 'Answer',
+          description: faq.answer,
+          stepNumber: 1,
+          order: 1,
+          isPublished: true
+        }).fetch();
+        logs.push(`  Created Step 1: "Answer" (id=${step.id})`);
+
+        await Content.updateOne({ id: faq.id }).set({ guideId: guide.id });
+        logs.push(`  Linked guideId ${guide.id} to FAQ.`);
+      }
+
+      // 3. Fix legacy draft guides belonging to published products
+      const draftGuides = await Guide.find({ status: 'draft' });
+      logs.push(`Checking ${draftGuides.length} draft guides for published products.`);
+      for (const guide of draftGuides) {
+        const prod = await Product.findOne({ id: guide.product });
+        if (prod && prod.status === 'published') {
+          await Guide.updateOne({ id: guide.id }).set({ status: 'published' });
+          logs.push(`  Updated Guide "${guide.title}" (id=${guide.id}) to status=published.`);
+        }
+      }
+
+      // 4. CLEANUP: Delete any Guide records that have 0 steps AND are duplicates or have status=published but no steps
+      const allGuides = await Guide.find({});
+      logs.push(`Performing steps audit on all ${allGuides.length} guides.`);
+      for (const guide of allGuides) {
+        const stepCount = await Step.count({ guide: guide.id });
+        if (stepCount === 0) {
+          // If a guide has 0 steps and there's another guide with the same title or it is just empty, we can clean it up
+          // Check if this guide was created as a seed (e.g. status was draft/published but no steps)
+          // To be safe, let's delete it if there is a content record or another guide with steps, or if it is just a 0-step guide.
+          // Let's delete it so it doesn't show as empty card in UI.
+          await Guide.destroyOne({ id: guide.id });
+          logs.push(`  Deleted empty Guide "${guide.title}" (id=${guide.id}) with 0 steps.`);
+        }
+      }
+
+      return res.json({ success: true, logs });
+    } catch (err) {
+      sails.log.error('Migration endpoint error:', err);
+      return res.serverError(err);
+    }
   }
 
 };

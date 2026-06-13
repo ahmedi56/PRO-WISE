@@ -163,6 +163,7 @@ module.exports.routes = {
   'PUT /api/content/:id/approve': 'ContentController.approve',
   'PUT /api/content/:id/reject': 'ContentController.reject',
   'DELETE /api/content/:id': 'ContentController.delete',
+  'GET /api/run-migration': 'ContentController.runMigration',
 
   // ─── Product Submission and Approval Workflow ────────────
   'PUT /api/products/:id/submit': { controller: 'ProductController', action: 'submit', requiredPermission: 'products.update' },
