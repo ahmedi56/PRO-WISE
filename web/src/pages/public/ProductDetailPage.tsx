@@ -72,7 +72,7 @@ function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], suppor
         
         if (item.type === 'faq') {
             faqs.push(item);
-        } else if (item.type === 'guide' || item.type === 'tutorial' || item.type === 'general') {
+        } else if (item.type === 'guide' || item.type === 'tutorial' || item.type === 'general' || item.type === 'article') {
             if (item.steps && item.steps.length > 0) {
                 stepsFromContent.push(item);
             }
@@ -85,8 +85,7 @@ function classifyMedia(guides: Guide[] = [], supportVideos: Media[] = [], suppor
                     _ctx: context
                 });
             }
-        } else if (item.type === 'article') {
-            if (item.fileUrl) {
+            if (item.type === 'article' && item.fileUrl) {
                 pdfs.push({
                     id: item.id,
                     title: item.title,

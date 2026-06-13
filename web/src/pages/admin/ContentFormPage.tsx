@@ -150,8 +150,8 @@ export const ContentFormPage: React.FC = () => {
                 setFormData(prev => ({ ...prev, description: descRes.data.data.text }));
             }
 
-            // 2. Generate Steps if it's a guide
-            if (formData.type === 'guide') {
+            // 2. Generate Steps if it has steps (non-FAQ)
+            if (formData.type !== 'faq') {
                 const stepsRes = await axios.post(`${API_URL}/ai/suggest-steps`, {
                     guideTitle: formData.title,
                     productContext: product?.name || ''
@@ -181,7 +181,7 @@ export const ContentFormPage: React.FC = () => {
         
         const payload = {
             ...formData,
-            steps: formData.type === 'guide' ? steps : []
+            steps: formData.type !== 'faq' ? steps : []
         };
 
         try {
@@ -341,7 +341,7 @@ export const ContentFormPage: React.FC = () => {
                 )}
 
                 {/* Repair Guide Specific Fields */}
-                {formData.type === 'guide' && (
+                {formData.type !== 'faq' && (
                     <div className="form-card fade-enter-active">
                         <div className="section-header">
                             <div className="section-icon">
